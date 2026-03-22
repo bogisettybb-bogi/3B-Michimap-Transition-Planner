@@ -25,6 +25,8 @@ export interface ResourceEffortsProps {
   agreedToTerms: boolean;
   isDownloading: boolean;
   onDownload: () => void;
+  onConfirm: () => void;
+  onUnconfirm: () => void;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -72,7 +74,7 @@ const round1 = (v: number) => Math.round(v * 10) / 10;
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export function ResourceEffortsPanel({ plan, agreedToTerms, isDownloading, onDownload }: ResourceEffortsProps) {
+export function ResourceEffortsPanel({ plan, agreedToTerms, isDownloading, onDownload, onConfirm, onUnconfirm }: ResourceEffortsProps) {
   const [resources, setResources] = useState<ResourceRow[]>(DEFAULT_RESOURCES);
   const [efforts,   setEfforts  ] = useState<EffortMap>({});
   const [locFilter, setLocFilter] = useState<"All" | "Onsite" | "Offshore">("All");
@@ -133,7 +135,8 @@ export function ResourceEffortsPanel({ plan, agreedToTerms, isDownloading, onDow
     const val = isNaN(parsed) ? 0 : round1(Math.min(5, Math.max(0, parsed)));
     setEfforts(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [weekNum]: val } }));
     setConfirmed(false);
-  }, []);
+    onUnconfirm();
+  }, [onUnconfirm]);
 
   const getRowTotal = (id: number) =>
     round1(Object.values(efforts[id] || {}).reduce((s, v) => s + v, 0));
@@ -543,7 +546,7 @@ export function ResourceEffortsPanel({ plan, agreedToTerms, isDownloading, onDow
             </p>
             <button
               disabled={!hasEfforts}
-              onClick={() => setConfirmed(true)}
+              onClick={() => { setConfirmed(true); onConfirm(); }}
               className={cn(
                 "w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all",
                 hasEfforts
@@ -564,7 +567,7 @@ export function ResourceEffortsPanel({ plan, agreedToTerms, isDownloading, onDow
               <p className="text-xs font-semibold">
                 Confirmed — <span className="font-bold">{grandTotalAll} days</span> total across {plan.phases.length} phases.
               </p>
-              <button onClick={() => setConfirmed(false)}
+              <button onClick={() => { setConfirmed(false); onUnconfirm(); }}
                 className="ml-auto text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors shrink-0">
                 Edit
               </button>

@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { format, addWeeks } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
+import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Share2, Check } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { PlanPreview } from "@/components/plan-preview";
 import { ResourceEffortsPanel } from "@/components/resource-efforts";
@@ -289,6 +289,7 @@ export default function Home() {
 
   const [generatedResult, setGeneratedResult] = useState<GeneratePlanResponse | null>(null);
   const [showEfforts, setShowEfforts] = useState(false);
+  const [confirmedEfforts, setConfirmedEfforts] = useState(false);
   const [isDisclaimersOpen, setIsDisclaimersOpen] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [hasDownloaded, setHasDownloaded] = useState(false);
@@ -337,6 +338,7 @@ export default function Home() {
     setTransitionPath(path);
     setGeneratedResult(null);
     setShowEfforts(false);
+    setConfirmedEfforts(false);
     setAgreedToTerms(false);
     setHasDownloaded(false);
   };
@@ -466,6 +468,54 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+
+              {/* STEP INDICATOR */}
+              {(() => {
+                const currentStep = confirmedEfforts ? 5 : generatedResult ? 4 : 3;
+                const STEPS = [
+                  { id: 1, label: "Choose LLM"       },
+                  { id: 2, label: "Transition Path"   },
+                  { id: 3, label: "Set Duration"      },
+                  { id: 4, label: "Enter Efforts"     },
+                  { id: 5, label: "Confirm & Download"},
+                ];
+                return (
+                  <div className="bg-card border border-border rounded-2xl px-5 py-4 shadow-sm">
+                    <div className="flex items-start w-full">
+                      {STEPS.map((step, i) => {
+                        const done   = step.id < currentStep;
+                        const active = step.id === currentStep;
+                        return (
+                          <div key={step.id} className="flex items-center flex-1 min-w-0">
+                            <div className="flex flex-col items-center gap-1.5 shrink-0">
+                              <div className={cn(
+                                "w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 transition-all duration-300",
+                                done   ? "bg-primary border-primary text-primary-foreground"
+                                       : active ? "border-primary text-primary bg-primary/10 shadow-[0_0_0_3px_rgba(233,169,68,0.15)]"
+                                               : "border-border text-muted-foreground bg-muted/40"
+                              )}>
+                                {done ? <Check className="w-3.5 h-3.5" /> : step.id}
+                              </div>
+                              <span className={cn(
+                                "text-[9px] font-semibold text-center leading-tight max-w-[56px] transition-colors duration-200",
+                                active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground"
+                              )}>
+                                {step.label}
+                              </span>
+                            </div>
+                            {i < STEPS.length - 1 && (
+                              <div className={cn(
+                                "flex-1 h-0.5 mx-1.5 mb-4 transition-colors duration-300 rounded-full",
+                                step.id < currentStep ? "bg-primary" : "bg-border"
+                              )} />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* FORM CARD */}
               <div className="bg-card rounded-2xl border border-border shadow-md overflow-hidden">
@@ -742,6 +792,8 @@ export default function Home() {
                             agreedToTerms={agreedToTerms}
                             isDownloading={isDownloading}
                             onDownload={handleDownload}
+                            onConfirm={() => setConfirmedEfforts(true)}
+                            onUnconfirm={() => setConfirmedEfforts(false)}
                           />
                         </motion.div>
                       )}
