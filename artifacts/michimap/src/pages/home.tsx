@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { PlanPreview } from "@/components/plan-preview";
+import { ResourceEffortsPanel } from "@/components/resource-efforts";
 import { MODELS, TRANSITION_PATHS, PHASES_META, cn } from "@/lib/utils";
 import {
   useGeneratePlan,
@@ -287,6 +288,7 @@ export default function Home() {
   });
 
   const [generatedResult, setGeneratedResult] = useState<GeneratePlanResponse | null>(null);
+  const [showEfforts, setShowEfforts] = useState(false);
   const [isDisclaimersOpen, setIsDisclaimersOpen] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [hasDownloaded, setHasDownloaded] = useState(false);
@@ -334,6 +336,7 @@ export default function Home() {
   const selectPath = (path: GeneratePlanRequestTransitionPath) => {
     setTransitionPath(path);
     setGeneratedResult(null);
+    setShowEfforts(false);
     setAgreedToTerms(false);
     setHasDownloaded(false);
   };
@@ -705,8 +708,39 @@ export default function Home() {
               {/* PLAN PREVIEW */}
               <AnimatePresence>
                 {generatedResult && (
-                  <motion.div id="plan-preview" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
+                  <motion.div id="plan-preview" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
                     <PlanPreview plan={generatedResult.plan} />
+
+                    {/* ENTER EFFORTS BUTTON */}
+                    {!showEfforts && (
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => {
+                            setShowEfforts(true);
+                            setTimeout(() => document.getElementById("resource-efforts")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                          }}
+                          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow hover:opacity-90 transition-all">
+                          <Plus className="w-4 h-4" /> Enter Resource Efforts
+                        </button>
+                      </div>
+                    )}
+
+                    {/* RESOURCE EFFORTS PANEL */}
+                    <AnimatePresence>
+                      {showEfforts && (
+                        <motion.div id="resource-efforts"
+                          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}>
+                          <div className="flex items-center justify-between mb-3">
+                            <h2 className="font-bold text-base text-foreground">Resource Efforts</h2>
+                            <button onClick={() => setShowEfforts(false)}
+                              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+                              <X className="w-3.5 h-3.5" /> Hide
+                            </button>
+                          </div>
+                          <ResourceEffortsPanel plan={generatedResult.plan} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 )}
               </AnimatePresence>
