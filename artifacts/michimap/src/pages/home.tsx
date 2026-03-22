@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { format, addWeeks } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
@@ -292,6 +292,44 @@ export default function Home() {
   const [hasDownloaded, setHasDownloaded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const stopRef = useRef(false);
+  const [genProgress, setGenProgress] = useState(0);
+  const [genStartTime, setGenStartTime] = useState<number | null>(null);
+  const [genMsgIdx, setGenMsgIdx] = useState(0);
+
+  const GEN_MESSAGES = [
+    "Analyzing your SAP landscape...",
+    "Mapping SAP Activate phases...",
+    "Structuring activities and milestones...",
+    "Calibrating effort estimates...",
+    "Building resource allocation model...",
+    "Preparing Gantt and workplan...",
+    "Validating transition approach...",
+    "Finalising your project plan...",
+  ];
+  const ESTIMATED_MS = 35_000;
+
+  useEffect(() => {
+    if (isGenerating) {
+      setGenStartTime(Date.now());
+      setGenProgress(0);
+      setGenMsgIdx(0);
+    } else {
+      setGenStartTime(null);
+    }
+  }, [isGenerating]);
+
+  useEffect(() => {
+    if (!isGenerating || genStartTime === null) return;
+    const tick = setInterval(() => {
+      const elapsed = Date.now() - genStartTime;
+      const raw = elapsed / ESTIMATED_MS;
+      const pct = Math.min(94, 95 * (1 - Math.exp(-raw * 2.8)));
+      setGenProgress(pct);
+      const msgPct = Math.floor((elapsed / ESTIMATED_MS) * GEN_MESSAGES.length);
+      setGenMsgIdx(Math.min(msgPct, GEN_MESSAGES.length - 1));
+    }, 120);
+    return () => clearInterval(tick);
+  }, [isGenerating, genStartTime]);
 
   const selectPath = (path: GeneratePlanRequestTransitionPath) => {
     setTransitionPath(path);
@@ -547,10 +585,34 @@ export default function Home() {
 
                   {/* GENERATE / STOP BUTTON */}
                   {isGenerating ? (
-                    <button onClick={handleStop}
-                      className="w-full flex items-center justify-center gap-3 bg-destructive text-destructive-foreground font-bold text-base rounded-2xl py-5 shadow-lg hover:opacity-90 active:scale-[0.99] transition-all">
-                      <X className="w-5 h-5" /> Stop Generation
-                    </button>
+                    <div className="space-y-3">
+                      <button onClick={handleStop}
+                        className="w-full flex items-center justify-center gap-3 bg-destructive text-destructive-foreground font-bold text-base rounded-2xl py-5 shadow-lg hover:opacity-90 active:scale-[0.99] transition-all">
+                        <X className="w-5 h-5" /> Stop Generation
+                      </button>
+                      {/* Progress bar */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground font-medium truncate pr-2">
+                            {GEN_MESSAGES[genMsgIdx]}
+                          </span>
+                          <span className="font-bold text-primary tabular-nums shrink-0">
+                            {Math.round(genProgress)}%
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-200 ease-out"
+                            style={{ width: `${genProgress}%` }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground/70 text-center">
+                          {genStartTime
+                            ? `~${Math.max(0, Math.round((ESTIMATED_MS - (Date.now() - genStartTime)) / 1000))}s remaining`
+                            : "Starting..."}
+                        </p>
+                      </div>
+                    </div>
                   ) : (
                     <button onClick={handleGenerate}
                       className="w-full flex items-center justify-center gap-3 bg-secondary text-secondary-foreground font-bold text-base rounded-2xl py-5 shadow-lg hover:opacity-90 active:scale-[0.99] transition-all">
