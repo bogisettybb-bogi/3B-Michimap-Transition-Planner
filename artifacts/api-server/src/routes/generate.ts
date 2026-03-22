@@ -48,10 +48,10 @@ const ACTIVITIES: Record<string, Record<string, any[]>> = {
       { category: "Standards", activity: "Project Standards & Governance", description: "Define coding standards, naming conventions, transport strategy and change management", workstream: "Project Management", effort: "Medium", responsible: "SAP Lead Consultant", accountable: "Project Manager", consulted: "Team Leads", informed: "All Teams", milestone: false },
     ],
     explore: [
-      { category: "Fit-to-Standard", activity: "FTS Workshop — Finance (FI/CO)", description: "Conduct Fit-to-Standard workshops for Finance, Controlling, Asset Accounting modules", workstream: "Finance", effort: "Very High", responsible: "Finance Consultant", accountable: "Finance Lead", consulted: "CFO/Finance Team", informed: "Project Manager", milestone: false },
-      { category: "Fit-to-Standard", activity: "FTS Workshop — Procurement (MM/SRM)", description: "Conduct Fit-to-Standard workshops for Materials Management and Procurement", workstream: "Procurement", effort: "High", responsible: "MM Consultant", accountable: "Procurement Lead", consulted: "Procurement Team", informed: "Project Manager", milestone: false },
-      { category: "Fit-to-Standard", activity: "FTS Workshop — Sales (SD/O2C)", description: "Conduct Fit-to-Standard workshops for Sales, Billing and Order-to-Cash process", workstream: "Sales", effort: "High", responsible: "SD Consultant", accountable: "Sales Lead", consulted: "Sales Team", informed: "Project Manager", milestone: false },
-      { category: "Fit-to-Standard", activity: "FTS Workshop — Manufacturing/Logistics", description: "Conduct Fit-to-Standard workshops for Production Planning, WM and Supply Chain", workstream: "Operations", effort: "High", responsible: "PP/WM Consultant", accountable: "Operations Lead", consulted: "Operations Team", informed: "Project Manager", milestone: false },
+      { category: "Fit-to-Standard", activity: "FTS Workshop - Finance (FI/CO)", description: "Conduct Fit-to-Standard workshops for Finance, Controlling, Asset Accounting modules", workstream: "Finance", effort: "Very High", responsible: "Finance Consultant", accountable: "Finance Lead", consulted: "CFO/Finance Team", informed: "Project Manager", milestone: false },
+      { category: "Fit-to-Standard", activity: "FTS Workshop - Procurement (MM/SRM)", description: "Conduct Fit-to-Standard workshops for Materials Management and Procurement", workstream: "Procurement", effort: "High", responsible: "MM Consultant", accountable: "Procurement Lead", consulted: "Procurement Team", informed: "Project Manager", milestone: false },
+      { category: "Fit-to-Standard", activity: "FTS Workshop - Sales (SD/O2C)", description: "Conduct Fit-to-Standard workshops for Sales, Billing and Order-to-Cash process", workstream: "Sales", effort: "High", responsible: "SD Consultant", accountable: "Sales Lead", consulted: "Sales Team", informed: "Project Manager", milestone: false },
+      { category: "Fit-to-Standard", activity: "FTS Workshop - Manufacturing/Logistics", description: "Conduct Fit-to-Standard workshops for Production Planning, WM and Supply Chain", workstream: "Operations", effort: "High", responsible: "PP/WM Consultant", accountable: "Operations Lead", consulted: "Operations Team", informed: "Project Manager", milestone: false },
       { category: "Gap Analysis", activity: "Gap/Delta Document & Sign-off", description: "Consolidate all gaps from FTS workshops, classify and obtain business sign-off", workstream: "Project Management", effort: "High", responsible: "SAP Lead Consultant", accountable: "Business Sponsor", consulted: "All Stream Leads", informed: "Steering Committee", milestone: true },
       { category: "Design", activity: "Solution Architecture & Design Document", description: "Finalize technical architecture, integration design and extension strategy (BTP, APIs)", workstream: "Technical", effort: "High", responsible: "Solution Architect", accountable: "Technical Lead", consulted: "Stream Consultants", informed: "Project Manager", milestone: false },
       { category: "Data", activity: "Data Migration Strategy & Template Design", description: "Define data migration approach, source mapping, cleansing rules and load sequence", workstream: "Data Management", effort: "High", responsible: "Data Lead", accountable: "Project Manager", consulted: "Business SMEs", informed: "Steering Committee", milestone: false },
@@ -63,7 +63,7 @@ const ACTIVITIES: Record<string, Record<string, any[]>> = {
       { category: "Configuration", activity: "Sales Configuration (SD)", description: "Configure order management, pricing, billing, credit management and customer master data", workstream: "Sales", effort: "High", responsible: "SD Consultant", accountable: "Sales Lead", consulted: "Sales SMEs", informed: "CSO", milestone: false },
       { category: "Development", activity: "Custom Development (ABAP/Fiori)", description: "Develop approved custom enhancements, Fiori apps, BAPIs and forms (based on gap analysis)", workstream: "Technical", effort: "Very High", responsible: "ABAP Team", accountable: "Technical Lead", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
       { category: "Integration", activity: "Integration Development & Testing", description: "Build and test all middleware integrations (iDoc, RFC, REST APIs, BTP Integration Suite)", workstream: "Technical", effort: "Very High", responsible: "Integration Team", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
-      { category: "Data", activity: "Data Migration — Mock Loads", description: "Execute mock data migration loads, validate data quality and fix mapping issues", workstream: "Data Management", effort: "High", responsible: "Data Lead", accountable: "Data Team", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Data", activity: "Data Migration - Mock Loads", description: "Execute mock data migration loads, validate data quality and fix mapping issues", workstream: "Data Management", effort: "High", responsible: "Data Lead", accountable: "Data Team", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
       { category: "Testing", activity: "Unit Testing & SIT", description: "Conduct Unit Testing and System Integration Testing across all process streams", workstream: "Quality Assurance", effort: "Very High", responsible: "QA Team + Consultants", accountable: "QA Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
       { category: "Change Management", activity: "Training Material Development", description: "Develop role-based training materials, quick reference guides and e-learning content", workstream: "Change Management", effort: "High", responsible: "Change Manager", accountable: "Business Sponsor", consulted: "Stream Consultants", informed: "All Users", milestone: false },
     ],
@@ -87,7 +87,7 @@ const ACTIVITIES: Record<string, Record<string, any[]>> = {
     discover: [
       { category: "Assessment", activity: "Current System Assessment", description: "Assess existing SAP ECC landscape, custom code, interfaces and data volumes", workstream: "Technical", effort: "High", responsible: "Solution Architect", accountable: "Technical Lead", consulted: "Basis Team", informed: "Project Manager", milestone: false },
       { category: "Assessment", activity: "Readiness Check & Simplification List", description: "Run SAP Readiness Check, Simplification Item analysis and custom code impact assessment", workstream: "Technical", effort: "High", responsible: "SAP Consultant", accountable: "Technical Lead", consulted: "ABAP Team", informed: "Project Manager", milestone: true },
-      { category: "Business Case", activity: "Business Case — System Conversion", description: "Develop ROI analysis for system conversion vs. new implementation approach", workstream: "Project Management", effort: "Medium", responsible: "SAP Consultant", accountable: "Business Sponsor", consulted: "Finance", informed: "Board", milestone: false },
+      { category: "Business Case", activity: "Business Case - System Conversion", description: "Develop ROI analysis for system conversion vs. new implementation approach", workstream: "Project Management", effort: "Medium", responsible: "SAP Consultant", accountable: "Business Sponsor", consulted: "Finance", informed: "Board", milestone: false },
     ],
     prepare: [
       { category: "Project Initiation", activity: "Project Kickoff & Charter", description: "Formal kickoff, team mobilization and project charter sign-off for system conversion", workstream: "Project Management", effort: "High", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Teams", informed: "Organization", milestone: true },
@@ -95,8 +95,8 @@ const ACTIVITIES: Record<string, Record<string, any[]>> = {
       { category: "Custom Code", activity: "Custom Code Remediation Plan", description: "Plan remediation of custom ABAP objects based on Simplification Item analysis", workstream: "Technical", effort: "High", responsible: "ABAP Lead", accountable: "Technical Lead", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
     ],
     explore: [
-      { category: "Delta Design", activity: "Delta Design — Finance (FI/CO)", description: "Design S/4HANA delta changes for Finance: universal journal, asset accounting migration", workstream: "Finance", effort: "High", responsible: "Finance Consultant", accountable: "Finance Lead", consulted: "Finance Team", informed: "CFO", milestone: false },
-      { category: "Delta Design", activity: "Delta Design — Logistics", description: "Design S/4HANA delta changes for MM, SD, PP including new table structures", workstream: "Operations", effort: "High", responsible: "Logistics Consultant", accountable: "Operations Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Delta Design", activity: "Delta Design - Finance (FI/CO)", description: "Design S/4HANA delta changes for Finance: universal journal, asset accounting migration", workstream: "Finance", effort: "High", responsible: "Finance Consultant", accountable: "Finance Lead", consulted: "Finance Team", informed: "CFO", milestone: false },
+      { category: "Delta Design", activity: "Delta Design - Logistics", description: "Design S/4HANA delta changes for MM, SD, PP including new table structures", workstream: "Operations", effort: "High", responsible: "Logistics Consultant", accountable: "Operations Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
       { category: "Process Review", activity: "Business Process Review & Optimization", description: "Review existing processes, identify opportunities to adopt standard S/4HANA best practices", workstream: "Cross-Stream", effort: "High", responsible: "SAP Lead Consultant", accountable: "Business Sponsor", consulted: "Process Owners", informed: "Steering Committee", milestone: false },
       { category: "Technical", activity: "Integration & Interface Impact Analysis", description: "Analyze impact on existing interfaces, identify modifications required for S/4HANA APIs", workstream: "Technical", effort: "High", responsible: "Integration Team", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
     ],
@@ -129,11 +129,11 @@ const ACTIVITIES: Record<string, Record<string, any[]>> = {
     ],
     prepare: [
       { category: "Project Initiation", activity: "Project Kickoff & Governance", description: "Formal kickoff, team mobilization and governance model for selective migration project", workstream: "Project Management", effort: "High", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Teams", informed: "Organization", milestone: true },
-      { category: "Technical Setup", activity: "Shell Conversion — Greenfield Configuration", description: "Perform shell conversion of existing system, configure new org structures and master data", workstream: "Technical", effort: "Very High", responsible: "Basis + Functional Team", accountable: "Technical Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Technical Setup", activity: "Shell Conversion - Greenfield Configuration", description: "Perform shell conversion of existing system, configure new org structures and master data", workstream: "Technical", effort: "Very High", responsible: "Basis + Functional Team", accountable: "Technical Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
       { category: "Tools", activity: "Migration Tooling Setup (SNP / Magnitude)", description: "Set up and configure selective data migration tool (SNP, Magnitude or equivalent)", workstream: "Technical", effort: "High", responsible: "Data Team", accountable: "Technical Lead", consulted: "Tool Vendor", informed: "Project Manager", milestone: false },
     ],
     explore: [
-      { category: "Design", activity: "Process Design — New vs Retained", description: "Design which processes follow Greenfield (new) vs retained Brownfield approach", workstream: "Cross-Stream", effort: "Very High", responsible: "SAP Lead Consultant", accountable: "Business Sponsor", consulted: "Process Owners", informed: "Steering Committee", milestone: true },
+      { category: "Design", activity: "Process Design - New vs Retained", description: "Design which processes follow Greenfield (new) vs retained Brownfield approach", workstream: "Cross-Stream", effort: "Very High", responsible: "SAP Lead Consultant", accountable: "Business Sponsor", consulted: "Process Owners", informed: "Steering Committee", milestone: true },
       { category: "Data Design", activity: "Data Object Scope & Migration Design", description: "Define data object scope, extraction rules, cleansing criteria and target mapping for selective load", workstream: "Data Management", effort: "Very High", responsible: "Data Lead", accountable: "Solution Architect", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
       { category: "FTS", activity: "Fit-to-Standard for New Processes", description: "FTS workshops for newly adopted S/4HANA standard processes (replacing legacy customizations)", workstream: "Cross-Stream", effort: "High", responsible: "Functional Consultants", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
     ],
@@ -237,7 +237,7 @@ async function generateWithAI(params: any): Promise<any> {
 
 Phases: ${phaseLines}
 
-Return ONLY valid JSON. No markdown, no extra text — raw JSON only:
+Return ONLY valid JSON. No markdown, no extra text - raw JSON only:
 {"summary":"2-3 sentence executive summary","phases":{"${phaseNames.join('":[],"')}":[]}}
 
 Rules per phase (6–8 activities each):
@@ -258,7 +258,7 @@ Set milestone:true for kickoff, gap sign-off, UAT sign-off, go-live, closure.`;
 
     const raw = (response.choices[0]?.message?.content || "").replace(/```json\n?|\n?```/g, "").trim();
 
-    // Attempt robust parse — fix truncated JSON by closing open structures
+    // Attempt robust parse - fix truncated JSON by closing open structures
     let parsed: any = null;
     try {
       parsed = JSON.parse(raw);
@@ -301,7 +301,7 @@ Set milestone:true for kickoff, gap sign-off, UAT sign-off, go-live, closure.`;
       }
     }
   } catch (err) {
-    logger.warn({ err }, "AI generation failed — using static activity baseline");
+    logger.warn({ err }, "AI generation failed - using static activity baseline");
   }
 
   return plan;
@@ -347,7 +347,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   const genDate    = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
   // ────────────────────────────────────────────────
-  // SHEET 1 — Project Plan (Gantt)
+  // SHEET 1 - Project Plan (Gantt)
   // ────────────────────────────────────────────────
   const gantt = wb.addWorksheet("Project Plan", {
     pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 },
@@ -365,7 +365,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   // ── Row 1: Main Title ──
   gantt.mergeCells(1, 1, 1, FIXED + totalWeeks);
   const titleCell = gantt.getCell(1, 1);
-  titleCell.value = `3B Michimap  —  SAP S/4HANA Pre-Sales Plan  (${pathLabel})`;
+  titleCell.value = `3B Michimap  -  SAP S/4HANA Pre-Sales Plan  (${pathLabel})`;
   titleCell.font  = { bold: true, size: 14, color: { argb: WHITE }, name: "Calibri" };
   titleCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
   titleCell.alignment = { horizontal: "center", vertical: "middle" };
@@ -374,7 +374,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   // ── Row 2: Liner / Disclaimer ──
   gantt.mergeCells(2, 1, 2, FIXED + totalWeeks);
   const linerCell = gantt.getCell(2, 1);
-  linerCell.value = `Generated by 3B Michimap using ${aiModel}  |  ${genDate}  |  For internal pre-sales use only — not for client distribution. Estimates are indicative.`;
+  linerCell.value = `Generated by 3B Michimap using ${aiModel}  |  ${genDate}  |  For internal pre-sales use only - not for client distribution. Estimates are indicative.`;
   linerCell.font  = { italic: true, size: 8, color: { argb: "FF888888" } };
   linerCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
   linerCell.alignment = { horizontal: "center", vertical: "middle" };
@@ -503,7 +503,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   gantt.getRow(dataRow).height = 14;
 
   // ────────────────────────────────────────────────
-  // SHEET 2 — Resource Planning Matrix (week columns)
+  // SHEET 2 - Resource Planning Matrix (week columns)
   // ────────────────────────────────────────────────
   const pivot = wb.addWorksheet("Resource Planning Matrix", {
     pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 },
@@ -568,7 +568,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   // ── Row 1: Title ──
   pivot.mergeCells(1, 1, 1, pivotTotalCols);
   const rmt = pivot.getCell(1, 1);
-  rmt.value = `Resource Planning Matrix  —  3B Michimap`;
+  rmt.value = `Resource Planning Matrix  -  3B Michimap`;
   rmt.font  = { bold: true, size: 13, color: { argb: WHITE } };
   rmt.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
   rmt.alignment = { horizontal: "center", vertical: "middle" };
@@ -653,7 +653,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     pCell(rowNum, 4, res ? res.loc  : "", { bg: rowBg });
     pCell(rowNum, 5, res ? res.level: "", { bg: rowBg });
 
-    // Week input cells — coloured by phase (light)
+    // Week input cells - coloured by phase (light)
     for (let w = 1; w <= totalWeeks; w++) {
       const phName = weekPhase[w];
       const cellBg = res ? (PHASE_LIGHT[phName] || GREY_LIGHT) : rowBg;
@@ -1036,7 +1036,7 @@ When the user asks you to list, add, or refine activities for one or more phases
 }
 2. Include 5–12 activities per modified phase. Be specific and realistic.
 3. Workstream values: Finance, Procurement, Sales, Operations, Technical, Data Management, Project Management, Quality Assurance, Change Management, Cross-Stream, Support, AI & Analytics.
-4. Only include the phases you are modifying in the response — omit unchanged phases.
+4. Only include the phases you are modifying in the response - omit unchanged phases.
 5. Set milestone:true for: kickoff, sign-offs, go-live, closure.
 If the user asks a general question (not requesting plan changes), still return JSON with:
 { "message": "your answer here", "phases": {} }`;

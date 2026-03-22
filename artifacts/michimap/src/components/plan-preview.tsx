@@ -55,7 +55,7 @@ export function PlanPreview({ plan }: { plan: Plan }) {
         <div>
           <div className="text-xs text-white/50 uppercase tracking-widest font-medium mb-0.5">Project Plan Preview</div>
           <h2 className="text-lg font-bold text-white capitalize">
-            {plan.transitionPath} — SAP S/4HANA Activate Plan
+            {plan.transitionPath} - SAP S/4HANA Activate Plan
           </h2>
         </div>
         <div className="text-right">
@@ -88,7 +88,7 @@ export function PlanPreview({ plan }: { plan: Plan }) {
           </div>
         )}
 
-        {/* Phase timeline — cascading waterfall */}
+        {/* Phase timeline - cascading waterfall */}
         <div>
           <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-3">Phase Timeline</div>
           <div className="space-y-1.5">
@@ -125,7 +125,7 @@ export function PlanPreview({ plan }: { plan: Plan }) {
                         <span className="text-[9px] text-white font-bold px-1 truncate">{phase.weeks}w</span>
                       </div>
 
-                      {/* GO-LIVE badge + vertical pin — sits above the Deploy bar */}
+                      {/* GO-LIVE badge + vertical pin - sits above the Deploy bar */}
                       {isDeployPhase && (
                         <>
                           {/* vertical pin line */}

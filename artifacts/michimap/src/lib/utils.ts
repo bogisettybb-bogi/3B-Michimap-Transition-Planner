@@ -13,8 +13,8 @@ export function formatDate(dateString: string) {
 
 export const MODELS = {
   free: [
-    { id: "gpt-5-mini",       name: "GPT-5 mini · 2025  (Best free — OpenAI)" },
-    { id: "gemini-2-5-flash", name: "Gemini 2.5 Flash · 2025  (Best free — Google)" },
+    { id: "gpt-5-mini",       name: "GPT-5 mini · 2025  (Best free - OpenAI)" },
+    { id: "gemini-2-5-flash", name: "Gemini 2.5 Flash · 2025  (Best free - Google)" },
     { id: "gemini-2-flash",   name: "Gemini 2.0 Flash · 2025  (Gemini free tier)" },
     { id: "gpt-4o-free",      name: "GPT-4o · 2024  (ChatGPT free tier)" },
     { id: "claude-3-5-haiku", name: "Claude 3.5 Haiku · 2024  (Claude free tier)" },
