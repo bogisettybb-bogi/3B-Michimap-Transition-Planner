@@ -488,7 +488,7 @@ export function ResourceEffortsPanel({
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="bg-muted/40">
-                    <th className="text-left px-3 py-2 font-bold text-foreground border-b border-border whitespace-nowrap">Level</th>
+                    <th className="text-left px-3 py-2 font-bold text-foreground border-b border-border whitespace-nowrap" style={{ minWidth: 175 }}>Level</th>
                     {plan.phases.map(ph => {
                       const pal = PHASE_PALETTE[ph.name] || DEFAULT_PAL;
                       return (
@@ -507,7 +507,7 @@ export function ResourceEffortsPanel({
                     const rowTot = levelPhaseTot(lv);
                     return (
                       <tr key={lv} style={{ backgroundColor: li % 2 === 0 ? "#fff" : "#F9FAFB" }}>
-                        <td className="px-3 py-2 font-semibold text-foreground whitespace-nowrap">{lv}</td>
+                        <td className="px-3 py-2 font-semibold text-foreground whitespace-nowrap" style={{ minWidth: 175 }}>{lv}</td>
                         {plan.phases.map(ph => {
                           const v = phasePivot[ph.name]?.[lv] || 0;
                           return (
@@ -543,7 +543,7 @@ export function ResourceEffortsPanel({
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="bg-muted/40">
-                    <th className="text-left px-3 py-2 font-bold text-foreground border-b border-border">Level</th>
+                    <th className="text-left px-3 py-2 font-bold text-foreground border-b border-border whitespace-nowrap" style={{ minWidth: 175 }}>Level</th>
                     {years.map(y => (
                       <th key={y} className="text-center px-2 py-2 font-bold text-foreground border-b border-border">{y}</th>
                     ))}
@@ -555,7 +555,7 @@ export function ResourceEffortsPanel({
                     const tot = lvAllYrTot(lv);
                     return (
                       <tr key={lv} style={{ backgroundColor: li % 2 === 0 ? "#fff" : "#F9FAFB" }}>
-                        <td className="px-3 py-2 font-semibold text-foreground">{lv}</td>
+                        <td className="px-3 py-2 font-semibold text-foreground whitespace-nowrap" style={{ minWidth: 175 }}>{lv}</td>
                         {years.map(y => {
                           const v = yearPivot[y]?.[lv] || 0;
                           return (
