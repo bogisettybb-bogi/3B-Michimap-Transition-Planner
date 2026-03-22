@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays } from "date-fns";
 import { Plus, Trash2, Download, CheckCircle2, Loader2, Share2 } from "lucide-react";
@@ -21,6 +21,11 @@ interface WeekInfo {
 
 type EffortMap = Record<number, Record<number, number>>;
 
+export interface ResourceRowExport {
+  role: string; location: Loc; level: Level; remarks: string;
+  weekEfforts: Record<number, number>;
+}
+
 export interface ResourceEffortsProps {
   plan: Plan;
   agreedToTerms: boolean;
@@ -33,6 +38,7 @@ export interface ResourceEffortsProps {
   linkedInShareUrl: string;
   onConfirm: () => void;
   onUnconfirm: () => void;
+  onDataChange?: (rows: ResourceRowExport[]) => void;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -90,6 +96,14 @@ export function ResourceEffortsPanel({
   const [locFilter, setLocFilter] = useState<"All" | "Onsite" | "Offshore">("All");
   const [confirmed, setConfirmed] = useState(false);
   const nextId = useRef(DEFAULT_RESOURCES.length + 1);
+
+  // ── Notify parent of current data whenever resources/efforts change ───────
+  useEffect(() => {
+    if (!onDataChange) return;
+    onDataChange(
+      resources.map(r => ({ role: r.role, location: r.location, level: r.level, remarks: r.remarks, weekEfforts: efforts[r.id] || {} }))
+    );
+  }, [resources, efforts, onDataChange]);
 
   // ── Week list ─────────────────────────────────────────────────────────────
 

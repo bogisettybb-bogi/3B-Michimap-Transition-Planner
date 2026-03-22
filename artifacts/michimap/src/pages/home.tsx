@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Share2, Check } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { PlanPreview } from "@/components/plan-preview";
-import { ResourceEffortsPanel } from "@/components/resource-efforts";
+import { ResourceEffortsPanel, type ResourceRowExport } from "@/components/resource-efforts";
 import { MODELS, TRANSITION_PATHS, PHASES_META, cn } from "@/lib/utils";
 import {
   useGeneratePlan,
@@ -293,6 +293,7 @@ export default function Home() {
   const [isDisclaimersOpen, setIsDisclaimersOpen] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [hasDownloaded, setHasDownloaded] = useState(false);
+  const [ganttRows, setGanttRows] = useState<ResourceRowExport[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const stopRef = useRef(false);
   const [genProgress, setGenProgress] = useState(0);
@@ -404,7 +405,7 @@ export default function Home() {
   const handleDownload = async () => {
     if (!generatedResult) return;
     try {
-      const blob = await downloadPlan({ data: { planId: generatedResult.planId } as any });
+      const blob = await downloadPlan({ data: { planId: generatedResult.planId, resourceRows: ganttRows } as any });
       const url = URL.createObjectURL(blob as any);
       const a = document.createElement("a");
       a.href = url;
@@ -731,6 +732,7 @@ export default function Home() {
                             linkedInShareUrl={linkedInShareUrl}
                             onConfirm={() => setConfirmedEfforts(true)}
                             onUnconfirm={() => setConfirmedEfforts(false)}
+                            onDataChange={rows => setGanttRows(rows)}
                           />
                         </motion.div>
                       )}

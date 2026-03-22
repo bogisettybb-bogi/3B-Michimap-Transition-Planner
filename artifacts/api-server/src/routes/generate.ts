@@ -308,7 +308,12 @@ Set milestone:true for kickoff, gap sign-off, UAT sign-off, go-live, closure.`;
 // Excel workbook builder  (Gantt + Resource Pivot)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: string, recipientName?: string) {
+interface ResourceRowInput {
+  role: string; location: string; level: string; remarks: string;
+  weekEfforts: Record<number, number>;
+}
+
+async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: string, recipientName?: string, resourceRows?: ResourceRowInput[]) {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   wb.creator = "3B Michimap";
@@ -640,51 +645,64 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   pivot.getRow(4).height = 24;
 
   // ── Resource rows ──
-  const RESOURCES = [
-    { role: "Solution Architect",           desc: "Functional",  loc: "Onsite",   level: "Sol. Architect" },
-    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Onsite",   level: "Sr" },
-    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Offshore", level: "Sr" },
-    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Offshore", level: "Jr" },
-    { role: "SAP Technical Consultant",     desc: "Technical",   loc: "Offshore", level: "Sr" },
-    { role: "ABAP / BTP Developer",         desc: "Technical",   loc: "Offshore", level: "Jr" },
-    { role: "Integration Developer (CPI)",  desc: "Technical",   loc: "Offshore", level: "Sr" },
-    { role: "SAP Basis Administrator",      desc: "Platform",    loc: "Offshore", level: "Sr" },
-    { role: "Security Consultant",          desc: "Technical",   loc: "Onsite",   level: "Sr" },
-    { role: "Project Manager",              desc: "Governance",  loc: "Onsite",   level: "PM" },
-    { role: "Service Delivery Manager",     desc: "Governance",  loc: "Onsite",   level: "SDM" },
-    { role: "Change Management Lead",       desc: "Governance",  loc: "Onsite",   level: "Sr" },
-    { role: "QA / Test Lead",               desc: "Quality",     loc: "Onsite",   level: "Sr" },
-    { role: "Infra / Cloud Engineer",       desc: "Platform",    loc: "Offshore", level: "Sr" },
-    { role: "AI / Analytics Consultant",    desc: "AI",          loc: "Offshore", level: "Sr" },
+  // Derive category from level (used for "Summary by Category" pivot)
+  const levelToCategory: Record<string, string> = {
+    "Sol. Architect": "Functional", "Sr": "Functional", "Jr": "Technical",
+    "PM": "Governance", "SDM": "Governance", "SME": "Functional", "AI": "AI",
+  };
+
+  // Use real user data when available, otherwise fall back to template
+  const DEFAULT_RES = [
+    { role: "Solution Architect",           desc: "Functional",  loc: "Onsite",   level: "Sol. Architect", weekEfforts: {} as Record<number,number> },
+    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Onsite",   level: "Sr",             weekEfforts: {} },
+    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Offshore", level: "Sr",             weekEfforts: {} },
+    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Offshore", level: "Jr",             weekEfforts: {} },
+    { role: "SAP Technical Consultant",     desc: "Technical",   loc: "Offshore", level: "Sr",             weekEfforts: {} },
+    { role: "ABAP / BTP Developer",         desc: "Technical",   loc: "Offshore", level: "Jr",             weekEfforts: {} },
+    { role: "Integration Developer (CPI)",  desc: "Technical",   loc: "Offshore", level: "Sr",             weekEfforts: {} },
+    { role: "SAP Basis Administrator",      desc: "Platform",    loc: "Offshore", level: "Sr",             weekEfforts: {} },
+    { role: "Security Consultant",          desc: "Technical",   loc: "Onsite",   level: "Sr",             weekEfforts: {} },
+    { role: "Project Manager",              desc: "Governance",  loc: "Onsite",   level: "PM",             weekEfforts: {} },
+    { role: "Service Delivery Manager",     desc: "Governance",  loc: "Onsite",   level: "SDM",            weekEfforts: {} },
+    { role: "Change Management Lead",       desc: "Governance",  loc: "Onsite",   level: "Sr",             weekEfforts: {} },
+    { role: "QA / Test Lead",               desc: "Quality",     loc: "Onsite",   level: "Sr",             weekEfforts: {} },
+    { role: "Infra / Cloud Engineer",       desc: "Platform",    loc: "Offshore", level: "Sr",             weekEfforts: {} },
+    { role: "AI / Analytics Consultant",    desc: "AI",          loc: "Offshore", level: "Sr",             weekEfforts: {} },
   ];
 
+  const RESOURCES: { role: string; desc: string; loc: string; level: string; weekEfforts: Record<number,number> }[] =
+    resourceRows && resourceRows.length > 0
+      ? resourceRows.map(r => ({ role: r.role, desc: levelToCategory[r.level] || "Functional", loc: r.location, level: r.level, weekEfforts: r.weekEfforts }))
+      : DEFAULT_RES;
+
   const DATA_START = 5;
-  const NUM_ROWS   = 20; // 15 named + 5 blank
+  const NUM_ROWS   = RESOURCES.length;
 
   for (let i = 0; i < NUM_ROWS; i++) {
     const rowNum = DATA_START + i;
-    const res    = RESOURCES[i] as any | undefined;
+    const res    = RESOURCES[i];
     const rowBg  = i % 2 === 0 ? WHITE : GREY_LIGHT;
     pivot.getRow(rowNum).height = 17;
 
     // Fixed label cells
-    pCell(rowNum, 1, res ? i + 1 : "", { bg: rowBg });
-    pCell(rowNum, 2, res ? res.role : "", { bg: rowBg, hAlign: "left" });
-    pCell(rowNum, 3, res ? res.desc : "", { bg: rowBg });
-    pCell(rowNum, 4, res ? res.loc  : "", { bg: rowBg });
-    pCell(rowNum, 5, res ? res.level: "", { bg: rowBg });
+    pCell(rowNum, 1, i + 1, { bg: rowBg });
+    pCell(rowNum, 2, res.role,  { bg: rowBg, hAlign: "left" });
+    pCell(rowNum, 3, res.desc,  { bg: rowBg });
+    pCell(rowNum, 4, res.loc,   { bg: rowBg });
+    pCell(rowNum, 5, res.level, { bg: rowBg });
 
-    // Week input cells - coloured by phase (light)
+    // Week effort cells — use actual values if user provided them, otherwise 0
     for (let w = 1; w <= totalWeeks; w++) {
-      const phName = weekPhase[w];
-      const cellBg = res ? (PHASE_LIGHT[phName] || GREY_LIGHT) : rowBg;
-      const wCell  = pivot.getCell(rowNum, FIXED_P + w);
-      wCell.value  = res ? 0 : "";
-      wCell.font   = { size: 8, color: { argb: "FF333333" } };
-      wCell.fill   = { type: "pattern", pattern: "solid", fgColor: { argb: cellBg } };
+      const phName  = weekPhase[w];
+      const cellBg  = PHASE_LIGHT[phName] || GREY_LIGHT;
+      const effortVal = res.weekEfforts[w] ?? 0;
+      const wCell   = pivot.getCell(rowNum, FIXED_P + w);
+      wCell.value   = effortVal;
+      wCell.font    = { size: 8, color: { argb: effortVal > 0 ? "FF0D6E3B" : "FF333333" } };
+      wCell.fill    = { type: "pattern", pattern: "solid", fgColor: { argb: cellBg } };
       wCell.alignment = { horizontal: "center", vertical: "middle" };
-      wCell.numFmt = "0";
-      wCell.border = {
+      wCell.numFmt  = "0.#";
+      wCell.border  = {
         right:  { style: "hair", color: { argb: "FFBBBBBB" } },
         bottom: { style: "hair", color: { argb: "FFBBBBBB" } },
       };
@@ -694,11 +712,11 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     const wFirst = colToLetter(FIXED_P + 1);
     const wLast  = colToLetter(FIXED_P + totalWeeks);
     const totCell = pivot.getCell(rowNum, TOTAL_COL);
-    totCell.value = res ? { formula: `SUM(${wFirst}${rowNum}:${wLast}${rowNum})` } : "";
+    totCell.value = { formula: `SUM(${wFirst}${rowNum}:${wLast}${rowNum})` };
     totCell.font  = { bold: true, size: 9, color: { argb: "FF15803D" } };
     totCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: rowBg } };
     totCell.alignment = { horizontal: "center", vertical: "middle" };
-    totCell.numFmt = "0";
+    totCell.numFmt = "0.#";
     totCell.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
   }
 
@@ -1172,7 +1190,7 @@ router.post("/send-email", async (req, res) => {
 });
 
 router.post("/download", async (req, res) => {
-  const { planId, downloadToken } = req.body;
+  const { planId, downloadToken, resourceRows } = req.body;
   const resolvedPlanId = downloadToken ? downloadTokens.get(downloadToken) : planId;
   if (!resolvedPlanId) return res.status(403).json({ error: "Invalid or expired download token" });
 
@@ -1182,7 +1200,7 @@ router.post("/download", async (req, res) => {
   try {
     const storedPlan = planStore.get(resolvedPlanId);
 
-    const workbook = await buildExcelWorkbook(plan, plan.requestBody?.aiModel || "Gemini 2.0 Flash");
+    const workbook = await buildExcelWorkbook(plan, plan.requestBody?.aiModel || "Gemini 2.0 Flash", undefined, undefined, resourceRows);
 
     if (storedPlan?.generationId) {
       await db.update(generationsTable)
