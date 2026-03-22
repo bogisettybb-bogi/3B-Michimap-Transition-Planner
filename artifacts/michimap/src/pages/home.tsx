@@ -465,33 +465,33 @@ export default function Home() {
         ];
         return (
           <div className="sticky top-14 z-40 bg-background border-b border-border shadow-sm">
-            <div className="max-w-screen-xl mx-auto px-4 py-3">
+            <div className="max-w-screen-xl mx-auto px-4 py-4">
               <div className="flex items-start w-full">
                 {STEPS.map((step, i) => {
                   const done   = step.id < currentStep;
                   const active = step.id === currentStep;
                   return (
                     <div key={step.id} className="flex items-center flex-1 min-w-0">
-                      <div className="flex flex-col items-center gap-1 shrink-0">
+                      <div className="flex flex-col items-center gap-1.5 shrink-0">
                         <div className={cn(
-                          "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all duration-300",
-                          done   ? "bg-primary border-primary text-primary-foreground"
-                                 : active ? "border-primary text-primary bg-primary/10 shadow-[0_0_0_3px_rgba(233,169,68,0.15)]"
+                          "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300",
+                          done   ? "bg-green-500 border-green-500 text-white shadow-[0_0_0_3px_rgba(34,197,94,0.18)]"
+                                 : active ? "border-primary text-primary bg-primary/10 shadow-[0_0_0_3px_rgba(233,169,68,0.18)]"
                                          : "border-border text-muted-foreground bg-muted/40"
                         )}>
-                          {done ? <Check className="w-3 h-3" /> : step.id}
+                          {done ? <Check className="w-4 h-4 stroke-[3]" /> : step.id}
                         </div>
                         <span className={cn(
-                          "text-[8px] font-semibold text-center leading-tight max-w-[52px] transition-colors duration-200",
-                          active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground"
+                          "text-[10px] font-semibold text-center leading-tight max-w-[60px] transition-colors duration-200",
+                          active ? "text-primary" : done ? "text-green-600" : "text-muted-foreground"
                         )}>
                           {step.label}
                         </span>
                       </div>
                       {i < STEPS.length - 1 && (
                         <div className={cn(
-                          "flex-1 h-0.5 mx-1 mb-4 transition-colors duration-300 rounded-full",
-                          step.id < currentStep ? "bg-primary" : "bg-border"
+                          "flex-1 h-1 mx-2 mb-5 transition-colors duration-300 rounded-full",
+                          step.id < currentStep ? "bg-green-400" : "bg-border"
                         )} />
                       )}
                     </div>
