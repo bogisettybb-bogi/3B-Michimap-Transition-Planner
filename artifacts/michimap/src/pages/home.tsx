@@ -688,7 +688,7 @@ export default function Home() {
                                 className="w-7 h-7 flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-40">
                                 <Plus className="w-3 h-3" />
                               </button>
-                              <span className="text-xs text-muted-foreground ml-1">wks</span>
+                              <span className="text-xs text-muted-foreground ml-1">weeks</span>
                             </div>
                           </div>
                         );
