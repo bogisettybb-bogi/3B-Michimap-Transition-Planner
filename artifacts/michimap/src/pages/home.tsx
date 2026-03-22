@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { format, addWeeks } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Mail, CheckCircle2, Send } from "lucide-react";
+import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { PlanPreview } from "@/components/plan-preview";
 import { MODELS, TRANSITION_PATHS, PHASES_META, cn } from "@/lib/utils";
@@ -27,8 +27,7 @@ function DisclaimersModal({ open, onClose }: { open: boolean; onClose: () => voi
           {[
             { title: "1. Accuracy / No Warranty", text: "Effort estimates are indicative and based on inputs provided by the user. 3B Michimap makes no warranty, express or implied, regarding the accuracy, completeness, or fitness of generated outputs for any specific engagement." },
             { title: "2. No Commercial Reliance", text: "Outputs from this tool are intended for internal planning purposes only and should not be submitted to clients or included in formal commercial proposals without independent validation by a qualified SAP professional." },
-            { title: "3. Data Privacy", text: "Your email address is collected solely to deliver the generated plan. It is not shared with third parties or used for marketing purposes. You may contact us at any time to request deletion of your data." },
-            { title: "4. Acceptable Use", text: "This tool is intended exclusively for SAP pre-sales and delivery professionals. Unauthorised use, reverse engineering, or redistribution of generated outputs is prohibited." },
+            { title: "3. Acceptable Use", text: "This tool is intended exclusively for SAP pre-sales and delivery professionals. Unauthorised use, reverse engineering, or redistribution of generated outputs is prohibited." },
           ].map(d => (
             <div key={d.title} className="border-l-2 border-primary/40 pl-4">
               <h3 className="font-bold text-foreground mb-1">{d.title}</h3>
@@ -256,10 +255,6 @@ export default function Home() {
   const [isDisclaimersOpen, setIsDisclaimersOpen] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  const [visitorEmail, setVisitorEmail] = useState("");
-  const [visitorName, setVisitorName] = useState("");
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const [downloadToken, setDownloadToken] = useState<string | null>(null);
 
   const isPaidModel = MODELS.paid.some(m => m.id === aiModel);
 
@@ -298,45 +293,16 @@ export default function Home() {
         },
       });
       setGeneratedResult(res);
-      setDownloadToken(null);
       setTimeout(() => document.getElementById("plan-preview")?.scrollIntoView({ behavior: "smooth" }), 200);
     } catch (err: any) {
       toast({ title: "Generation Failed", description: err.message || "Failed to generate project plan.", variant: "destructive" });
     }
   };
 
-  const handleSendEmail = async () => {
-    if (!generatedResult) return;
-    if (!visitorEmail.trim()) {
-      toast({ title: "Email Required", description: "Please enter your email address.", variant: "destructive" });
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail.trim())) {
-      toast({ title: "Invalid Email", description: "Please enter a valid email address.", variant: "destructive" });
-      return;
-    }
-    setIsSendingEmail(true);
-    try {
-      const res = await fetch("/api/generate/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: generatedResult.planId, email: visitorEmail.trim(), name: visitorName.trim() || undefined }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to send email");
-      setDownloadToken(data.downloadToken);
-      toast({ title: "Plan sent!", description: `Your Excel plan was delivered to ${visitorEmail.trim()}.` });
-    } catch (err: any) {
-      toast({ title: "Email Failed", description: err.message || "Could not send email. Please try again.", variant: "destructive" });
-    } finally {
-      setIsSendingEmail(false);
-    }
-  };
-
   const handleDownload = async () => {
-    if (!downloadToken || !generatedResult) return;
+    if (!generatedResult) return;
     try {
-      const blob = await downloadPlan({ data: { planId: generatedResult.planId, downloadToken } as any });
+      const blob = await downloadPlan({ data: { planId: generatedResult.planId } as any });
       const url = URL.createObjectURL(blob as any);
       const a = document.createElement("a");
       a.href = url;
@@ -530,69 +496,27 @@ export default function Home() {
                   </button>
                 </div>
 
-                {/* EMAIL + DOWNLOAD SECTION */}
-                <div className="border-t border-border bg-card/50 px-6 py-6 space-y-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Mail className="w-4 h-4 text-primary" />
-                    <h3 className="font-bold text-foreground text-sm">Get your plan by email</h3>
-                  </div>
-
-                  {!downloadToken ? (
-                    <>
-                      <p className="text-xs text-muted-foreground">We'll send the Excel plan to your inbox. Then you can download it instantly.</p>
-
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          placeholder="Your name (optional)"
-                          value={visitorName}
-                          onChange={e => setVisitorName(e.target.value)}
-                          className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60"
-                        />
-                        <input
-                          type="email"
-                          placeholder="Your email address *"
-                          value={visitorEmail}
-                          onChange={e => setVisitorEmail(e.target.value)}
-                          className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60"
-                        />
-                      </div>
-
-                      <label className="flex items-start gap-2.5 cursor-pointer group">
-                        <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
-                          className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
-                        <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
-                          I have read and agree to the{" "}
-                          <button type="button" onClick={() => setIsDisclaimersOpen(true)} className="text-primary font-semibold hover:underline">
-                            Disclaimers &amp; Terms of Use
-                          </button>.
-                        </span>
-                      </label>
-
-                      <button
-                        onClick={handleSendEmail}
-                        disabled={!generatedResult || isSendingEmail || !agreedToTerms || !visitorEmail.trim()}
-                        className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl py-3 text-sm shadow-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                        {isSendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        {!generatedResult ? "Generate a plan first" : isSendingEmail ? "Sending..." : "Send to my email"}
+                {/* DOWNLOAD SECTION */}
+                <div className="border-t border-border bg-card/50 px-6 py-5 space-y-3">
+                  <label className="flex items-start gap-2.5 cursor-pointer group">
+                    <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+                    <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
+                      I agree to the{" "}
+                      <button type="button" onClick={() => setIsDisclaimersOpen(true)} className="text-primary font-semibold hover:underline">
+                        Disclaimers &amp; Terms of Use
                       </button>
-                    </>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-green-600 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                        <p className="text-sm font-medium">Plan sent to <span className="font-bold">{visitorEmail}</span></p>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Check your inbox (and spam folder). You can also download it directly below.</p>
-                      <button
-                        onClick={handleDownload}
-                        disabled={isDownloading}
-                        className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl py-3 text-sm shadow-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                        {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        {isDownloading ? "Preparing..." : "Download Excel Now"}
-                      </button>
-                    </div>
-                  )}
+                      {" "}— this plan is for internal pre-sales use only.
+                    </span>
+                  </label>
+
+                  <button
+                    onClick={handleDownload}
+                    disabled={!generatedResult || isDownloading || !agreedToTerms}
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl py-3.5 text-sm shadow-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    {!generatedResult ? "Generate a plan first" : isDownloading ? "Preparing Excel..." : "Download Excel Plan"}
+                  </button>
                 </div>
               </div>
 
