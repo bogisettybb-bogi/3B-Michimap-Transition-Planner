@@ -4,7 +4,7 @@ const STORAGE_KEY = "michimap_terms_accepted_v1";
 
 const CLAUSES = [
   {
-    title: "1. Disclaimer of Warranty — AI-Generated Outputs",
+    title: "1. Disclaimer of Warranty",
     text: `The project plans, effort estimates, activity listings, and associated deliverables made available through 3B Michimap are generated wholly or partly by artificial intelligence language models. All such outputs are provided strictly on an "as is" and "as available" basis, without any warranty of any nature, whether express, implied, statutory, or otherwise, including but not limited to any warranty as to accuracy, completeness, fitness for a particular purpose, or non-infringement. The operator makes no representation that any AI-generated content accurately reflects the actual effort, timelines, or resource requirements of any specific SAP S/4HANA engagement.`,
   },
   {
