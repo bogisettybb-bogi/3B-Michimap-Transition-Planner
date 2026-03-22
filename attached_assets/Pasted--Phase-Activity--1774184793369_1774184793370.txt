@@ -1,0 +1,22 @@
+| Phase   | Activity                                                                              | Responsible       | Outcome                    | Effort % | Notes / Tools / Risks               |
+| ------- | ------------------------------------------------------------------------------------- | ----------------- | -------------------------- | -------- | ----------------------------------- |
+| Prepare | Execute SAP Readiness Check 2.0 and analyze system conversion feasibility             | Technical + Basis | Feasibility validated      | 5%       | **Tool: Readiness Check 2.0**       |
+| Prepare | Perform custom code analysis using ATC and define remediation strategy                | Technical         | Code backlog               | 5%       |                                     |
+| Prepare | Analyze simplification items and business impact across modules                       | Functional        | Impact analysis            | 4%       |                                     |
+| Prepare | Define conversion strategy including N+0, N+1, NZDT or DoDMO approach                 | PM + Basis        | Strategy finalized         | 5%       | **Critical decision driver**        |
+| Prepare | Prepare sandbox and landscape (DEV/QAS/PRD) for conversion cycles                     | Basis             | Conversion landscape ready | 5%       |                                     |
+| Explore | Conduct delta design workshops to identify required functional changes                | Functional        | Delta requirements         | 4%       |                                     |
+| Explore | Execute data cleanup, archiving, and consistency validation in ECC system             | Technical         | Clean source system        | 3%       | **Accelerator: archiving**          |
+| Explore | Analyze integration impact and define required adjustments                            | Integration       | Integration impact list    | 3%       |                                     |
+| Explore | Define testing strategy including regression, SPAU/SPDD, and UAT cycles               | PM                | Test plan                  | 3%       |                                     |
+| Realize | Execute SUM with DMO conversion cycles in sandbox and DEV environments (N+0 path)     | Basis             | Converted DEV system       | 10%      | **Tool: SUM with DMO**              |
+| Realize | Execute landscape transformation activities for N+1 approach if applicable            | Basis + Technical | Parallel system ready      | 7%       | **Risk: dual landscape complexity** |
+| Realize | Execute NZDT / DoDMO approach for downtime optimization in large systems              | Basis             | Reduced downtime           | 5%       |                                     |
+| Realize | Perform SPAU/SPDD adjustments and remediate custom code                               | Technical         | Adapted code               | 6%       |                                     |
+| Realize | Validate converted data including finance reconciliation in QAS system                | Technical         | Data integrity             | 6%       | **Risk: FI inconsistencies**        |
+| Realize | Execute SIT and UAT cycles in QAS and obtain formal business sign-off                 | All               | Validated system           | 6%       | **Customer dependency**             |
+| Deploy  | Execute production system conversion using selected approach with controlled downtime | Basis             | Live S/4 system            | 6%       |                                     |
+| Deploy  | Perform business validation and reconciliation post conversion in PRD                 | Customer          | Sign-off                   | 4%       |                                     |
+| Deploy  | Execute go-live and provide hypercare support                                         | All               | Stabilized system          | 3%       |                                     |
+| Run     | Establish AMS model and transition system to support team                             | PM + Customer     | Support model              | 3%       |                                     |
+| Run     | Execute KT and optimize system performance post go-live                               | Basis + Support   | Stable operations          | 2%       |                                     |

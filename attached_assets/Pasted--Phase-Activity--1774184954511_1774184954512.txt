@@ -1,0 +1,22 @@
+| Phase   | Activity                                                                                    | Responsible       | Outcome            | Effort % | Notes / Tools / Risks        |
+| ------- | ------------------------------------------------------------------------------------------- | ----------------- | ------------------ | -------- | ---------------------------- |
+| Prepare | Perform landscape and data assessment to define selective migration scope                   | Technical + Basis | Feasibility        | 5%       |                              |
+| Prepare | Define data carve-out and transformation strategy using SNP CrystalBridge or Datavard tools | Technical         | Data strategy      | 6%       | **Tool: SNP / Datavard**     |
+| Prepare | Identify business units, company codes, and historical data scope for migration             | Functional        | Scoped entities    | 4%       |                              |
+| Prepare | Define transition approach including shell creation, phased rollout, or hybrid strategy     | PM                | Transition roadmap | 5%       | **Risk: scope misalignment** |
+| Prepare | Provision S/4HANA landscape (DEV/QAS/PRD) for target system                                 | Basis             | System ready       | 4%       |                              |
+| Explore | Define data mapping and transformation rules using SNP or Datavard tools                    | Technical         | Mapping logic      | 6%       |                              |
+| Explore | Conduct business workshops to validate scope and redesigned processes                       | Functional        | Approved scope     | 5%       |                              |
+| Explore | Redesign integration landscape for hybrid systems                                           | Integration       | Updated interfaces | 4%       |                              |
+| Explore | Define testing strategy covering selective and retained data scenarios                      | PM                | Test plan          | 4%       |                              |
+| Realize | Execute selective data migration using SNP CrystalBridge or Datavard tools into DEV/QAS     | Technical         | Migrated data      | 10%      | **Critical cost driver**     |
+| Realize | Apply transformation rules and validate data consistency in QAS system                      | Technical         | Clean data         | 7%       |                              |
+| Realize | Configure business processes aligned to migrated data                                       | Functional        | Process alignment  | 6%       |                              |
+| Realize | Build or update integration interfaces across hybrid landscape                              | Integration       | Integrated systems | 5%       |                              |
+| Realize | Execute SIT and UAT cycles and obtain business sign-off                                     | All               | Validated system   | 6%       |                              |
+| Deploy  | Execute phased or big-bang cutover and final selective migration to PRD                     | PM                | Go-live            | 5%       |                              |
+| Deploy  | Validate production data and business processes                                             | Customer          | Sign-off           | 4%       |                              |
+| Deploy  | Execute go-live and provide hypercare support                                               | All               | Stabilized system  | 3%       |                              |
+| Run     | Establish AMS model and transition ownership to support team                                | PM + Customer     | Support model      | 3%       |                              |
+| Run     | Monitor hybrid landscape data consistency and integrations                                  | Technical         | Data integrity     | 2%       |                              |
+| Run     | Execute continuous improvements and incident management                                     | Support           | Stable ops         | 1%       |                              |

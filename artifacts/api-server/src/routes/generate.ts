@@ -85,42 +85,36 @@ const ACTIVITIES: Record<string, Record<string, any[]>> = {
       { category: "Business Case", activity: "Business Case for System Conversion", description: "Develop ROI analysis comparing system conversion against reimplementation and present to executive stakeholders", workstream: "Project Management", responsible: "SAP Consultant", accountable: "Business Sponsor", consulted: "Finance", informed: "Board", milestone: false },
     ],
     prepare: [
-      { category: "Governance", activity: "Project Governance Structure and RACI", description: "Establish project governance structure, define RACI matrix, and finalize project plan with conversion milestones and downtime windows", workstream: "Project Management", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Stream Leads", informed: "Steering Committee", milestone: true },
-      { category: "Infrastructure", activity: "Conversion Environment Setup", description: "Set up technical conversion sandbox, install SUM tool, and configure initial transport routes for DEV-QAS-PRD landscape", workstream: "Technical", responsible: "Basis / Platform", accountable: "Technical Lead", consulted: "SAP Support", informed: "Project Manager", milestone: false },
-      { category: "Infrastructure", activity: "Initial System Configuration and Access", description: "Configure system settings including client parameters, transport management system (TMS), and user access roles for the project team", workstream: "Technical", responsible: "Basis", accountable: "Technical Lead", consulted: "IT Security", informed: "Project Manager", milestone: false },
-      { category: "Custom Code", activity: "Custom Code Remediation Planning", description: "Plan remediation of custom ABAP objects based on Simplification Item analysis, categorize by impact and assign resolution owners", workstream: "Technical", responsible: "ABAP Lead", accountable: "Technical Lead", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
-      { category: "Integration", activity: "Integration and Interface Impact Assessment", description: "Identify all existing interfaces and assess modifications required to align with S/4HANA APIs and data models", workstream: "Technical", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
+      { category: "Readiness Check", activity: "Execute SAP Readiness Check 2.0 and analyze system conversion feasibility", effortPct: "5%", notes: "Tool: Readiness Check 2.0", responsible: "Technical + Basis", accountable: "Technical Lead", consulted: "Basis Team", informed: "Project Manager", milestone: false },
+      { category: "Custom Code",     activity: "Perform custom code analysis using ATC and define remediation strategy", effortPct: "5%", notes: "", responsible: "Technical", accountable: "Technical Lead", consulted: "ABAP Team", informed: "Project Manager", milestone: false },
+      { category: "Impact Analysis", activity: "Analyze simplification items and business impact across modules", effortPct: "4%", notes: "", responsible: "Functional", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Strategy",        activity: "Define conversion strategy including N+0, N+1, NZDT or DoDMO approach", effortPct: "5%", notes: "Critical decision driver", responsible: "PM + Basis", accountable: "Business Sponsor", consulted: "All Stream Leads", informed: "Steering Committee", milestone: true },
+      { category: "Infrastructure",  activity: "Prepare sandbox and landscape (DEV/QAS/PRD) for conversion cycles", effortPct: "5%", notes: "", responsible: "Basis", accountable: "Technical Lead", consulted: "SAP Support", informed: "Project Manager", milestone: false },
     ],
     explore: [
-      { category: "Delta Design", activity: "Delta Design for Finance Processes", description: "Design S/4HANA delta changes for Finance: universal journal migration, asset accounting changes and new FI reporting structures", workstream: "Finance", responsible: "Finance Consultant", accountable: "Finance Lead", consulted: "Finance Team", informed: "CFO", milestone: false },
-      { category: "Delta Design", activity: "Delta Design for Logistics and Operations", description: "Design S/4HANA delta changes for MM, SD, PP and WM including new table structures and changed business functions", workstream: "Operations", responsible: "Functional Consultant", accountable: "Operations Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Design", activity: "Functional and Technical Design Documents", description: "Finalize functional design for all delta changes and technical design for WRICEF objects requiring remediation or replacement", workstream: "Cross-Stream", responsible: "Functional + Technical", accountable: "Solution Architect", consulted: "Business SMEs", informed: "Project Manager", milestone: true },
-      { category: "Data Management", activity: "Data Migration Object and Mapping Design", description: "Identify open items and balances requiring migration or data cleansing during conversion and define reconciliation approach", workstream: "Data Management", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Integration", activity: "Integration Interface Redesign Specifications", description: "Define updated interface specifications and API designs for all upstream and downstream systems impacted by S/4HANA conversion", workstream: "Technical", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
+      { category: "Delta Design",      activity: "Conduct delta design workshops to identify required functional changes", effortPct: "4%", notes: "", responsible: "Functional", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Data",              activity: "Execute data cleanup, archiving, and consistency validation in ECC system", effortPct: "3%", notes: "Accelerator: archiving", responsible: "Technical", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Integration",       activity: "Analyze integration impact and define required adjustments", effortPct: "3%", notes: "", responsible: "Integration", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
+      { category: "Testing Strategy",  activity: "Define testing strategy including regression, SPAU/SPDD, and UAT cycles", effortPct: "3%", notes: "", responsible: "PM", accountable: "Business Sponsor", consulted: "All Teams", informed: "Steering Committee", milestone: false },
     ],
     realizeDevelop: [
-      { category: "Configuration", activity: "S/4HANA Delta Configuration", description: "Perform detailed delta configuration in DEV system for all process areas and transport configuration changes to QAS", workstream: "Cross-Stream", responsible: "Functional Consultant", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Development", activity: "Custom Code Remediation and WRICEF Development", description: "Remediate custom ABAP objects affected by simplifications and develop new WRICEF objects to replace retired custom code", workstream: "Technical", responsible: "Technical Consultant", accountable: "Technical Lead", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
-      { category: "Conversion", activity: "Trial System Conversion Runs", description: "Execute multiple trial system conversions using SUM, measure conversion downtime and validate technical migration consistency", workstream: "Technical", responsible: "Basis / Platform", accountable: "Technical Lead", consulted: "ABAP Team", informed: "Project Manager", milestone: false },
-      { category: "Integration", activity: "Interface Adaptation and End-to-End Validation", description: "Adapt existing interfaces to S/4HANA APIs and validate all inbound and outbound message flows across connected systems", workstream: "Technical", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
-      { category: "Testing", activity: "Regression Testing and SIT", description: "Execute comprehensive regression testing to verify existing functionality is preserved and run system integration testing in QAS", workstream: "Quality Assurance", responsible: "Functional + Technical", accountable: "QA Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Conversion",   activity: "Execute SUM with DMO conversion cycles in sandbox and DEV environments (N+0 path)", effortPct: "10%", notes: "Tool: SUM with DMO", responsible: "Basis", accountable: "Technical Lead", consulted: "ABAP Team", informed: "Project Manager", milestone: false },
+      { category: "Conversion",   activity: "Execute landscape transformation activities for N+1 approach if applicable", effortPct: "7%", notes: "Risk: dual landscape complexity", responsible: "Basis + Technical", accountable: "Technical Lead", consulted: "SAP Support", informed: "Project Manager", milestone: false },
+      { category: "Conversion",   activity: "Execute NZDT / DoDMO approach for downtime optimization in large systems", effortPct: "5%", notes: "", responsible: "Basis", accountable: "Technical Lead", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
+      { category: "Custom Code",  activity: "Perform SPAU/SPDD adjustments and remediate custom code", effortPct: "6%", notes: "", responsible: "Technical", accountable: "Technical Lead", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
     ],
     realizeUat: [
-      { category: "UAT", activity: "User Acceptance Testing", description: "Business-led UAT in QAS focusing on converted processes, delta functionality and resolution of all identified defects", workstream: "Quality Assurance", responsible: "Functional Consultant", accountable: "Business Sponsor", consulted: "Business Users", informed: "Steering Committee", milestone: true },
-      { category: "Cutover", activity: "Cutover Planning and Conversion Rehearsal", description: "Finalize production cutover plan, run full conversion rehearsal and validate go/no-go criteria including downtime window", workstream: "Project Management", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Teams", informed: "Board", milestone: false },
-      { category: "Training", activity: "End User Training for Changed Processes", description: "Deliver role-based training covering all changed and new processes resulting from S/4HANA delta functionality", workstream: "Change Management", responsible: "Functional Consultant", accountable: "Change Manager", consulted: "Department Heads", informed: "All Users", milestone: false },
+      { category: "Validation",  activity: "Validate converted data including finance reconciliation in QAS system", effortPct: "6%", notes: "Risk: FI inconsistencies", responsible: "Technical", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "UAT",         activity: "Execute SIT and UAT cycles in QAS and obtain formal business sign-off", effortPct: "6%", notes: "Customer dependency", responsible: "All", accountable: "Business Sponsor", consulted: "Business Users", informed: "Steering Committee", milestone: true },
     ],
     deploy: [
-      { category: "Cutover", activity: "Production System Conversion Execution", description: "Execute production system conversion using SUM within agreed downtime window and validate all technical migration steps", workstream: "Technical", responsible: "Basis + Technical Lead", accountable: "Project Manager", consulted: "All Teams", informed: "Organization", milestone: true },
-      { category: "Validation", activity: "Post-Conversion Data and Process Validation", description: "Validate business data integrity, financial balances, open items and critical business processes after production conversion", workstream: "Cross-Stream", responsible: "Business SMEs", accountable: "Business Sponsor", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
-      { category: "Change Management", activity: "Go-Live Communication and User Enablement", description: "Communicate go-live status to all stakeholders and confirm end-user readiness and system access in production", workstream: "Change Management", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "Department Heads", informed: "All Users", milestone: false },
-      { category: "Go-Live", activity: "Go-Live and Hypercare Activation", description: "Activate production system post-conversion and initiate hypercare support for rapid incident resolution", workstream: "Cross-Stream", responsible: "All", accountable: "Project Manager", consulted: "Business Sponsor", informed: "Organization", milestone: false },
+      { category: "Cutover",    activity: "Execute production system conversion using selected approach with controlled downtime", effortPct: "6%", notes: "", responsible: "Basis", accountable: "Project Manager", consulted: "All Teams", informed: "Organization", milestone: false },
+      { category: "Validation", activity: "Perform business validation and reconciliation post conversion in PRD", effortPct: "4%", notes: "", responsible: "Customer", accountable: "Business Sponsor", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
+      { category: "Go-Live",    activity: "Execute go-live and provide hypercare support", effortPct: "3%", notes: "", responsible: "All", accountable: "Project Manager", consulted: "Business Sponsor", informed: "Organization", milestone: true },
     ],
     run: [
-      { category: "Support", activity: "System Performance and Incident Monitoring", description: "Monitor converted production system performance, background jobs and interfaces and resolve incidents with urgency", workstream: "Support", responsible: "Basis / Support", accountable: "IT Manager", consulted: "Business Users", informed: "Project Manager", milestone: false },
-      { category: "Optimization", activity: "Post-Conversion System Optimization", description: "Optimize converted system performance, clean up obsolete legacy customizations and tune critical batch processes", workstream: "Technical", responsible: "Technical Lead", accountable: "IT Manager", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Knowledge Transfer", activity: "Knowledge Transfer to Internal Support Team", description: "Complete knowledge transfer for converted system and formally hand over operations to the internal BAU support team", workstream: "Change Management", responsible: "Consultants", accountable: "Internal IT Lead", consulted: "Support Team", informed: "Management", milestone: false },
-      { category: "Closure", activity: "Project Closure and Lessons Learned", description: "Formal project closure, post-conversion benefits realization review and lessons learned documentation", workstream: "Project Management", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Teams", informed: "Board", milestone: true },
+      { category: "Support",      activity: "Establish AMS model and transition system to support team", effortPct: "3%", notes: "", responsible: "PM + Customer", accountable: "IT Manager", consulted: "Business Users", informed: "Project Manager", milestone: false },
+      { category: "Optimization", activity: "Execute KT and optimize system performance post go-live", effortPct: "2%", notes: "", responsible: "Basis + Support", accountable: "IT Manager", consulted: "Business SMEs", informed: "Project Manager", milestone: true },
     ],
   },
   bluefield: {
@@ -130,42 +124,36 @@ const ACTIVITIES: Record<string, Record<string, any[]>> = {
       { category: "Business Case", activity: "Business Case for Selective Migration", description: "Develop business case justifying selective migration approach including cost, risk and business continuity benefits over pure greenfield or brownfield", workstream: "Project Management", responsible: "SAP Consultant", accountable: "Business Sponsor", consulted: "Finance", informed: "Board", milestone: false },
     ],
     prepare: [
-      { category: "Governance", activity: "Project Governance Structure and RACI", description: "Establish project governance structure, define RACI matrix, and finalize project plan with phase-wise milestones for selective migration execution", workstream: "Project Management", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Stream Leads", informed: "Steering Committee", milestone: true },
-      { category: "Infrastructure", activity: "Shell Conversion and Landscape Setup", description: "Perform shell conversion of existing ECC system, configure new org structures and provision DEV-QAS-PRD landscape with transport routes", workstream: "Technical", responsible: "Basis / Platform", accountable: "Technical Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Infrastructure", activity: "Initial System Configuration and Access", description: "Configure initial system settings including client setup, transport management system (TMS), and user access roles for all team members", workstream: "Technical", responsible: "Basis", accountable: "Technical Lead", consulted: "IT Security", informed: "Project Manager", milestone: false },
-      { category: "Tools", activity: "Selective Migration Tooling Setup", description: "Install, configure and validate selective data migration tooling (SNP Transformation Cockpit, Magnitude or equivalent) in the project landscape", workstream: "Technical", responsible: "Technical Consultant", accountable: "Technical Lead", consulted: "Tool Vendor", informed: "Project Manager", milestone: false },
-      { category: "Integration", activity: "Integration Architecture Definition", description: "Define integration architecture for all upstream and downstream systems, confirming which interfaces carry over versus require redesign", workstream: "Technical", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
+      { category: "Assessment",    activity: "Perform landscape and data assessment to define selective migration scope", effortPct: "5%", notes: "", responsible: "Technical + Basis", accountable: "Technical Lead", consulted: "Basis Team", informed: "Project Manager", milestone: false },
+      { category: "Strategy",      activity: "Define data carve-out and transformation strategy using SNP CrystalBridge or Datavard tools", effortPct: "6%", notes: "Tool: SNP / Datavard", responsible: "Technical", accountable: "Technical Lead", consulted: "Tool Vendor", informed: "Project Manager", milestone: true },
+      { category: "Scoping",       activity: "Identify business units, company codes, and historical data scope for migration", effortPct: "4%", notes: "", responsible: "Functional", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Transition",    activity: "Define transition approach including shell creation, phased rollout, or hybrid strategy", effortPct: "5%", notes: "Risk: scope misalignment", responsible: "PM", accountable: "Business Sponsor", consulted: "All Stream Leads", informed: "Steering Committee", milestone: false },
+      { category: "Infrastructure",activity: "Provision S/4HANA landscape (DEV/QAS/PRD) for target system", effortPct: "4%", notes: "", responsible: "Basis", accountable: "Technical Lead", consulted: "SAP Support", informed: "Project Manager", milestone: false },
     ],
     explore: [
-      { category: "Fit-to-Standard", activity: "Fit-to-Standard Workshops for New Processes", description: "Conduct FTS workshops for process areas being rebuilt as net-new using SAP Best Practices and document delta requirements", workstream: "Cross-Stream", responsible: "Functional Consultant", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Design", activity: "New vs Retained Process Decision Design", description: "Finalize which processes follow the greenfield (new) approach versus carry-over from existing ECC with minimal change", workstream: "Cross-Stream", responsible: "SAP Lead Consultant", accountable: "Business Sponsor", consulted: "Process Owners", informed: "Steering Committee", milestone: true },
-      { category: "Design", activity: "Functional and Technical Design Documents", description: "Finalize functional and technical design documents for both new and retained process areas including WRICEF identification", workstream: "Cross-Stream", responsible: "Functional + Technical", accountable: "Solution Architect", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Data Management", activity: "Data Object Scope and Migration Design", description: "Define data migration object scope, extraction rules, cleansing criteria and source-to-target mapping for selective load into S/4HANA", workstream: "Data Management", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Integration", activity: "Integration Interface Design Specifications", description: "Define updated integration interface specifications and APIs for all upstream and downstream systems aligned to S/4HANA data models", workstream: "Technical", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
+      { category: "Data Mapping",      activity: "Define data mapping and transformation rules using SNP or Datavard tools", effortPct: "6%", notes: "", responsible: "Technical", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Workshops",         activity: "Conduct business workshops to validate scope and redesigned processes", effortPct: "5%", notes: "", responsible: "Functional", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Integration",       activity: "Redesign integration landscape for hybrid systems", effortPct: "4%", notes: "", responsible: "Integration", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
+      { category: "Testing Strategy",  activity: "Define testing strategy covering selective and retained data scenarios", effortPct: "4%", notes: "", responsible: "PM", accountable: "Business Sponsor", consulted: "All Teams", informed: "Steering Committee", milestone: false },
     ],
     realizeDevelop: [
-      { category: "Configuration", activity: "Business Process Configuration", description: "Perform detailed configuration of business processes in DEV system using IMG and transport all configuration changes to QAS", workstream: "Cross-Stream", responsible: "Functional Consultant", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Development", activity: "WRICEF Object Development", description: "Develop WRICEF objects (Reports, Interfaces, Conversions, Enhancements, Forms, Workflows) in DEV and transport to QAS", workstream: "Technical", responsible: "Technical Consultant", accountable: "Technical Lead", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
-      { category: "Data Management", activity: "Selective Data Migration Mock Cycles", description: "Execute data migration mock runs using selective migration tooling, validate balances, open items and data completeness in QAS", workstream: "Data Management", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Integration", activity: "Integration Interface Build and Validation", description: "Build and deploy integration interfaces using middleware and validate message flows across all connected systems", workstream: "Technical", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
-      { category: "Testing", activity: "Unit Testing and System Integration Testing", description: "Execute unit testing in DEV and end-to-end system integration testing in QAS covering both migrated and newly configured business scenarios", workstream: "Quality Assurance", responsible: "Functional + Technical", accountable: "QA Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Data Migration",    activity: "Execute selective data migration using SNP CrystalBridge or Datavard tools into DEV/QAS", effortPct: "10%", notes: "Critical cost driver", responsible: "Technical", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Data Validation",   activity: "Apply transformation rules and validate data consistency in QAS system", effortPct: "7%", notes: "", responsible: "Technical", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Configuration",     activity: "Configure business processes aligned to migrated data", effortPct: "6%", notes: "", responsible: "Functional", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Integration",       activity: "Build or update integration interfaces across hybrid landscape", effortPct: "5%", notes: "", responsible: "Integration", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
     ],
     realizeUat: [
-      { category: "UAT", activity: "User Acceptance Testing", description: "Business-led UAT in QAS covering both selectively migrated historical data scenarios and newly configured S/4HANA process capabilities", workstream: "Quality Assurance", responsible: "Functional Consultant", accountable: "Business Sponsor", consulted: "Business Users", informed: "Steering Committee", milestone: true },
-      { category: "Cutover", activity: "Cutover Planning and Migration Rehearsal", description: "Finalize cutover plan for selective migration go-live, execute full rehearsal and validate go/no-go criteria with all stakeholders", workstream: "Project Management", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Teams", informed: "Board", milestone: false },
-      { category: "Training", activity: "End User Training for New and Migrated Processes", description: "Deliver role-based training covering both new standard processes and migrated data handling procedures for all end users", workstream: "Change Management", responsible: "Functional Consultant", accountable: "Change Manager", consulted: "Department Heads", informed: "All Users", milestone: false },
+      { category: "UAT", activity: "Execute SIT and UAT cycles and obtain business sign-off", effortPct: "6%", notes: "", responsible: "All", accountable: "Business Sponsor", consulted: "Business Users", informed: "Steering Committee", milestone: true },
     ],
     deploy: [
-      { category: "Cutover", activity: "Cutover and Transport Execution", description: "Execute cutover plan including transport of all approved objects from QAS to PRD using a controlled release strategy", workstream: "Project Management", responsible: "Project Manager + Basis", accountable: "Project Manager", consulted: "All Teams", informed: "Organization", milestone: false },
-      { category: "Data Management", activity: "Final Selective Migration to Production", description: "Execute final production selective data migration, validate completeness, accuracy and data reconciliation against source systems", workstream: "Data Management", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Change Management", activity: "End-User Training and System Access", description: "Confirm end-user access in PRD and provide final training support ahead of go-live", workstream: "Change Management", responsible: "Functional Consultant", accountable: "Change Manager", consulted: "Department Heads", informed: "All Users", milestone: false },
-      { category: "Go-Live", activity: "Go-Live and Hypercare Activation", description: "Execute system go-live, cutover sign-off and activation of production environment with real-time hypercare support", workstream: "Cross-Stream", responsible: "All", accountable: "Project Manager", consulted: "Business Sponsor", informed: "Organization", milestone: true },
+      { category: "Cutover",    activity: "Execute phased or big-bang cutover and final selective migration to PRD", effortPct: "5%", notes: "", responsible: "PM", accountable: "Project Manager", consulted: "All Teams", informed: "Organization", milestone: false },
+      { category: "Validation", activity: "Validate production data and business processes", effortPct: "4%", notes: "", responsible: "Customer", accountable: "Business Sponsor", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
+      { category: "Go-Live",    activity: "Execute go-live and provide hypercare support", effortPct: "3%", notes: "", responsible: "All", accountable: "Project Manager", consulted: "Business Sponsor", informed: "Organization", milestone: true },
     ],
     run: [
-      { category: "Support", activity: "System Performance and Incident Monitoring", description: "Monitor production system performance, background jobs and interfaces and resolve incidents with urgency during stabilization period", workstream: "Support", responsible: "Basis / Support", accountable: "IT Manager", consulted: "Business Users", informed: "Project Manager", milestone: false },
-      { category: "Stabilization", activity: "Migrated Data Quality Validation", description: "Validate selectively migrated data quality in production, identify and remediate any migration gaps or reconciliation issues found", workstream: "Data Management", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Optimization", activity: "Continuous Improvements and Enhancements", description: "Perform continuous improvements including minor enhancements and transport changes across the system landscape", workstream: "Cross-Stream", responsible: "Functional + Technical", accountable: "IT Manager", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Closure", activity: "Project Closure and Benefits Review", description: "Formal project closure, benefits realization review and lessons learned documentation for the selective migration approach", workstream: "Project Management", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Teams", informed: "Board", milestone: true },
+      { category: "Support",      activity: "Establish AMS model and transition ownership to support team", effortPct: "3%", notes: "", responsible: "PM + Customer", accountable: "IT Manager", consulted: "Business Users", informed: "Project Manager", milestone: false },
+      { category: "Monitoring",   activity: "Monitor hybrid landscape data consistency and integrations", effortPct: "2%", notes: "", responsible: "Technical", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Optimization", activity: "Execute continuous improvements and incident management", effortPct: "1%", notes: "", responsible: "Support", accountable: "IT Manager", consulted: "Business SMEs", informed: "Project Manager", milestone: true },
     ],
   },
 };
@@ -411,20 +399,23 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   }
   gantt.getRow(3).height = 20;
 
-  // ── Row 4: Week numbers ──
+  // ── Row 4: Week numbers + Month Year (two-line) ──
   for (let c = 1; c <= FIXED; c++) {
     gantt.getCell(4, c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D2D2D" } };
   }
   for (let w = 1; w <= totalWeeks; w++) {
-    const c = gantt.getCell(4, FIXED + w);
-    c.value = `W${w}`;
-    c.font  = { bold: true, size: 7, color: { argb: WHITE } };
-    c.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D2D2D" } };
-    c.alignment = { horizontal: "center", vertical: "middle" };
+    const weekDate = new Date(startDate.getTime() + (w - 1) * 7 * 24 * 60 * 60 * 1000);
+    const mon  = weekDate.toLocaleDateString("en-GB", { month: "short" });
+    const yr2  = String(weekDate.getFullYear()).slice(2);
+    const c    = gantt.getCell(4, FIXED + w);
+    c.value    = `W${w}\n${mon} ${yr2}`;
+    c.font     = { bold: true, size: 6, color: { argb: WHITE } };
+    c.fill     = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D2D2D" } };
+    c.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
   }
-  gantt.getRow(4).height = 14;
+  gantt.getRow(4).height = 28;
 
-  // ── Row 5: Calendar dates + column headers ──
+  // ── Row 5: Column headers only (no dates — now embedded in row 4) ──
   const hdrLabels = ["Phase", "Activity", "Responsible", "Effort %", "Notes / Tools / Risks"];
   const hdrAligns = ["center", "left", "left", "center", "left"] as const;
   for (let c = 1; c <= FIXED; c++) {
@@ -436,16 +427,11 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     cell.border = { right: { style: "thin", color: { argb: "FF444444" } } };
   }
   for (let w = 1; w <= totalWeeks; w++) {
-    const weekDate = new Date(startDate.getTime() + (w - 1) * 7 * 24 * 60 * 60 * 1000);
-    const dateStr  = weekDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
     const c = gantt.getCell(5, FIXED + w);
-    c.value = dateStr;
-    c.font  = { size: 7, color: { argb: "FF333333" } };
-    c.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: GREY_LIGHT } };
-    c.alignment = { horizontal: "center", vertical: "middle", textRotation: 90 };
-    c.border   = { right: { style: "hair", color: { argb: GREY_MID } }, bottom: { style: "thin", color: { argb: GREY_MID } } };
+    c.fill   = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    c.border = { right: { style: "hair", color: { argb: GREY_MID } }, bottom: { style: "thin", color: { argb: GREY_MID } } };
   }
-  gantt.getRow(5).height = 48;
+  gantt.getRow(5).height = 18;
 
   // ── Rows 6+: Activity data ──
   let dataRow = 6;
@@ -569,8 +555,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
       if (wks.length) YEAR_RANGES.push({ year: y, firstWeek: wks[0], lastWeek: wks[wks.length - 1], col: TOTAL_COL + yOff++ });
     }
   }
-  const LAST_COL = YEAR_RANGES.length ? YEAR_RANGES[YEAR_RANGES.length - 1].col : TOTAL_COL;
-  const pivotTotalCols = LAST_COL;
+  const pivotTotalCols = TOTAL_COL;
 
   pivot.getColumn(1).width = 4;
   pivot.getColumn(2).width = 28;
@@ -578,8 +563,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   pivot.getColumn(4).width = 12;
   pivot.getColumn(5).width = 15;
   for (let w = 1; w <= totalWeeks; w++) pivot.getColumn(FIXED_P + w).width = 4;
-  pivot.getColumn(TOTAL_COL).width = 8;
-  for (const yr of YEAR_RANGES) pivot.getColumn(yr.col).width = 12;
+  pivot.getColumn(TOTAL_COL).width = 10;
 
   // Build week → phase lookup
   const weekPhase: string[] = new Array(totalWeeks + 1).fill("");
@@ -648,14 +632,6 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   // Total header col (row 3)
   const rtc = pivot.getCell(3, TOTAL_COL);
   rtc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
-  // Year column headers (row 3)
-  for (const yr of YEAR_RANGES) {
-    const yrc = pivot.getCell(3, yr.col);
-    yrc.value = String(yr.year);
-    yrc.font  = { bold: true, size: 9, color: { argb: WHITE } };
-    yrc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF374151" } };
-    yrc.alignment = { horizontal: "center", vertical: "middle" };
-  }
   pivot.getRow(3).height = 18;
 
   // ── Row 4: Column headers (No, Role, Description, Location, Level, W1…Wn, Total) ──
@@ -670,9 +646,6 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     pCell(4, FIXED_P + w, `W${w}`, { bg, fontColor: WHITE, bold: true, size: 7 });
   }
   pCell(4, TOTAL_COL, "Total Days", { bg: "FF2D7A4F", fontColor: WHITE, bold: true, size: 9 });
-  for (const yr of YEAR_RANGES) {
-    pCell(4, yr.col, `${yr.year} Efforts`, { bg: "FF374151", fontColor: WHITE, bold: true, size: 9 });
-  }
   pivot.getRow(4).height = 24;
 
   // ── Resource rows ──
@@ -736,19 +709,6 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     totCell.alignment = { horizontal: "center", vertical: "middle" };
     totCell.numFmt = "0";
     totCell.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
-
-    // Year effort columns
-    for (const yr of YEAR_RANGES) {
-      const yrFirst = colToLetter(FIXED_P + yr.firstWeek);
-      const yrLast  = colToLetter(FIXED_P + yr.lastWeek);
-      const yrCell  = pivot.getCell(rowNum, yr.col);
-      yrCell.value  = res ? { formula: `SUM(${yrFirst}${rowNum}:${yrLast}${rowNum})` } : "";
-      yrCell.font   = { bold: true, size: 9, color: { argb: "FF374151" } };
-      yrCell.fill   = { type: "pattern", pattern: "solid", fgColor: { argb: rowBg } };
-      yrCell.alignment = { horizontal: "center", vertical: "middle" };
-      yrCell.numFmt = "0";
-      yrCell.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
-    }
   }
 
   // Dropdown validation for Location (col D) and Level (col E)
@@ -789,17 +749,6 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   grandCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
   grandCell.alignment = { horizontal: "center", vertical: "middle" };
   grandCell.numFmt = "0";
-
-  // Year totals in TOTAL row
-  for (const yr of YEAR_RANGES) {
-    const yrColLet = colToLetter(yr.col);
-    const yrTotCell = pivot.getCell(totRow, yr.col);
-    yrTotCell.value = { formula: `SUM(${yrColLet}${DATA_START}:${yrColLet}${DATA_START + NUM_ROWS - 1})` };
-    yrTotCell.font  = { bold: true, size: 10, color: { argb: WHITE } };
-    yrTotCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF374151" } };
-    yrTotCell.alignment = { horizontal: "center", vertical: "middle" };
-    yrTotCell.numFmt = "0";
-  }
 
   // ── Summary section (below the matrix) ──
   const SUM_GAP = totRow + 2;
@@ -926,6 +875,175 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     totC.alignment = { horizontal: "center", vertical: "middle" };
     totC.numFmt = "0";
   });
+
+  // ── Location x Level x Year Effort Pivot ──
+  const LOC_GAP = DESC_HDR + 1 + DESCS.length + 2;
+
+  const LOC_COMBOS: { loc: string; level: string }[] = [
+    { loc: "Onsite",   level: "Sol. Architect" },
+    { loc: "Onsite",   level: "Sr" },
+    { loc: "Onsite",   level: "PM" },
+    { loc: "Onsite",   level: "SDM" },
+    { loc: "Offshore", level: "Sr" },
+    { loc: "Offshore", level: "Jr" },
+  ];
+
+  // Number of year columns
+  const yearCount = YEAR_RANGES.length;
+  // Columns: Location(1) | Level(2) | Year...(3..3+yearCount-1) | Total(3+yearCount)
+  const LC_TOTAL_COL = 3 + yearCount;
+  const LC_COLS = 3 + yearCount;  // total cols in this pivot
+
+  // Title row
+  pivot.mergeCells(LOC_GAP, 1, LOC_GAP, LC_COLS);
+  const lch = pivot.getCell(LOC_GAP, 1);
+  lch.value = "Effort Summary by Location & Level";
+  lch.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  lch.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+  lch.alignment = { horizontal: "center", vertical: "middle" };
+  pivot.getRow(LOC_GAP).height = 18;
+
+  // Header row
+  const LC_HDR = LOC_GAP + 1;
+  pivot.getRow(LC_HDR).height = 16;
+  const lcHdrs = ["Location", "Level", ...YEAR_RANGES.map(y => String(y.year)), "Total Days"];
+  lcHdrs.forEach((h, i) => {
+    const sc = pivot.getCell(LC_HDR, 1 + i);
+    sc.value = h;
+    sc.font  = { bold: true, size: 8, color: { argb: WHITE } };
+    sc.fill  = { type: "pattern", pattern: "solid",
+                 fgColor: { argb: i >= 2 && i < 2 + yearCount ? "FF374151" : DARK_BG } };
+    sc.alignment = { horizontal: "center", vertical: "middle" };
+    sc.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
+  });
+
+  const wFirstLetter = colToLetter(FIXED_P + 1);
+  const wLastLetter  = colToLetter(FIXED_P + totalWeeks);
+  const locCol  = `$D$${DATA_START}:$D$${DATA_START + NUM_ROWS - 1}`;
+  const levCol  = `$E$${DATA_START}:$E$${DATA_START + NUM_ROWS - 1}`;
+
+  let prevLoc = "";
+  LOC_COMBOS.forEach(({ loc, level }, i) => {
+    const rn  = LC_HDR + 1 + i;
+    const bg  = i % 2 === 0 ? WHITE : GREY_LIGHT;
+    pivot.getRow(rn).height = 15;
+
+    // Location cell — only on first row for that location
+    const locCell = pivot.getCell(rn, 1);
+    if (loc !== prevLoc) {
+      locCell.value = loc;
+      locCell.font  = { bold: true, size: 8 };
+    }
+    locCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+    locCell.alignment = { horizontal: "center", vertical: "middle" };
+    locCell.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
+    prevLoc = loc;
+
+    // Level cell
+    const levCell = pivot.getCell(rn, 2);
+    levCell.value = level;
+    levCell.font  = { size: 8 };
+    levCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+    levCell.alignment = { horizontal: "left", vertical: "middle" };
+    levCell.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
+
+    // Per-year columns
+    YEAR_RANGES.forEach((yr, yi) => {
+      const yrFirst = colToLetter(FIXED_P + yr.firstWeek);
+      const yrLast  = colToLetter(FIXED_P + yr.lastWeek);
+      const yrRange = `$${yrFirst}$${DATA_START}:$${yrLast}$${DATA_START + NUM_ROWS - 1}`;
+      const yc = pivot.getCell(rn, 3 + yi);
+      yc.value = { formula: `SUMIFS(${yrRange},${locCol},"${loc}",${levCol},"${level}")` };
+      yc.font  = { size: 8 };
+      yc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+      yc.alignment = { horizontal: "center", vertical: "middle" };
+      yc.numFmt = "0";
+      yc.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
+    });
+
+    // Total Days (all weeks)
+    const allRange = `$${wFirstLetter}$${DATA_START}:$${wLastLetter}$${DATA_START + NUM_ROWS - 1}`;
+    const tc = pivot.getCell(rn, LC_TOTAL_COL);
+    tc.value = { formula: `SUMIFS(${allRange},${locCol},"${loc}",${levCol},"${level}")` };
+    tc.font  = { bold: true, size: 8, color: { argb: "FF15803D" } };
+    tc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+    tc.alignment = { horizontal: "center", vertical: "middle" };
+    tc.numFmt = "0";
+    tc.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
+  });
+
+  // Subtotal rows: Onsite total, Offshore total
+  ["Onsite", "Offshore"].forEach((loc, si) => {
+    const rn = LC_HDR + 1 + LOC_COMBOS.length + si;
+    const bg = "FFEFF6FF";
+    pivot.getRow(rn).height = 16;
+
+    const stLabel = pivot.getCell(rn, 1);
+    stLabel.value = `Subtotal ${loc}`;
+    stLabel.font  = { bold: true, size: 8 };
+    stLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+    stLabel.alignment = { horizontal: "left", vertical: "middle" };
+    stLabel.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
+    pivot.getCell(rn, 2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+
+    YEAR_RANGES.forEach((yr, yi) => {
+      const yrFirst = colToLetter(FIXED_P + yr.firstWeek);
+      const yrLast  = colToLetter(FIXED_P + yr.lastWeek);
+      const yrRange = `$${yrFirst}$${DATA_START}:$${yrLast}$${DATA_START + NUM_ROWS - 1}`;
+      const yc = pivot.getCell(rn, 3 + yi);
+      yc.value = { formula: `SUMIFS(${yrRange},${locCol},"${loc}")` };
+      yc.font  = { bold: true, size: 8 };
+      yc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+      yc.alignment = { horizontal: "center", vertical: "middle" };
+      yc.numFmt = "0";
+      yc.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
+    });
+
+    const allRange = `$${wFirstLetter}$${DATA_START}:$${wLastLetter}$${DATA_START + NUM_ROWS - 1}`;
+    const tc = pivot.getCell(rn, LC_TOTAL_COL);
+    tc.value = { formula: `SUMIFS(${allRange},${locCol},"${loc}")` };
+    tc.font  = { bold: true, size: 8, color: { argb: "FF15803D" } };
+    tc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+    tc.alignment = { horizontal: "center", vertical: "middle" };
+    tc.numFmt = "0";
+    tc.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
+  });
+
+  // Grand total row
+  const lcTotRow = LC_HDR + 1 + LOC_COMBOS.length + 2;
+  pivot.getRow(lcTotRow).height = 18;
+  pivot.mergeCells(lcTotRow, 1, lcTotRow, 2);
+  const gtLabel = pivot.getCell(lcTotRow, 1);
+  gtLabel.value = "GRAND TOTAL";
+  gtLabel.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  gtLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+  gtLabel.alignment = { horizontal: "center", vertical: "middle" };
+
+  YEAR_RANGES.forEach((yr, yi) => {
+    const yrFirst = colToLetter(FIXED_P + yr.firstWeek);
+    const yrLast  = colToLetter(FIXED_P + yr.lastWeek);
+    const yrRange = `$${yrFirst}$${DATA_START}:$${yrLast}$${DATA_START + NUM_ROWS - 1}`;
+    const yc = pivot.getCell(lcTotRow, 3 + yi);
+    yc.value = { formula: `SUM(${yrRange})` };
+    yc.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    yc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    yc.alignment = { horizontal: "center", vertical: "middle" };
+    yc.numFmt = "0";
+  });
+
+  const allRange = `$${wFirstLetter}$${DATA_START}:$${wLastLetter}$${DATA_START + NUM_ROWS - 1}`;
+  const lcGrand = pivot.getCell(lcTotRow, LC_TOTAL_COL);
+  lcGrand.value = { formula: `SUM(${allRange})` };
+  lcGrand.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  lcGrand.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+  lcGrand.alignment = { horizontal: "center", vertical: "middle" };
+  lcGrand.numFmt = "0";
+
+  // Column widths for the pivot table area
+  pivot.getColumn(1).width = 16;
+  pivot.getColumn(2).width = 18;
+  YEAR_RANGES.forEach((_, yi) => { pivot.getColumn(3 + yi).width = 12; });
+  pivot.getColumn(LC_TOTAL_COL).width = 12;
 
   return wb;
 }
