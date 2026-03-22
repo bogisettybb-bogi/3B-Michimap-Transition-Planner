@@ -16,10 +16,6 @@ const DISCLAIMERS = [
     text: "Outputs from this tool are intended for internal planning purposes only and should not be submitted to clients or included in formal commercial proposals without independent validation by a qualified SAP professional.",
   },
   {
-    title: "Third-Party Login",
-    text: "Authentication is facilitated via third-party providers (Google, LinkedIn). 3B Michimap is not responsible for data handling practices of these providers. Users are encouraged to review their respective privacy policies.",
-  },
-  {
     title: "Acceptable Use",
     text: "This tool is intended exclusively for SAP pre-sales and delivery professionals. Unauthorised use, reverse engineering, or redistribution of generated outputs is prohibited.",
   },

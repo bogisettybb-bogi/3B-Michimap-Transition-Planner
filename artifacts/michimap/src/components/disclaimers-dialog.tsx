@@ -62,16 +62,6 @@ export function DisclaimersDialog({ isOpen, onClose }: Props) {
         <section>
           <h3 className="font-bold text-primary mb-2 flex items-center gap-2">
             <span className="bg-primary/10 w-6 h-6 rounded-full flex items-center justify-center text-sm">3</span>
-            Third-Party Login
-          </h3>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Authentication is facilitated via third-party providers (Google, LinkedIn). 3B Michimap is not responsible for data handling practices of these providers. Users are encouraged to review their respective privacy policies.
-          </p>
-        </section>
-
-        <section>
-          <h3 className="font-bold text-primary mb-2 flex items-center gap-2">
-            <span className="bg-primary/10 w-6 h-6 rounded-full flex items-center justify-center text-sm">4</span>
             Acceptable Use
           </h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
