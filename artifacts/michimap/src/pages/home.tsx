@@ -395,17 +395,10 @@ export default function Home() {
     <Layout>
       <DisclaimersModal open={isDisclaimersOpen} onClose={() => setIsDisclaimersOpen(false)} />
 
-      {/* Three-column layout */}
+      {/* Two-column layout */}
       <div className="min-h-screen">
         <div className="max-w-screen-xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 xl:grid-cols-[220px_1fr_220px] gap-6 items-start">
-
-            {/* ── LEFT SIDEBAR ── */}
-            <div className="hidden xl:block sticky top-20">
-              <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
-                <PhaseTimeline phases={phases} transitionPath={transitionPath} />
-              </div>
-            </div>
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start">
 
             {/* ── CENTRE COLUMN ── */}
             <div className="space-y-6">
@@ -739,8 +732,8 @@ export default function Home() {
             </div>
 
             {/* ── RIGHT SIDEBAR ── */}
-            <div className="hidden xl:block sticky top-20">
-              <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
+            <div className="hidden xl:block sticky top-20 space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
                 <LiveSummary phases={phases} projectStartDate={projectStartDate} transitionPath={transitionPath} />
               </div>
             </div>
