@@ -812,7 +812,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
       const phSumRange = `${phStartCol}${DATA_START}:${phEndCol}${DATA_START + NUM_ROWS - 1}`;
       const levelRange = `${levelCol}${DATA_START}:${levelCol}${DATA_START + NUM_ROWS - 1}`;
       const sumCell = pivot.getCell(rn, 3 + pi);
-      sumCell.value = { formula: `SUMIF(${levelRange},"${key}",${phSumRange})` };
+      sumCell.value = { formula: `SUMPRODUCT((${levelRange}="${key}")*1*(${phSumRange}))` };
       sumCell.font  = { size: 8 };
       sumCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: PHASE_LIGHT[ph.name] || bg } };
       sumCell.alignment = { horizontal: "center", vertical: "middle" };
@@ -868,7 +868,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
       const phSumRange = `${phStartCol}${DATA_START}:${phEndCol}${DATA_START + NUM_ROWS - 1}`;
       const descRange  = `${descColLtr}${DATA_START}:${descColLtr}${DATA_START + NUM_ROWS - 1}`;
       const sumCell = pivot.getCell(rn, 2 + pi);
-      sumCell.value = { formula: `SUMIF(${descRange},"${cat}",${phSumRange})` };
+      sumCell.value = { formula: `SUMPRODUCT((${descRange}="${cat}")*1*(${phSumRange}))` };
       sumCell.font  = { size: 8 };
       sumCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: PHASE_LIGHT[ph.name] || bg } };
       sumCell.alignment = { horizontal: "center", vertical: "middle" };

@@ -284,17 +284,17 @@ export default function Home() {
 
   const [aiModel, setAiModel] = useState("gpt-5-mini");
   const [apiKey, setApiKey] = useState("");
-  const [transitionPath, setTransitionPath] = useState<GeneratePlanRequestTransitionPath>("brownfield");
+  const [transitionPath, setTransitionPath] = useState<GeneratePlanRequestTransitionPath | null>(null);
   const [projectStartDate, setProjectStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
   const [phases, setPhases] = useState({
-    discover:       { weeks: 2,  included: false },
-    prepare:        { weeks: 4  },
-    explore:        { weeks: 6  },
-    realizeDevelop: { weeks: 12 },
-    realizeUat:     { weeks: 6  },
-    deploy:         { weeks: 2  },
-    run:            { weeks: 4  },
+    discover:       { weeks: 0, included: false },
+    prepare:        { weeks: 0 },
+    explore:        { weeks: 0 },
+    realizeDevelop: { weeks: 0 },
+    realizeUat:     { weeks: 0 },
+    deploy:         { weeks: 0 },
+    run:            { weeks: 0 },
   });
 
   const [generatedResult, setGeneratedResult] = useState<GeneratePlanResponse | null>(null);
@@ -366,7 +366,7 @@ export default function Home() {
   }, [phases]);
 
   const updatePhaseWeeks = (key: keyof typeof phases, delta: number) => {
-    setPhases(prev => ({ ...prev, [key]: { ...prev[key], weeks: Math.max(1, prev[key].weeks + delta) } }));
+    setPhases(prev => ({ ...prev, [key]: { ...prev[key], weeks: Math.max(0, prev[key].weeks + delta) } }));
   };
 
   const handleStop = () => {
@@ -375,6 +375,10 @@ export default function Home() {
   };
 
   const handleGenerate = async () => {
+    if (!transitionPath) {
+      toast({ title: "Transition Path Required", description: "Please select a transition path before generating.", variant: "destructive" });
+      return;
+    }
     if (isPaidModel && !apiKey.trim()) {
       toast({ title: "API Key Required", description: "Please enter your API key for the selected paid model.", variant: "destructive" });
       return;
@@ -436,7 +440,7 @@ export default function Home() {
   const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
   const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}&summary=${encodeURIComponent(shareText)}`;
 
-  const colors = PATH_COLORS[transitionPath];
+  const colors = transitionPath ? PATH_COLORS[transitionPath] : null;
 
   return (
     <Layout>
@@ -482,7 +486,7 @@ export default function Home() {
 
               {/* STEP INDICATOR */}
               {(() => {
-                const currentStep = confirmedEfforts ? 5 : generatedResult ? 4 : 3;
+                const currentStep = confirmedEfforts ? 5 : generatedResult ? 4 : transitionPath ? 3 : 2;
                 const STEPS = [
                   { id: 1, label: "Choose LLM"       },
                   { id: 2, label: "Transition Path"   },
@@ -577,26 +581,28 @@ export default function Home() {
                         );
                       })}
                     </div>
-                    <AnimatePresence mode="wait">
-                      <motion.div key={transitionPath} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-                        className={cn("rounded-xl border p-4 space-y-3", colors.desc)}>
-                        <div>
-                          <p className={cn("text-xs font-bold uppercase tracking-wide mb-1", colors.descLabel)}>{TRANSITION_PATHS[transitionPath].name}</p>
-                          <p className={cn("text-sm leading-relaxed", colors.descText)}>
-                            {TRANSITION_PATHS[transitionPath].description}
-                          </p>
-                        </div>
-                        {TRANSITION_PATHS[transitionPath].tip && (
-                          <div className={cn("rounded-lg border px-3 py-2.5 flex gap-2", colors.desc)}>
-                            <span className="text-base leading-none mt-0.5 shrink-0">💡</span>
-                            <p className={cn("text-[11px] leading-relaxed", colors.descText)}>
-                              <span className={cn("font-bold", colors.descLabel)}>Did you know? </span>
-                              {TRANSITION_PATHS[transitionPath].tip}
+                    {transitionPath && colors && (
+                      <AnimatePresence mode="wait">
+                        <motion.div key={transitionPath} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+                          className={cn("rounded-xl border p-4 space-y-3", colors.desc)}>
+                          <div>
+                            <p className={cn("text-xs font-bold uppercase tracking-wide mb-1", colors.descLabel)}>{TRANSITION_PATHS[transitionPath].name}</p>
+                            <p className={cn("text-sm leading-relaxed", colors.descText)}>
+                              {TRANSITION_PATHS[transitionPath].description}
                             </p>
                           </div>
-                        )}
-                      </motion.div>
-                    </AnimatePresence>
+                          {TRANSITION_PATHS[transitionPath].tip && (
+                            <div className={cn("rounded-lg border px-3 py-2.5 flex gap-2", colors.desc)}>
+                              <span className="text-base leading-none mt-0.5 shrink-0">💡</span>
+                              <p className={cn("text-[11px] leading-relaxed", colors.descText)}>
+                                <span className={cn("font-bold", colors.descLabel)}>Did you know? </span>
+                                {TRANSITION_PATHS[transitionPath].tip}
+                              </p>
+                            </div>
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
                   </div>
 
                   {/* PROJECT START DATE */}
@@ -689,8 +695,11 @@ export default function Home() {
                       </div>
                     </div>
                   ) : (
-                    <button onClick={handleGenerate}
-                      className="w-full flex items-center justify-center gap-3 bg-secondary text-secondary-foreground font-bold text-base rounded-2xl py-5 shadow-lg hover:opacity-90 active:scale-[0.99] transition-all">
+                    <button onClick={handleGenerate} disabled={!transitionPath}
+                      className={cn("w-full flex items-center justify-center gap-3 font-bold text-base rounded-2xl py-5 shadow-lg transition-all",
+                        transitionPath
+                          ? "bg-secondary text-secondary-foreground hover:opacity-90 active:scale-[0.99]"
+                          : "bg-muted text-muted-foreground cursor-not-allowed opacity-60")}>
                       <Sparkles className="w-5 h-5" /> Generate Project Plan
                     </button>
                   )}
