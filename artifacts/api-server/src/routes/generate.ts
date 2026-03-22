@@ -908,10 +908,22 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     sc.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
   });
 
-  const wFirstLetter = colToLetter(FIXED_P + 1);
-  const wLastLetter  = colToLetter(FIXED_P + totalWeeks);
-  const locCol  = `$D$${DATA_START}:$D$${DATA_START + NUM_ROWS - 1}`;
-  const levCol  = `$E$${DATA_START}:$E$${DATA_START + NUM_ROWS - 1}`;
+  // Helper: build a single-column row-sum expression for a range of weeks.
+  // e.g. weekRowSum(1, 3) => "F5:F24+G5:G24+H5:H24"
+  // This collapses multi-column week data into a 20-row column array so that
+  // SUMPRODUCT can filter it with single-column criteria arrays without #VALUE!
+  const weekRowSum = (firstW: number, lastW: number): string => {
+    const terms: string[] = [];
+    for (let w = firstW; w <= lastW; w++) {
+      const col = colToLetter(FIXED_P + w);
+      terms.push(`${col}${DATA_START}:${col}${DATA_START + NUM_ROWS - 1}`);
+    }
+    return terms.join("+");
+  };
+
+  const locArr = `$D$${DATA_START}:$D$${DATA_START + NUM_ROWS - 1}`;
+  const levArr = `$E$${DATA_START}:$E$${DATA_START + NUM_ROWS - 1}`;
+  const allWeeksExpr = weekRowSum(1, totalWeeks);
 
   let prevLoc = "";
   LOC_COMBOS.forEach(({ loc, level }, i) => {
@@ -938,13 +950,11 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     levCell.alignment = { horizontal: "left", vertical: "middle" };
     levCell.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
 
-    // Per-year columns
+    // Per-year columns — SUMPRODUCT with collapsed row-sum (no multi-col SUMIFS)
     YEAR_RANGES.forEach((yr, yi) => {
-      const yrFirst = colToLetter(FIXED_P + yr.firstWeek);
-      const yrLast  = colToLetter(FIXED_P + yr.lastWeek);
-      const yrRange = `$${yrFirst}$${DATA_START}:$${yrLast}$${DATA_START + NUM_ROWS - 1}`;
+      const yrExpr = weekRowSum(yr.firstWeek, yr.lastWeek);
       const yc = pivot.getCell(rn, 3 + yi);
-      yc.value = { formula: `SUMIFS(${yrRange},${locCol},"${loc}",${levCol},"${level}")` };
+      yc.value = { formula: `SUMPRODUCT((${locArr}="${loc}")*(${levArr}="${level}")*(${yrExpr}))` };
       yc.font  = { size: 8 };
       yc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
       yc.alignment = { horizontal: "center", vertical: "middle" };
@@ -953,9 +963,8 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     });
 
     // Total Days (all weeks)
-    const allRange = `$${wFirstLetter}$${DATA_START}:$${wLastLetter}$${DATA_START + NUM_ROWS - 1}`;
     const tc = pivot.getCell(rn, LC_TOTAL_COL);
-    tc.value = { formula: `SUMIFS(${allRange},${locCol},"${loc}",${levCol},"${level}")` };
+    tc.value = { formula: `SUMPRODUCT((${locArr}="${loc}")*(${levArr}="${level}")*(${allWeeksExpr}))` };
     tc.font  = { bold: true, size: 8, color: { argb: "FF15803D" } };
     tc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
     tc.alignment = { horizontal: "center", vertical: "middle" };
@@ -978,11 +987,9 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     pivot.getCell(rn, 2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
 
     YEAR_RANGES.forEach((yr, yi) => {
-      const yrFirst = colToLetter(FIXED_P + yr.firstWeek);
-      const yrLast  = colToLetter(FIXED_P + yr.lastWeek);
-      const yrRange = `$${yrFirst}$${DATA_START}:$${yrLast}$${DATA_START + NUM_ROWS - 1}`;
+      const yrExpr = weekRowSum(yr.firstWeek, yr.lastWeek);
       const yc = pivot.getCell(rn, 3 + yi);
-      yc.value = { formula: `SUMIFS(${yrRange},${locCol},"${loc}")` };
+      yc.value = { formula: `SUMPRODUCT((${locArr}="${loc}")*(${yrExpr}))` };
       yc.font  = { bold: true, size: 8 };
       yc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
       yc.alignment = { horizontal: "center", vertical: "middle" };
@@ -990,9 +997,8 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
       yc.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
     });
 
-    const allRange = `$${wFirstLetter}$${DATA_START}:$${wLastLetter}$${DATA_START + NUM_ROWS - 1}`;
     const tc = pivot.getCell(rn, LC_TOTAL_COL);
-    tc.value = { formula: `SUMIFS(${allRange},${locCol},"${loc}")` };
+    tc.value = { formula: `SUMPRODUCT((${locArr}="${loc}")*(${allWeeksExpr}))` };
     tc.font  = { bold: true, size: 8, color: { argb: "FF15803D" } };
     tc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
     tc.alignment = { horizontal: "center", vertical: "middle" };
@@ -1010,21 +1016,19 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   gtLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
   gtLabel.alignment = { horizontal: "center", vertical: "middle" };
 
+  // Grand total per year — SUM is fine here (no row filtering needed)
   YEAR_RANGES.forEach((yr, yi) => {
-    const yrFirst = colToLetter(FIXED_P + yr.firstWeek);
-    const yrLast  = colToLetter(FIXED_P + yr.lastWeek);
-    const yrRange = `$${yrFirst}$${DATA_START}:$${yrLast}$${DATA_START + NUM_ROWS - 1}`;
+    const yrExpr = weekRowSum(yr.firstWeek, yr.lastWeek);
     const yc = pivot.getCell(lcTotRow, 3 + yi);
-    yc.value = { formula: `SUM(${yrRange})` };
+    yc.value = { formula: `SUMPRODUCT(${yrExpr})` };
     yc.font  = { bold: true, size: 9, color: { argb: WHITE } };
     yc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
     yc.alignment = { horizontal: "center", vertical: "middle" };
     yc.numFmt = "0";
   });
 
-  const allRange = `$${wFirstLetter}$${DATA_START}:$${wLastLetter}$${DATA_START + NUM_ROWS - 1}`;
   const lcGrand = pivot.getCell(lcTotRow, LC_TOTAL_COL);
-  lcGrand.value = { formula: `SUM(${allRange})` };
+  lcGrand.value = { formula: `SUMPRODUCT(${allWeeksExpr})` };
   lcGrand.font  = { bold: true, size: 9, color: { argb: WHITE } };
   lcGrand.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
   lcGrand.alignment = { horizontal: "center", vertical: "middle" };
