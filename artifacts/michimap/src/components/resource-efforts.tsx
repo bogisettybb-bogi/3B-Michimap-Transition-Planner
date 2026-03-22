@@ -333,6 +333,8 @@ export function ResourceEffortsPanel({
             <tbody>
               {resources.map((res, ri) => {
                 const rowBg = ri % 2 === 0 ? "#FFFFFF" : "#F9FAFB";
+                const isOnsite = res.location === "Onsite";
+                const textColor = isOnsite ? "#1D4ED8" : undefined;
                 const total = getRowTotal(res.id);
                 return (
                   <tr key={res.id} style={{ backgroundColor: rowBg }}>
@@ -363,7 +365,8 @@ export function ResourceEffortsPanel({
                       className="border-r border-[#E5E7EB] px-2 py-1">
                       <input value={res.role}
                         onChange={e => updateRes(res.id, { role: e.target.value })}
-                        className="w-full bg-transparent text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded px-1 py-0.5" />
+                        style={{ color: textColor }}
+                        className="w-full bg-transparent text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary/40 rounded px-1 py-0.5" />
                     </td>
 
                     {/* Location */}
@@ -372,7 +375,8 @@ export function ResourceEffortsPanel({
                       className="border-r border-[#E5E7EB] px-1 py-1 text-center">
                       <select value={res.location}
                         onChange={e => updateRes(res.id, { location: e.target.value as Loc })}
-                        className="w-full bg-transparent text-[10px] text-foreground focus:outline-none cursor-pointer text-center appearance-none">
+                        style={{ color: textColor }}
+                        className="w-full bg-transparent text-[10px] focus:outline-none cursor-pointer text-center appearance-none">
                         <option>Onsite</option>
                         <option>Offshore</option>
                       </select>
@@ -384,7 +388,8 @@ export function ResourceEffortsPanel({
                       className="border-r border-[#E5E7EB] px-1 py-1 text-center">
                       <select value={res.level}
                         onChange={e => updateRes(res.id, { level: e.target.value as Level })}
-                        className="w-full bg-transparent text-[10px] text-foreground focus:outline-none cursor-pointer appearance-none text-center">
+                        style={{ color: textColor }}
+                        className="w-full bg-transparent text-[10px] focus:outline-none cursor-pointer appearance-none text-center">
                         {LEVELS.map(l => <option key={l}>{l}</option>)}
                       </select>
                     </td>
@@ -396,23 +401,24 @@ export function ResourceEffortsPanel({
                       <input value={res.remarks}
                         onChange={e => updateRes(res.id, { remarks: e.target.value })}
                         placeholder="Note…"
-                        className="w-full bg-transparent text-[10px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 rounded px-1 py-0.5" />
+                        style={{ color: textColor }}
+                        className="w-full bg-transparent text-[10px] placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 rounded px-1 py-0.5" />
                     </td>
 
                     {/* Week effort cells */}
                     {weeks.map(w => {
                       const val = (efforts[res.id] || {})[w.weekNum] || 0;
+                      const cellBg = val > 0 ? `${w.phaseHdr}55` : `${w.phaseHdr}12`;
                       return (
                         <td key={w.weekNum}
-                          style={{ width: WK_W, minWidth: WK_W,
-                                   backgroundColor: val > 0 ? `${w.phaseHdr}22` : rowBg }}
+                          style={{ width: WK_W, minWidth: WK_W, backgroundColor: cellBg }}
                           className="border-r border-border px-0.5 py-0.5 text-center">
                           <input
                             type="number" min={0} max={5} step="any"
                             value={val || ""}
                             placeholder="·"
                             onChange={e => setEffort(res.id, w.weekNum, e.target.value)}
-                            className="effort-input w-[42px] h-[22px] text-center text-xs font-mono rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-transparent placeholder:text-muted-foreground/25 tabular-nums" />
+                            className="effort-input w-[42px] h-[22px] text-center text-xs font-mono rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-transparent placeholder:text-muted-foreground/40 tabular-nums" />
                         </td>
                       );
                     })}
