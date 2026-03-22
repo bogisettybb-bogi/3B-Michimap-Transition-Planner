@@ -773,7 +773,7 @@ export default function Home() {
             </div>
 
             {/* ── RIGHT SIDEBAR ── */}
-            <div className="hidden xl:block sticky top-20 space-y-4">
+            <div className="hidden xl:block sticky top-[136px] space-y-4">
               <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
                 <LiveSummary phases={phases} projectStartDate={projectStartDate} transitionPath={transitionPath} />
               </div>
