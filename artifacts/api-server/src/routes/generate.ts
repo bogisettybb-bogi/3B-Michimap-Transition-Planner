@@ -15,6 +15,8 @@ const openai = new OpenAI({
 
 // Free models: all route through our server (Replit AI proxy)
 const FREE_MODEL_MAP: Record<string, string> = {
+  "gpt-5-mini":       "gpt-5-mini",   // GPT-5 mini (best free)
+  "gemini-2-5-flash": "gpt-5-mini",   // Gemini 2.5 Flash (best free)
   "gpt-4o-mini":      "gpt-5-nano",   // GPT-4o mini
   "gpt-4o-free":      "gpt-5-mini",   // GPT-4o
   "claude-3-5-haiku": "gpt-5-nano",   // Claude 3.5 Haiku (proxied)
@@ -179,19 +181,22 @@ function buildPlan(params: any) {
     const phaseStart = new Date(start.getTime() + weekOffset * 7 * 24 * 60 * 60 * 1000);
     const phaseEnd = new Date(phaseStart.getTime() + (phase.weeks - 1) * 7 * 24 * 60 * 60 * 1000 + 6 * 24 * 60 * 60 * 1000);
     
-    const activities = (acts[phase.key] || []).map((act: any, idx: number) => ({
+    const baseActs = acts[phase.key] || [];
+    const activities = baseActs.map((act: any, idx: number) => ({
       ...act,
-      startWeek: weekOffset + 1 + Math.floor(idx * phase.weeks / Math.max(acts[phase.key].length, 1)),
-      endWeek: weekOffset + Math.min(phase.weeks, Math.ceil((idx + 1) * phase.weeks / Math.max(acts[phase.key].length, 1))),
-      duration: `${Math.ceil(phase.weeks / Math.max(acts[phase.key].length, 1))} weeks`,
+      startWeek: weekOffset + 1 + Math.floor(idx * phase.weeks / Math.max(baseActs.length, 1)),
+      endWeek: weekOffset + Math.min(phase.weeks, Math.ceil((idx + 1) * phase.weeks / Math.max(baseActs.length, 1))),
+      duration: `${Math.ceil(phase.weeks / Math.max(baseActs.length, 1))} weeks`,
     }));
 
+    const thisOffset = weekOffset;
     weekOffset += phase.weeks;
     return {
       name: phase.name,
       startDate: phaseStart.toISOString().split("T")[0],
       endDate: phaseEnd.toISOString().split("T")[0],
       weeks: phase.weeks,
+      weekStart: thisOffset,
       activities,
     };
   });
@@ -210,15 +215,12 @@ function buildPlan(params: any) {
 async function generateWithAI(params: any): Promise<any> {
   const plan = buildPlan(params);
   
-  // Enhance activities with AI
   try {
-    const apiKey = params.apiKey;
     let client = openai;
-    
     const freeModelId = FREE_MODEL_MAP[params.aiModel];
     const paidModelBase = PAID_MODEL_BASES[params.aiModel];
 
-    let model = "gpt-5-nano";
+    let model = "gpt-5-mini";
     if (freeModelId) {
       model = freeModelId;
     } else if (paidModelBase && params.apiKey) {
@@ -226,25 +228,77 @@ async function generateWithAI(params: any): Promise<any> {
       model = paidModelBase.model;
     }
 
-    const prompt = `You are an SAP S/4HANA implementation expert. The user has selected a ${params.transitionPath} transition path with ${params.phases.realizeDevelop.weeks} weeks for Realize-Develop.
+    const phaseLines = plan.phases
+      .map((p: any) => `- ${p.name}: ${p.weeks} weeks`)
+      .join("\n");
+    const phaseNames = plan.phases.map((p: any) => p.name);
 
-Based on this, provide a brief executive summary (2-3 sentences) for this project plan. Keep it professional and specific to ${params.transitionPath} implementation.
+    const prompt = `You are a senior SAP S/4HANA Activate consultant with deep expertise in SAP Cloud ALM task templates, accelerators, and deliverables.
 
-Return ONLY a JSON object with one field: {"summary": "your summary here"}`;
+The client is doing a **${params.transitionPath}** SAP S/4HANA implementation using SAP Activate methodology with these phases:
+${phaseLines}
+
+Your job: generate a comprehensive, SAP Cloud ALM-aligned activity list for each phase.
+
+Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
+{
+  "summary": "2-3 sentence professional executive summary for pre-sales, specific to ${params.transitionPath}",
+  "phases": {
+    ${phaseNames.map((n: string) => `"${n}": [
+      {"category": "...", "activity": "...", "description": "detailed description aligned with SAP Cloud ALM deliverable", "workstream": "...", "responsible": "SAP role", "accountable": "...", "consulted": "...", "informed": "...", "milestone": false}
+    ]`).join(",\n    ")}
+  }
+}
+
+Requirements per phase:
+- ${phaseNames[0] === "Discover" ? "Discover: 4–6 activities (scoping, readiness, business case, demos)" : "First phase: 6–10 activities"}
+- Prepare: 8–12 activities (project initiation, governance, infrastructure, standards, SAP Cloud ALM setup, risk register)
+- Explore: 10–14 activities (Fit-to-Standard workshops per module, gap analysis, solution design, data migration strategy, integration design, security design)
+- Realize - Develop: 12–16 activities (configuration per module FI/CO/MM/SD/PP/WM, custom development ABAP/Fiori, integration build, data migration mock loads, unit testing, SIT, training development)
+- Realize - UAT: 6–10 activities (UAT preparation, UAT execution per stream, defect management, cutover planning, rehearsals, training delivery, go-live readiness sign-off)
+- Deploy: 4–6 activities (final data load, production cutover, go-live execution, hypercare plan activation, stakeholder communication)
+- Run: 4–7 activities (hypercare support, incident management, performance tuning, knowledge transfer, stabilization, project closure)
+
+Each activity must reference real SAP Activate deliverables, SAP Cloud ALM tasks, or standard S/4HANA implementation best practices.
+Workstream values: Finance, Procurement, Sales, Operations, Technical, Data Management, Project Management, Quality Assurance, Change Management, Cross-Stream, Support, AI & Analytics.
+Milestone must be true for: kickoff, gap sign-off, UAT sign-off, go-live, project closure.`;
 
     const response = await client.chat.completions.create({
       model,
       messages: [{ role: "user", content: prompt }],
-      max_completion_tokens: 200,
+      max_completion_tokens: 5000,
     });
 
     const content = response.choices[0]?.message?.content || "";
-    try {
-      const parsed = JSON.parse(content.replace(/```json\n?|\n?```/g, "").trim());
-      if (parsed.summary) plan.summary = parsed.summary;
-    } catch {}
+    const parsed = JSON.parse(content.replace(/```json\n?|\n?```/g, "").trim());
+
+    if (parsed.summary) plan.summary = parsed.summary;
+
+    if (parsed.phases && typeof parsed.phases === "object") {
+      for (const phase of plan.phases) {
+        const aiActs: any[] = parsed.phases[phase.name];
+        if (Array.isArray(aiActs) && aiActs.length >= 3) {
+          const w0: number = phase.weekStart;
+          const n = aiActs.length;
+          phase.activities = aiActs.map((act: any, idx: number) => ({
+            category:    act.category    || "General",
+            activity:    act.activity    || `Activity ${idx + 1}`,
+            description: act.description || "",
+            workstream:  act.workstream  || "Cross-Stream",
+            responsible: act.responsible || "SAP Consultant",
+            accountable: act.accountable || "Project Manager",
+            consulted:   act.consulted   || "Business SMEs",
+            informed:    act.informed    || "Stakeholders",
+            milestone:   !!act.milestone,
+            startWeek: w0 + 1 + Math.floor(idx * phase.weeks / n),
+            endWeek:   w0 + Math.min(phase.weeks, Math.ceil((idx + 1) * phase.weeks / n)),
+            duration:  `${Math.ceil(phase.weeks / n)} weeks`,
+          }));
+        }
+      }
+    }
   } catch (err) {
-    logger.warn({ err }, "AI enhancement failed, using default summary");
+    logger.warn({ err }, "AI generation failed — using static activity baseline");
   }
 
   return plan;
@@ -446,72 +500,122 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   gantt.getRow(dataRow).height = 14;
 
   // ────────────────────────────────────────────────
-  // SHEET 2 — Resource Pivot
+  // SHEET 2 — Resource Planning Matrix (week columns)
   // ────────────────────────────────────────────────
-  const pivot = wb.addWorksheet("Resource Pivot", {
-    pageSetup: { orientation: "portrait", fitToPage: true, fitToWidth: 1 },
+  const pivot = wb.addWorksheet("Resource Planning Matrix", {
+    pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 },
+    views: [{ state: "frozen", xSplit: 5, ySplit: 4 }],
   });
 
-  // Determine year columns
-  const startYear = startDate.getFullYear();
-  const endYear   = new Date(startDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000).getFullYear();
-  const years: number[] = [];
-  for (let y = startYear; y <= endYear; y++) years.push(y);
+  // Helper: column index → Excel letter (A, B, ... Z, AA, ...)
+  const colToLetter = (col: number): string => {
+    let letter = "";
+    let c = col;
+    while (c > 0) {
+      c--;
+      letter = String.fromCharCode(65 + (c % 26)) + letter;
+      c = Math.floor(c / 26);
+    }
+    return letter;
+  };
 
-  // Column widths: No | Role | Description | Location | Level | [years] | Total
-  pivot.getColumn(1).width = 5;
-  pivot.getColumn(2).width = 30;
-  pivot.getColumn(3).width = 16;
+  // Fixed cols: No(1) Role(2) Description(3) Location(4) Level(5)
+  const FIXED_P = 5;
+  const TOTAL_COL = FIXED_P + totalWeeks + 1;  // +1 for Total
+  const pivotTotalCols = TOTAL_COL;
+
+  pivot.getColumn(1).width = 4;
+  pivot.getColumn(2).width = 28;
+  pivot.getColumn(3).width = 15;
   pivot.getColumn(4).width = 12;
-  pivot.getColumn(5).width = 16;
-  for (let i = 0; i < years.length; i++) pivot.getColumn(6 + i).width = 10;
-  pivot.getColumn(6 + years.length).width = 10;
+  pivot.getColumn(5).width = 15;
+  for (let w = 1; w <= totalWeeks; w++) pivot.getColumn(FIXED_P + w).width = 4;
+  pivot.getColumn(TOTAL_COL).width = 8;
 
-  const totalCols = 5 + years.length + 1; // No+Role+Desc+Loc+Level + years + Total
+  // Build week → phase lookup
+  const weekPhase: string[] = new Array(totalWeeks + 1).fill("");
+  for (const ph of plan.phases as any[]) {
+    for (let w = ph.weekStart + 1; w <= ph.weekStart + ph.weeks; w++) {
+      weekPhase[w] = ph.name;
+    }
+  }
 
-  function pivotHeaderCell(row: number, col: number, value: string, opts?: { bg?: string; fontColor?: string; bold?: boolean; size?: number; hAlign?: string }) {
+  function pCell(row: number, col: number, value: any, opts?: {
+    bg?: string; fontColor?: string; bold?: boolean; size?: number;
+    hAlign?: string; italic?: boolean; numFmt?: string; wrapText?: boolean;
+    borderRight?: string; borderBottom?: string;
+  }) {
     const cell = pivot.getCell(row, col);
     cell.value = value;
-    cell.font  = { bold: opts?.bold ?? true, size: opts?.size ?? 9, color: { argb: opts?.fontColor ?? WHITE } };
-    cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: opts?.bg ?? DARK_BG } };
-    cell.alignment = { horizontal: (opts?.hAlign as any) ?? "center", vertical: "middle", wrapText: true };
-    cell.border = { top: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "thin", color: { argb: "FF444444" } }, right: { style: "thin", color: { argb: "FF444444" } }, left: { style: "thin", color: { argb: "FF444444" } } };
+    cell.font  = { bold: opts?.bold ?? false, italic: opts?.italic ?? false, size: opts?.size ?? 9,
+                   color: { argb: opts?.fontColor ?? "FF1A1A1A" } };
+    if (opts?.bg) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: opts.bg } };
+    cell.alignment = { horizontal: (opts?.hAlign as any) ?? "center", vertical: "middle",
+                       wrapText: opts?.wrapText ?? false };
+    const br = opts?.borderRight ?? "hair";
+    const bb = opts?.borderBottom ?? "hair";
+    cell.border = {
+      right:  { style: br as any, color: { argb: "FFCCCCCC" } },
+      bottom: { style: bb as any, color: { argb: "FFCCCCCC" } },
+    };
+    if (opts?.numFmt) cell.numFmt = opts.numFmt;
     return cell;
   }
 
-  // Row 1: Title
-  pivot.mergeCells(1, 1, 1, totalCols);
-  const pTitleCell = pivot.getCell(1, 1);
-  pTitleCell.value = `Resource Effort Pivot by Year`;
-  pTitleCell.font  = { bold: true, size: 13, color: { argb: WHITE } };
-  pTitleCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  pTitleCell.alignment = { horizontal: "center", vertical: "middle" };
-  pivot.getRow(1).height = 26;
+  // ── Row 1: Title ──
+  pivot.mergeCells(1, 1, 1, pivotTotalCols);
+  const rmt = pivot.getCell(1, 1);
+  rmt.value = `Resource Planning Matrix  —  3B Michimap`;
+  rmt.font  = { bold: true, size: 13, color: { argb: WHITE } };
+  rmt.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+  rmt.alignment = { horizontal: "center", vertical: "middle" };
+  pivot.getRow(1).height = 28;
 
-  // Row 2: Subtitle
-  pivot.mergeCells(2, 1, 2, totalCols);
-  const pSubCell = pivot.getCell(2, 1);
-  pSubCell.value = `Transition: ${pathLabel}  |  Total Weeks: ${totalWeeks}  |  Model: ${aiModel}`;
-  pSubCell.font  = { italic: true, size: 8, color: { argb: "FF444444" } };
-  pSubCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
-  pSubCell.alignment = { horizontal: "center", vertical: "middle" };
+  // ── Row 2: Subtitle ──
+  pivot.mergeCells(2, 1, 2, pivotTotalCols);
+  const rms = pivot.getCell(2, 1);
+  rms.value = `Transition: ${pathLabel}  |  Total: ${totalWeeks} weeks  |  Model: ${aiModel}  |  Generated: ${genDate}  |  For internal pre-sales use only`;
+  rms.font  = { italic: true, size: 8, color: { argb: "FF555555" } };
+  rms.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
+  rms.alignment = { horizontal: "center", vertical: "middle" };
   pivot.getRow(2).height = 16;
 
-  // Row 3: blank
-  pivot.getRow(3).height = 6;
+  // ── Row 3: Phase colour band (spans week columns) ──
+  for (let c = 1; c <= FIXED_P; c++) {
+    const fc = pivot.getCell(3, c);
+    fc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D2D2D" } };
+  }
+  let bandCol = FIXED_P + 1;
+  for (const ph of plan.phases as any[]) {
+    const bandEnd = bandCol + ph.weeks - 1;
+    if (ph.weeks > 1) pivot.mergeCells(3, bandCol, 3, bandEnd);
+    const bc = pivot.getCell(3, bandCol);
+    bc.value = ph.name;
+    bc.font  = { bold: true, size: 8, color: { argb: WHITE } };
+    bc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: PHASE_SOLID[ph.name] || "FF888888" } };
+    bc.alignment = { horizontal: "center", vertical: "middle" };
+    bandCol = bandEnd + 1;
+  }
+  // Total header col (row 3)
+  const rtc = pivot.getCell(3, TOTAL_COL);
+  rtc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+  pivot.getRow(3).height = 18;
 
-  // Row 4: Column headers
-  const hdrRow = 4;
-  pivot.getRow(hdrRow).height = 30;
-  pivotHeaderCell(hdrRow, 1, "No");
-  pivotHeaderCell(hdrRow, 2, "Role",        { hAlign: "left" });
-  pivotHeaderCell(hdrRow, 3, "Description", { hAlign: "center" });
-  pivotHeaderCell(hdrRow, 4, "Location",    { hAlign: "center" });
-  pivotHeaderCell(hdrRow, 5, "Level",       { hAlign: "center" });
-  years.forEach((yr, i) => pivotHeaderCell(hdrRow, 6 + i, String(yr)));
-  pivotHeaderCell(hdrRow, 6 + years.length, "Total", { bg: "FF2D7A4F" });
+  // ── Row 4: Column headers (No, Role, Description, Location, Level, W1…Wn, Total) ──
+  pCell(4, 1, "No",          { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
+  pCell(4, 2, "Role",        { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9, hAlign: "left" });
+  pCell(4, 3, "Description", { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
+  pCell(4, 4, "Location",    { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
+  pCell(4, 5, "Level",       { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
+  for (let w = 1; w <= totalWeeks; w++) {
+    const phName = weekPhase[w];
+    const bg = PHASE_SOLID[phName] || "FF444444";
+    pCell(4, FIXED_P + w, `W${w}`, { bg, fontColor: WHITE, bold: true, size: 7 });
+  }
+  pCell(4, TOTAL_COL, "Total", { bg: "FF2D7A4F", fontColor: WHITE, bold: true, size: 9 });
+  pivot.getRow(4).height = 24;
 
-  // Resource rows
+  // ── Resource rows ──
   const RESOURCES = [
     { role: "Solution Architect",           desc: "Functional",  loc: "Onsite",   level: "Sol. Architect" },
     { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Onsite",   level: "Sr" },
@@ -530,106 +634,103 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     { role: "AI / Analytics Consultant",    desc: "AI",          loc: "Offshore", level: "Sr" },
   ];
 
-  const dataStartRow = 5;
+  const DATA_START = 5;
+  const NUM_ROWS   = 20; // 15 named + 5 blank
 
-  const colToLetter = (col: number): string => {
-    let letter = "";
-    while (col > 0) {
-      col--;
-      letter = String.fromCharCode(65 + (col % 26)) + letter;
-      col = Math.floor(col / 26);
-    }
-    return letter;
-  };
+  for (let i = 0; i < NUM_ROWS; i++) {
+    const rowNum = DATA_START + i;
+    const res    = RESOURCES[i] as any | undefined;
+    const rowBg  = i % 2 === 0 ? WHITE : GREY_LIGHT;
+    pivot.getRow(rowNum).height = 17;
 
-  for (let i = 0; i < 20; i++) {
-    const rowNum = dataStartRow + i;
-    const res = RESOURCES[i] as any;
-    const isEven = i % 2 === 0;
-    const rowBg = isEven ? WHITE : GREY_LIGHT;
-    pivot.getRow(rowNum).height = 18;
+    // Fixed label cells
+    pCell(rowNum, 1, res ? i + 1 : "", { bg: rowBg });
+    pCell(rowNum, 2, res ? res.role : "", { bg: rowBg, hAlign: "left" });
+    pCell(rowNum, 3, res ? res.desc : "", { bg: rowBg });
+    pCell(rowNum, 4, res ? res.loc  : "", { bg: rowBg });
+    pCell(rowNum, 5, res ? res.level: "", { bg: rowBg });
 
-    const setDataCell = (col: number, value: any, opts?: { bold?: boolean; color?: string; hAlign?: string; numFmt?: string }) => {
-      const cell = pivot.getCell(rowNum, col);
-      cell.value = value;
-      cell.font  = { size: 9, bold: opts?.bold ?? false, color: { argb: opts?.color ?? "FF1A1A1A" } };
-      cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: rowBg } };
-      cell.alignment = { horizontal: (opts?.hAlign as any) ?? "center", vertical: "middle" };
-      cell.border = { bottom: { style: "hair", color: { argb: GREY_MID } }, right: { style: "hair", color: { argb: GREY_MID } } };
-      if (opts?.numFmt) cell.numFmt = opts.numFmt;
-      return cell;
-    };
-
-    setDataCell(1, res ? i + 1 : "");
-    setDataCell(2, res ? res.role : "",        { hAlign: "left" });
-    setDataCell(3, res ? res.desc : "");
-    setDataCell(4, res ? res.loc : "");
-    setDataCell(5, res ? res.level : "");
-
-    for (let yi = 0; yi < years.length; yi++) {
-      setDataCell(6 + yi, res ? 0 : "", { hAlign: "center", numFmt: "0" });
+    // Week input cells — coloured by phase (light)
+    for (let w = 1; w <= totalWeeks; w++) {
+      const phName = weekPhase[w];
+      const cellBg = res ? (PHASE_LIGHT[phName] || GREY_LIGHT) : rowBg;
+      const wCell  = pivot.getCell(rowNum, FIXED_P + w);
+      wCell.value  = res ? 0 : "";
+      wCell.font   = { size: 8, color: { argb: "FF333333" } };
+      wCell.fill   = { type: "pattern", pattern: "solid", fgColor: { argb: cellBg } };
+      wCell.alignment = { horizontal: "center", vertical: "middle" };
+      wCell.numFmt = "0";
+      wCell.border = {
+        right:  { style: "hair", color: { argb: "FFBBBBBB" } },
+        bottom: { style: "hair", color: { argb: "FFBBBBBB" } },
+      };
     }
 
-    // Total col — sum of year cols
-    const firstYrCol = colToLetter(6);
-    const lastYrCol  = colToLetter(5 + years.length);
-    const totalCell = pivot.getCell(rowNum, 6 + years.length);
-    totalCell.value = res
-      ? { formula: `SUM(${firstYrCol}${rowNum}:${lastYrCol}${rowNum})` }
-      : "";
-    totalCell.font  = { bold: true, size: 9, color: { argb: "FF15803D" } };
-    totalCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: rowBg } };
-    totalCell.alignment = { horizontal: "center", vertical: "middle" };
-    totalCell.numFmt = "0";
-    totalCell.border = { bottom: { style: "hair", color: { argb: GREY_MID } }, right: { style: "thin", color: { argb: "FF444444" } } };
+    // Total = SUM of week columns
+    const wFirst = colToLetter(FIXED_P + 1);
+    const wLast  = colToLetter(FIXED_P + totalWeeks);
+    const totCell = pivot.getCell(rowNum, TOTAL_COL);
+    totCell.value = res ? { formula: `SUM(${wFirst}${rowNum}:${wLast}${rowNum})` } : "";
+    totCell.font  = { bold: true, size: 9, color: { argb: "FF15803D" } };
+    totCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: rowBg } };
+    totCell.alignment = { horizontal: "center", vertical: "middle" };
+    totCell.numFmt = "0";
+    totCell.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
   }
 
-  // TOTAL row
-  const totalRowNum = dataStartRow + 20;
-  pivot.getRow(totalRowNum).height = 20;
-  pivot.mergeCells(totalRowNum, 1, totalRowNum, 5);
-  const totLblCell = pivot.getCell(totalRowNum, 1);
-  totLblCell.value = "TOTAL";
-  totLblCell.font  = { bold: true, size: 10, color: { argb: WHITE } };
-  totLblCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  totLblCell.alignment = { horizontal: "center", vertical: "middle" };
+  // ── TOTAL row ──
+  const totRow = DATA_START + NUM_ROWS;
+  pivot.getRow(totRow).height = 20;
+  pivot.mergeCells(totRow, 1, totRow, FIXED_P);
+  const trLabel = pivot.getCell(totRow, 1);
+  trLabel.value = "TOTAL";
+  trLabel.font  = { bold: true, size: 10, color: { argb: WHITE } };
+  trLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+  trLabel.alignment = { horizontal: "center", vertical: "middle" };
 
-  for (let yi = 0; yi < years.length; yi++) {
-    const col = 6 + yi;
-    const letter = colToLetter(col);
-    const cell = pivot.getCell(totalRowNum, col);
-    cell.value = { formula: `SUM(${letter}${dataStartRow}:${letter}${dataStartRow + 19})` };
-    cell.font  = { bold: true, size: 10, color: { argb: WHITE } };
-    cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-    cell.alignment = { horizontal: "center", vertical: "middle" };
-    cell.numFmt = "0";
+  for (let w = 1; w <= totalWeeks; w++) {
+    const colLet = colToLetter(FIXED_P + w);
+    const tc = pivot.getCell(totRow, FIXED_P + w);
+    tc.value = { formula: `SUM(${colLet}${DATA_START}:${colLet}${DATA_START + NUM_ROWS - 1})` };
+    tc.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    tc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    tc.alignment = { horizontal: "center", vertical: "middle" };
+    tc.numFmt = "0";
   }
-  const totColLetter = colToLetter(6 + years.length);
-  const grandTotCell = pivot.getCell(totalRowNum, 6 + years.length);
-  grandTotCell.value = { formula: `SUM(${totColLetter}${dataStartRow}:${totColLetter}${dataStartRow + 19})` };
-  grandTotCell.font  = { bold: true, size: 10, color: { argb: WHITE } };
-  grandTotCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
-  grandTotCell.alignment = { horizontal: "center", vertical: "middle" };
-  grandTotCell.numFmt = "0";
+  const grandLet  = colToLetter(TOTAL_COL);
+  const grandCell = pivot.getCell(totRow, TOTAL_COL);
+  grandCell.value = { formula: `SUM(${grandLet}${DATA_START}:${grandLet}${DATA_START + NUM_ROWS - 1})` };
+  grandCell.font  = { bold: true, size: 10, color: { argb: WHITE } };
+  grandCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+  grandCell.alignment = { horizontal: "center", vertical: "middle" };
+  grandCell.numFmt = "0";
 
-  // Gap
-  const gapRow = totalRowNum + 2;
+  // ── Summary section (below the matrix) ──
+  const SUM_GAP = totRow + 2;
 
-  // ── Summary by Level ──
-  const lvlStartRow = gapRow;
-  pivot.mergeCells(lvlStartRow, 1, lvlStartRow, 5 + years.length);
-  const lvlHdrCell = pivot.getCell(lvlStartRow, 1);
-  lvlHdrCell.value = "Summary by Level";
-  lvlHdrCell.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  lvlHdrCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  lvlHdrCell.alignment = { horizontal: "center", vertical: "middle" };
-  pivot.getRow(lvlStartRow).height = 18;
+  // Summary by Level header
+  const levelHdrCols = 2 + plan.phases.length + 1; // Level | Desc | [phases] | Total
+  pivot.mergeCells(SUM_GAP, 1, SUM_GAP, levelHdrCols);
+  const slh = pivot.getCell(SUM_GAP, 1);
+  slh.value = "Summary by Level";
+  slh.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  slh.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+  slh.alignment = { horizontal: "center", vertical: "middle" };
+  pivot.getRow(SUM_GAP).height = 18;
 
-  // Level header row
-  const lvlColHdrRow = lvlStartRow + 1;
-  pivot.getRow(lvlColHdrRow).height = 16;
-  ["Level", "Description", ...years.map(y => String(y)), "Total"].forEach((lbl, i) => {
-    pivotHeaderCell(lvlColHdrRow, 1 + i, lbl);
+  // Column headers for summary
+  const SL_HDR = SUM_GAP + 1;
+  pivot.getRow(SL_HDR).height = 16;
+  const summaryPhaseLabels = (plan.phases as any[]).map((p: any) => p.name);
+  ["Level", "Description", ...summaryPhaseLabels, "Total"].forEach((lbl, i) => {
+    const sc = pivot.getCell(SL_HDR, 1 + i);
+    sc.value = lbl;
+    sc.font  = { bold: true, size: 8, color: { argb: WHITE } };
+    sc.fill  = { type: "pattern", pattern: "solid",
+                 fgColor: { argb: i >= 2 && i < 2 + summaryPhaseLabels.length
+                   ? (PHASE_SOLID[summaryPhaseLabels[i - 2]] || DARK_BG)
+                   : DARK_BG } };
+    sc.alignment = { horizontal: "center", vertical: "middle" };
   });
 
   const LEVELS = [
@@ -640,83 +741,91 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     { key: "SDM",           label: "Service Delivery Manager" },
   ];
 
-  const levelDataStart = lvlColHdrRow + 1;
-  const levelCol = colToLetter(5); // Level is col E
+  const levelCol = colToLetter(5); // Level is col E in main grid
 
   LEVELS.forEach(({ key, label }, i) => {
-    const rn = levelDataStart + i;
-    pivot.getRow(rn).height = 16;
+    const rn = SL_HDR + 1 + i;
     const bg = i % 2 === 0 ? WHITE : GREY_LIGHT;
-    const setL = (col: number, value: any, color?: string) => {
-      const cell = pivot.getCell(rn, col);
-      cell.value = value;
-      cell.font  = { size: 9, bold: !!color, color: { argb: color ?? "FF1A1A1A" } };
-      cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-      cell.alignment = { horizontal: "left", vertical: "middle" };
-      cell.border = { bottom: { style: "hair", color: { argb: GREY_MID } }, right: { style: "hair", color: { argb: GREY_MID } } };
-    };
-    setL(1, key);
-    setL(2, label);
-    for (let yi = 0; yi < years.length; yi++) {
-      const yrCol = colToLetter(6 + yi);
-      const cell = pivot.getCell(rn, 3 + yi);
-      cell.value = { formula: `SUMIF(${levelCol}${dataStartRow}:${levelCol}${dataStartRow + 19},"${key}",${yrCol}${dataStartRow}:${yrCol}${dataStartRow + 19})` };
-      cell.font  = { size: 9 };
-      cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-      cell.alignment = { horizontal: "center", vertical: "middle" };
-      cell.numFmt = "0";
-    }
-    const totC = pivot.getCell(rn, 3 + years.length);
-    const firstC = colToLetter(3);
-    const lastC  = colToLetter(2 + years.length);
-    totC.value = { formula: `SUM(${firstC}${rn}:${lastC}${rn})` };
-    totC.font  = { bold: true, size: 9, color: { argb: "FF15803D" } };
+    pivot.getRow(rn).height = 16;
+
+    pCell(rn, 1, key,   { bg, hAlign: "left" });
+    pCell(rn, 2, label, { bg, hAlign: "left" });
+
+    // Per-phase totals using SUMIF over week columns for each phase
+    (plan.phases as any[]).forEach((ph: any, pi: number) => {
+      const phStartCol = colToLetter(FIXED_P + ph.weekStart + 1);
+      const phEndCol   = colToLetter(FIXED_P + ph.weekStart + ph.weeks);
+      const phSumRange = `${phStartCol}${DATA_START}:${phEndCol}${DATA_START + NUM_ROWS - 1}`;
+      const levelRange = `${levelCol}${DATA_START}:${levelCol}${DATA_START + NUM_ROWS - 1}`;
+      const sumCell = pivot.getCell(rn, 3 + pi);
+      sumCell.value = { formula: `SUMIF(${levelRange},"${key}",${phSumRange})` };
+      sumCell.font  = { size: 8 };
+      sumCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: PHASE_LIGHT[ph.name] || bg } };
+      sumCell.alignment = { horizontal: "center", vertical: "middle" };
+      sumCell.numFmt = "0";
+    });
+
+    // Row total
+    const totC = pivot.getCell(rn, 3 + summaryPhaseLabels.length);
+    const sumFirst = colToLetter(3);
+    const sumLast  = colToLetter(2 + summaryPhaseLabels.length);
+    totC.value = { formula: `SUM(${sumFirst}${rn}:${sumLast}${rn})` };
+    totC.font  = { bold: true, size: 8, color: { argb: "FF15803D" } };
     totC.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
     totC.alignment = { horizontal: "center", vertical: "middle" };
     totC.numFmt = "0";
   });
 
   // ── Summary by Description ──
-  const descGapRow = levelDataStart + LEVELS.length + 2;
-  pivot.mergeCells(descGapRow, 1, descGapRow, 5 + years.length);
-  const descHdrCell = pivot.getCell(descGapRow, 1);
-  descHdrCell.value = "Summary by Description";
-  descHdrCell.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  descHdrCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  descHdrCell.alignment = { horizontal: "center", vertical: "middle" };
-  pivot.getRow(descGapRow).height = 18;
+  const DESC_GAP = SL_HDR + 1 + LEVELS.length + 2;
+  pivot.mergeCells(DESC_GAP, 1, DESC_GAP, levelHdrCols);
+  const sdh = pivot.getCell(DESC_GAP, 1);
+  sdh.value = "Summary by Category";
+  sdh.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  sdh.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+  sdh.alignment = { horizontal: "center", vertical: "middle" };
+  pivot.getRow(DESC_GAP).height = 18;
 
-  const descColHdrRow = descGapRow + 1;
-  pivot.getRow(descColHdrRow).height = 16;
-  ["Category", ...years.map(y => String(y)), "Total"].forEach((lbl, i) => {
-    pivotHeaderCell(descColHdrRow, 1 + i, lbl);
+  const DESC_HDR = DESC_GAP + 1;
+  pivot.getRow(DESC_HDR).height = 16;
+  ["Category", ...summaryPhaseLabels, "Total"].forEach((lbl, i) => {
+    const sc = pivot.getCell(DESC_HDR, 1 + i);
+    sc.value = lbl;
+    sc.font  = { bold: true, size: 8, color: { argb: WHITE } };
+    sc.fill  = { type: "pattern", pattern: "solid",
+                 fgColor: { argb: i >= 1 && i < 1 + summaryPhaseLabels.length
+                   ? (PHASE_SOLID[summaryPhaseLabels[i - 1]] || DARK_BG)
+                   : DARK_BG } };
+    sc.alignment = { horizontal: "center", vertical: "middle" };
   });
 
   const DESCS = ["Functional", "Technical", "Governance", "Quality", "Platform", "AI"];
-  const descCol = colToLetter(3); // Description is col C
+  const descColLtr = colToLetter(3); // Description is col C
 
   DESCS.forEach((cat, i) => {
-    const rn = descColHdrRow + 1 + i;
-    pivot.getRow(rn).height = 16;
+    const rn = DESC_HDR + 1 + i;
     const bg = i % 2 === 0 ? WHITE : GREY_LIGHT;
-    pivot.getCell(rn, 1).value = cat;
-    pivot.getCell(rn, 1).font  = { size: 9 };
-    pivot.getCell(rn, 1).fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-    pivot.getCell(rn, 1).alignment = { horizontal: "left", vertical: "middle" };
-    for (let yi = 0; yi < years.length; yi++) {
-      const yrCol = colToLetter(6 + yi);
-      const cell = pivot.getCell(rn, 2 + yi);
-      cell.value = { formula: `SUMIF(${descCol}${dataStartRow}:${descCol}${dataStartRow + 19},"${cat}",${yrCol}${dataStartRow}:${yrCol}${dataStartRow + 19})` };
-      cell.font  = { size: 9 };
-      cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-      cell.alignment = { horizontal: "center", vertical: "middle" };
-      cell.numFmt = "0";
-    }
-    const totC = pivot.getCell(rn, 2 + years.length);
-    const firstC = colToLetter(2);
-    const lastC  = colToLetter(1 + years.length);
-    totC.value = { formula: `SUM(${firstC}${rn}:${lastC}${rn})` };
-    totC.font  = { bold: true, size: 9, color: { argb: "FF15803D" } };
+    pivot.getRow(rn).height = 16;
+    pCell(rn, 1, cat, { bg, hAlign: "left" });
+
+    (plan.phases as any[]).forEach((ph: any, pi: number) => {
+      const phStartCol = colToLetter(FIXED_P + ph.weekStart + 1);
+      const phEndCol   = colToLetter(FIXED_P + ph.weekStart + ph.weeks);
+      const phSumRange = `${phStartCol}${DATA_START}:${phEndCol}${DATA_START + NUM_ROWS - 1}`;
+      const descRange  = `${descColLtr}${DATA_START}:${descColLtr}${DATA_START + NUM_ROWS - 1}`;
+      const sumCell = pivot.getCell(rn, 2 + pi);
+      sumCell.value = { formula: `SUMIF(${descRange},"${cat}",${phSumRange})` };
+      sumCell.font  = { size: 8 };
+      sumCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: PHASE_LIGHT[ph.name] || bg } };
+      sumCell.alignment = { horizontal: "center", vertical: "middle" };
+      sumCell.numFmt = "0";
+    });
+
+    const totC = pivot.getCell(rn, 2 + summaryPhaseLabels.length);
+    const sumFirst = colToLetter(2);
+    const sumLast  = colToLetter(1 + summaryPhaseLabels.length);
+    totC.value = { formula: `SUM(${sumFirst}${rn}:${sumLast}${rn})` };
+    totC.font  = { bold: true, size: 8, color: { argb: "FF15803D" } };
     totC.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
     totC.alignment = { horizontal: "center", vertical: "middle" };
     totC.numFmt = "0";

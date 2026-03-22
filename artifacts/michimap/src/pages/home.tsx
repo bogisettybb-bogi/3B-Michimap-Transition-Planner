@@ -236,7 +236,7 @@ export default function Home() {
   const { mutateAsync: downloadPlan, isPending: isDownloading } = useDownloadPlan();
   const { toast } = useToast();
 
-  const [aiModel, setAiModel] = useState("gemini-2-flash");
+  const [aiModel, setAiModel] = useState("gpt-5-mini");
   const [apiKey, setApiKey] = useState("");
   const [transitionPath, setTransitionPath] = useState<GeneratePlanRequestTransitionPath>("brownfield");
   const [projectStartDate, setProjectStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
