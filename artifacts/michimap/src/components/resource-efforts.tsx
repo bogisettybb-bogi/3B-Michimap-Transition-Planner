@@ -1,8 +1,19 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays } from "date-fns";
-import { Plus, Trash2, Download, CheckCircle2, Loader2, Share2, Copy, Maximize2, Minimize2 } from "lucide-react";
+import { Plus, Trash2, Download, CheckCircle2, Loader2, Share2, Copy, Check, Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const APP_URL = "https://3bmichimap.replit.app";
+const DRAFT_TEXT = `S/4HANA Transition Planning. Simplified.
+
+AI powered 3B MichiMap gives your team a credible starting point in minutes.
+Effort estimation. Transition scoping. Presales-ready output, all from one intelligent tool built on S/4HANA logic.
+No spreadsheets. No guesswork.
+
+This is what accelerated presales looks like. : ${APP_URL}
+
+#S4HANA #SAP #Presales #Transformation #SAPCommunity`;
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -95,6 +106,7 @@ export function ResourceEffortsPanel({
   const [locFilter,      setLocFilter     ] = useState<"All" | "Onsite" | "Offshore">("All");
   const [confirmed,      setConfirmed     ] = useState(false);
   const [ganttMaximized, setGanttMaximized] = useState(false);
+  const [copiedDraft,    setCopiedDraft   ] = useState(false);
   const nextId = useRef(DEFAULT_RESOURCES.length + 1);
 
   // ── Notify parent of current data whenever resources/efforts change ───────
@@ -689,20 +701,38 @@ export function ResourceEffortsPanel({
                 >
                   <div className="flex items-center gap-2">
                     <Share2 className="w-4 h-4 text-primary shrink-0" />
-                    <p className="text-xs font-semibold text-foreground">Your plan is ready - share your experience!</p>
+                    <p className="text-xs font-semibold text-foreground">Your plan is ready — share your experience!</p>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Found this useful? Share on social media and invite your colleagues to try it. Leave a comment - feedback helps improve the tool!
+                    Copy this draft post, then click "Post on LinkedIn" to share it with your network:
                   </p>
-                  <div className="flex gap-2">
+                  <pre className="text-[10px] text-muted-foreground bg-muted rounded-lg p-3 whitespace-pre-wrap leading-relaxed font-sans select-all">
+                    {DRAFT_TEXT}
+                  </pre>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(DRAFT_TEXT).then(() => {
+                          setCopiedDraft(true);
+                          setTimeout(() => setCopiedDraft(false), 2000);
+                        });
+                      }}
+                      className={`flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold transition-colors ${
+                        copiedDraft ? "bg-green-600 text-white" : "bg-muted text-foreground hover:bg-muted/70"
+                      }`}
+                    >
+                      {copiedDraft
+                        ? <><Check className="w-3.5 h-3.5" /> Copied!</>
+                        : <><Copy className="w-3.5 h-3.5" /> Copy Post Text</>}
+                    </button>
                     <button
                       onClick={() => window.open(linkedInShareUrl, "_blank", "noopener,noreferrer")}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-[#0A66C2] text-white text-xs font-bold rounded-lg py-2.5 hover:bg-[#0958a8] transition-colors cursor-pointer"
+                      className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-[#0A66C2] text-white text-xs font-bold rounded-lg hover:bg-[#0958a8] transition-colors cursor-pointer"
                     >
                       <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                       </svg>
-                      Share on LinkedIn
+                      Post on LinkedIn
                     </button>
                   </div>
                 </motion.div>
