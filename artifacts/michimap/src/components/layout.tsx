@@ -4,7 +4,7 @@ import { useGetMe } from "@workspace/api-client-react";
 import { LayoutDashboard } from "lucide-react";
 
 const APP_URL     = "https://3bmichimap.replit.app";
-const X_TWEET     = `AI-generated SAP S/4HANA project plans in minutes — no guesswork, no blank slides.\n\n3B Michimap maps your Activate roadmap with phases, activities & resource effort by level. Built for pre-sales clarity.\n\n#SAP #S4HANA #SAPActivate #SAPPresales #3BMichimap`;
+const X_TWEET     = `AI-generated SAP S/4HANA project plans in minutes. No guesswork.\n\n3B Michimap structures your Activate roadmap with phases, activities and resource effort by level.\n\n#SAP #S4HANA #SAPActivate #SAPPresales #3BMichimap`;
 const X_URL       = `https://twitter.com/intent/tweet?text=${encodeURIComponent(X_TWEET)}&url=${encodeURIComponent(APP_URL)}`;
 const LI_TITLE    = "3B Michimap — AI-Powered SAP S/4HANA Project Planner";
 const LI_SUMMARY  = `SAP S/4HANA pre-sales planning just got a lot faster.\n\n3B Michimap generates a fully structured SAP Activate project plan in minutes. Choose your transition path (Greenfield, Brownfield, or Bluefield), set your phases and timeline, and get a detailed plan with resource effort estimates broken down by level and phase.\n\nPerfect for consulting teams who need to move fast in pre-sales without sacrificing structure.\n\n#SAP #S4HANA #SAPActivate #SAPConsulting #SAPPresales #DigitalTransformation #3BMichimap`;

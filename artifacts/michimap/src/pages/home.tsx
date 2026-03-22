@@ -463,7 +463,7 @@ export default function Home() {
 
   const appUrl = "https://3bmichimap.replit.app";
 
-  const xTweetText = `AI-generated SAP S/4HANA project plans in minutes — no guesswork, no blank slides.\n\n3B Michimap maps your Activate roadmap with phases, activities & resource effort by level. Built for pre-sales clarity.\n\n#SAP #S4HANA #SAPActivate #SAPPresales #3BMichimap`;
+  const xTweetText = `AI-generated SAP S/4HANA project plans in minutes. No guesswork.\n\n3B Michimap structures your Activate roadmap with phases, activities and resource effort by level.\n\n#SAP #S4HANA #SAPActivate #SAPPresales #3BMichimap`;
   const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(xTweetText)}&url=${encodeURIComponent(appUrl)}`;
 
   const liTitle   = "3B Michimap — AI-Powered SAP S/4HANA Project Planner";
