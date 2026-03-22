@@ -463,9 +463,7 @@ export default function Home() {
 
   const appUrl = "https://3bmichimap.replit.app";
 
-  const liTitle   = "3B Michimap — AI-Powered SAP S/4HANA Project Planner";
-  const liSummary = `SAP S/4HANA pre-sales planning just got a lot faster.\n\n3B Michimap generates a fully structured SAP Activate project plan in minutes. Choose your transition path (Greenfield, Brownfield, or Bluefield), set your phases and timeline, and get a detailed plan with resource effort estimates broken down by level and phase.\n\nPerfect for consulting teams who need to move fast in pre-sales without sacrificing structure.\n\n#SAP #S4HANA #SAPActivate #SAPConsulting #SAPPresales #DigitalTransformation #3BMichimap`;
-  const linkedInShareUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(appUrl)}&title=${encodeURIComponent(liTitle)}&summary=${encodeURIComponent(liSummary)}&source=3BMichimap`;
+  const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}`;
 
   const colors = transitionPath ? PATH_COLORS[transitionPath] : null;
 

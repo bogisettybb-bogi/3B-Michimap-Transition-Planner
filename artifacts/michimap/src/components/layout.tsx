@@ -3,10 +3,8 @@ import { Link } from "wouter";
 import { useGetMe } from "@workspace/api-client-react";
 import { LayoutDashboard } from "lucide-react";
 
-const APP_URL     = "https://3bmichimap.replit.app";
-const LI_TITLE    = "3B Michimap — AI-Powered SAP S/4HANA Project Planner";
-const LI_SUMMARY  = `SAP S/4HANA pre-sales planning just got a lot faster.\n\n3B Michimap generates a fully structured SAP Activate project plan in minutes. Choose your transition path (Greenfield, Brownfield, or Bluefield), set your phases and timeline, and get a detailed plan with resource effort estimates broken down by level and phase.\n\nPerfect for consulting teams who need to move fast in pre-sales without sacrificing structure.\n\n#SAP #S4HANA #SAPActivate #SAPConsulting #SAPPresales #DigitalTransformation #3BMichimap`;
-const LI_URL      = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(APP_URL)}&title=${encodeURIComponent(LI_TITLE)}&summary=${encodeURIComponent(LI_SUMMARY)}&source=3BMichimap`;
+const APP_URL = "https://3bmichimap.replit.app";
+const LI_URL  = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(APP_URL)}`;
 
 export function Layout({ children }: { children: ReactNode }) {
   const { data: user } = useGetMe();
