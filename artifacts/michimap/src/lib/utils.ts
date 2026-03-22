@@ -13,17 +13,15 @@ export function formatDate(dateString: string) {
 
 export const MODELS = {
   free: [
-    { id: "gpt-5.2", name: "GPT-5.2 (OpenAI - Most Capable)" },
-    { id: "claude-sonnet", name: "Claude Sonnet (Anthropic)" },
-    { id: "gemini-flash", name: "Gemini Flash (Google)" },
-    { id: "deepseek-v3", name: "Deepseek V3" },
+    { id: "gpt-4o-mini", name: "GPT-4o mini (OpenAI)" },
+    { id: "gpt-4o-free", name: "GPT-4o (OpenAI)" },
+    { id: "o3-mini", name: "o3-mini — Reasoning (OpenAI)" },
   ],
   paid: [
-    { id: "gpt-4o", name: "GPT-4o (Own Key)" },
-    { id: "claude-opus", name: "Claude Opus (Own Key)" },
-    { id: "gemini-ultra", name: "Gemini Ultra (Own Key)" },
-    { id: "deepseek-r1", name: "Deepseek R1 (Own Key)" },
-    { id: "kimi-k1.5", name: "Kimi K1.5 (Own Key)" },
+    { id: "gpt-4o", name: "GPT-4o (OpenAI key)" },
+    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet (Anthropic key)" },
+    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro (Google key)" },
+    { id: "deepseek-v3", name: "DeepSeek-V3 (DeepSeek key)" },
   ],
 };
 

@@ -11,6 +11,19 @@ const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "placeholder",
 });
 
+const FREE_MODEL_MAP: Record<string, string> = {
+  "gpt-4o-mini": "gpt-5-nano",
+  "gpt-4o-free": "gpt-5-mini",
+  "o3-mini": "o4-mini",
+};
+
+const PAID_MODEL_BASES: Record<string, { baseURL: string }> = {
+  "gpt-4o": { baseURL: "https://api.openai.com/v1" },
+  "claude-3-5-sonnet": { baseURL: "https://api.anthropic.com/v1" },
+  "gemini-1.5-pro": { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai" },
+  "deepseek-v3": { baseURL: "https://api.deepseek.com/v1" },
+};
+
 const ACTIVITIES: Record<string, Record<string, any[]>> = {
   greenfield: {
     discover: [
@@ -195,9 +208,15 @@ async function generateWithAI(params: any): Promise<any> {
     const apiKey = params.apiKey;
     let client = openai;
     
-    if (apiKey && params.aiModel && params.aiModel !== "gpt-5.2") {
-      // Use user's own API key for paid models
-      client = new OpenAI({ apiKey });
+    const freeModelId = FREE_MODEL_MAP[params.aiModel];
+    const paidModelBase = PAID_MODEL_BASES[params.aiModel];
+
+    let model = "gpt-5-nano";
+    if (freeModelId) {
+      model = freeModelId;
+    } else if (paidModelBase && params.apiKey) {
+      client = new OpenAI({ apiKey: params.apiKey, baseURL: paidModelBase.baseURL });
+      model = params.aiModel;
     }
 
     const prompt = `You are an SAP S/4HANA implementation expert. The user has selected a ${params.transitionPath} transition path with ${params.phases.realizeDevelop.weeks} weeks for Realize-Develop.
@@ -207,7 +226,7 @@ Based on this, provide a brief executive summary (2-3 sentences) for this projec
 Return ONLY a JSON object with one field: {"summary": "your summary here"}`;
 
     const response = await client.chat.completions.create({
-      model: "gpt-5.2",
+      model,
       messages: [{ role: "user", content: prompt }],
       max_completion_tokens: 200,
     });

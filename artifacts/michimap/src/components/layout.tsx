@@ -49,7 +49,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 </div>
               </div>
             ) : (
-              <a href="/api/auth/google"
+              <a href="/api/login"
                 className="text-sm font-medium px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-foreground">
                 Sign in
               </a>

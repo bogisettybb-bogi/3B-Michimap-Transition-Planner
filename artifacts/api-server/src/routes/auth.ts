@@ -1,3 +1,4 @@
+import * as oidc from "openid-client";
 import { Router, type Request, type Response } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -5,6 +6,7 @@ import { logger } from "../lib/logger";
 import {
   clearSession,
   createSession,
+  getOidcConfig,
   getSessionId,
   SESSION_COOKIE,
   SESSION_TTL,
@@ -12,42 +14,39 @@ import {
   type SessionData,
 } from "../lib/auth";
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "bogisettybb@gmail.com";
+const OIDC_COOKIE_TTL = 10 * 60 * 1000;
+
 const router = Router();
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
-const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID || "";
-const LINKEDIN_CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET || "";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "bogisettybb@gmail.com";
-
-function getBaseUrl(req: Request): string {
-  const protocol = req.headers["x-forwarded-proto"] || "https";
-  const host = req.headers["x-forwarded-host"] || req.headers.host || "";
-  return `${protocol}://${host}`;
-}
-
-function randomState(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+function getOrigin(req: Request): string {
+  const proto = req.headers["x-forwarded-proto"] || "https";
+  const host = req.headers["x-forwarded-host"] || req.headers["host"] || "localhost";
+  return `${proto}://${host}`;
 }
 
 function setSessionCookie(res: Response, sid: string) {
   res.cookie(SESSION_COOKIE, sid, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_TTL,
+    httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: SESSION_TTL,
   });
 }
 
-async function upsertUser(
-  providerId: string,
-  provider: "google" | "linkedin",
-  email: string | null,
-  name: string | null,
-  avatarUrl: string | null,
-): Promise<AuthUser> {
-  const id = `${provider}:${providerId}`;
+function setOidcCookie(res: Response, name: string, value: string) {
+  res.cookie(name, value, {
+    httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: OIDC_COOKIE_TTL,
+  });
+}
+
+function getSafeReturnTo(value: unknown): string {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) return "/";
+  return value;
+}
+
+async function upsertUser(claims: Record<string, unknown>): Promise<AuthUser> {
+  const id = claims.sub as string;
+  const email = (claims.email as string) || null;
+  const name = (claims.name as string) || null;
+  const avatarUrl = ((claims.profile_image_url || claims.picture) as string) || null;
   const isAdmin = !!(email && email === ADMIN_EMAIL);
 
   const [user] = await db
@@ -69,134 +68,103 @@ async function upsertUser(
   };
 }
 
-async function startSession(res: Response, user: AuthUser, accessToken: string) {
-  const sessionData: SessionData = {
-    user,
-    access_token: accessToken,
-  };
-  const sid = await createSession(sessionData);
-  setSessionCookie(res, sid);
-}
-
-// ── GET /auth/me ────────────────────────────────────────────────────────────
 router.get("/auth/me", (req: Request, res: Response) => {
   if (!req.isAuthenticated()) return res.json(null);
   res.json(req.user);
 });
 
-// ── POST /auth/logout ────────────────────────────────────────────────────────
+router.get("/login", async (req: Request, res: Response) => {
+  try {
+    const config = await getOidcConfig();
+    const callbackUrl = `${getOrigin(req)}/api/callback`;
+    const returnTo = getSafeReturnTo(req.query.returnTo);
+
+    const state = oidc.randomState();
+    const nonce = oidc.randomNonce();
+    const codeVerifier = oidc.randomPKCECodeVerifier();
+    const codeChallenge = await oidc.calculatePKCECodeChallenge(codeVerifier);
+
+    const redirectTo = oidc.buildAuthorizationUrl(config, {
+      redirect_uri: callbackUrl,
+      scope: "openid email profile offline_access",
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
+      prompt: "login consent",
+      state,
+      nonce,
+    });
+
+    setOidcCookie(res, "code_verifier", codeVerifier);
+    setOidcCookie(res, "nonce", nonce);
+    setOidcCookie(res, "state", state);
+    setOidcCookie(res, "return_to", returnTo);
+
+    res.redirect(redirectTo.href);
+  } catch (err) {
+    logger.error({ err }, "Login initiation error");
+    res.redirect("/?error=auth_failed");
+  }
+});
+
+router.get("/callback", async (req: Request, res: Response) => {
+  try {
+    const config = await getOidcConfig();
+    const callbackUrl = `${getOrigin(req)}/api/callback`;
+
+    const codeVerifier = req.cookies?.code_verifier;
+    const nonce = req.cookies?.nonce;
+    const expectedState = req.cookies?.state;
+    const returnTo = req.cookies?.return_to || "/";
+
+    if (!codeVerifier || !expectedState) {
+      return res.redirect("/api/login");
+    }
+
+    const currentUrl = new URL(
+      `${callbackUrl}?${new URL(req.url, `http://${req.headers.host}`).searchParams}`,
+    );
+
+    const tokens = await oidc.authorizationCodeGrant(config, currentUrl, {
+      pkceCodeVerifier: codeVerifier,
+      expectedNonce: nonce,
+      expectedState,
+    });
+
+    const claims = tokens.claims();
+    if (!claims) return res.redirect("/?error=auth_failed");
+
+    const dbUser = await upsertUser(claims as unknown as Record<string, unknown>);
+
+    const now = Math.floor(Date.now() / 1000);
+    const sessionData: SessionData = {
+      user: dbUser,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: tokens.expiresIn() ? now + tokens.expiresIn()! : (claims.exp as number),
+    };
+
+    const sid = await createSession(sessionData);
+    setSessionCookie(res, sid);
+
+    ["code_verifier", "nonce", "state", "return_to"].forEach(c =>
+      res.clearCookie(c, { path: "/" })
+    );
+
+    res.redirect(returnTo);
+  } catch (err) {
+    logger.error({ err }, "Auth callback error");
+    res.redirect("/?error=auth_failed");
+  }
+});
+
 router.post("/auth/logout", async (req: Request, res: Response) => {
-  const sid = getSessionId(req);
-  await clearSession(res, sid);
-  res.json({ success: true });
-});
-
-// ── Google OAuth ─────────────────────────────────────────────────────────────
-router.get("/auth/google", (req: Request, res: Response) => {
-  if (!GOOGLE_CLIENT_ID) {
-    return res.status(503).json({
-      error: "Google OAuth not configured. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
-    });
-  }
-  const state = randomState();
-  const redirectUri = `${getBaseUrl(req)}/api/auth/google/callback`;
-  const params = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: redirectUri,
-    response_type: "code",
-    scope: "openid email profile",
-    state,
-    access_type: "offline",
-    prompt: "select_account",
-  });
-  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
-});
-
-router.get("/auth/google/callback", async (req: Request, res: Response) => {
-  const { code } = req.query as { code?: string };
-  if (!code) return res.redirect("/?error=google_auth_failed");
-
   try {
-    const redirectUri = `${getBaseUrl(req)}/api/auth/google/callback`;
-    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        client_id: GOOGLE_CLIENT_ID,
-        client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: redirectUri,
-        grant_type: "authorization_code",
-      }),
-    });
-    const tokenData = (await tokenRes.json()) as any;
-    if (!tokenData.access_token) throw new Error("No access token");
-
-    const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
-    });
-    const g = (await userRes.json()) as any;
-
-    const user = await upsertUser(g.sub, "google", g.email ?? null, g.name ?? null, g.picture ?? null);
-    await startSession(res, user, tokenData.access_token);
-    res.redirect("/");
+    const sid = getSessionId(req);
+    await clearSession(res, sid);
+    res.json({ success: true });
   } catch (err) {
-    logger.error({ err }, "Google auth callback error");
-    res.redirect("/?error=auth_failed");
-  }
-});
-
-// ── LinkedIn OAuth ────────────────────────────────────────────────────────────
-router.get("/auth/linkedin", (req: Request, res: Response) => {
-  if (!LINKEDIN_CLIENT_ID) {
-    return res.status(503).json({
-      error: "LinkedIn OAuth not configured. Please add LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET.",
-    });
-  }
-  const state = randomState();
-  const redirectUri = `${getBaseUrl(req)}/api/auth/linkedin/callback`;
-  const params = new URLSearchParams({
-    response_type: "code",
-    client_id: LINKEDIN_CLIENT_ID,
-    redirect_uri: redirectUri,
-    state,
-    scope: "openid profile email",
-  });
-  res.redirect(`https://www.linkedin.com/oauth/v2/authorization?${params}`);
-});
-
-router.get("/auth/linkedin/callback", async (req: Request, res: Response) => {
-  const { code } = req.query as { code?: string };
-  if (!code) return res.redirect("/?error=linkedin_auth_failed");
-
-  try {
-    const redirectUri = `${getBaseUrl(req)}/api/auth/linkedin/callback`;
-    const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: redirectUri,
-        client_id: LINKEDIN_CLIENT_ID,
-        client_secret: LINKEDIN_CLIENT_SECRET,
-      }),
-    });
-    const tokenData = (await tokenRes.json()) as any;
-    if (!tokenData.access_token) throw new Error("No access token");
-
-    const profileRes = await fetch("https://api.linkedin.com/v2/userinfo", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
-    });
-    const p = (await profileRes.json()) as any;
-
-    const name = p.name || `${p.given_name || ""} ${p.family_name || ""}`.trim() || null;
-    const user = await upsertUser(p.sub || p.email, "linkedin", p.email ?? null, name, p.picture ?? null);
-    await startSession(res, user, tokenData.access_token);
-    res.redirect("/");
-  } catch (err) {
-    logger.error({ err }, "LinkedIn auth callback error");
-    res.redirect("/?error=auth_failed");
+    logger.error({ err }, "Logout error");
+    res.json({ success: true });
   }
 });
 
