@@ -995,4 +995,100 @@ router.post("/download", async (req, res) => {
   }
 });
 
+// ── Chat / Plan Refinement endpoint ────────────────────────────────────────
+router.post("/chat", async (req, res) => {
+  try {
+    const { planId, message, plan: clientPlan, aiModel, apiKey, transitionPath } = req.body;
+    if (!message) return res.status(400).json({ error: "message is required" });
+
+    const currentPlan: any = planId ? planStore.get(planId) : clientPlan;
+    if (!currentPlan) return res.status(400).json({ error: "No plan context. Generate a plan first." });
+
+    // Pick model
+    const isFree = !PAID_MODEL_BASES[aiModel];
+    let client = openai;
+    let model = FREE_MODEL_MAP[aiModel] || "gpt-5-mini";
+    if (!isFree && apiKey) {
+      const base = PAID_MODEL_BASES[aiModel];
+      client = new OpenAI({ baseURL: base.baseURL, apiKey }) as any;
+      model = base.model;
+    }
+
+    // Build phase context string (compact)
+    const phaseCtx = (currentPlan.phases as any[]).map((p: any) => {
+      const acts = (p.activities || []).map((a: any) => a.activity).join("; ");
+      return `${p.name} (${p.weeks}w): ${acts || "default activities"}`;
+    }).join("\n");
+
+    const systemPrompt = `You are a senior SAP S/4HANA Activate consultant helping refine a project plan.
+Current plan: ${currentPlan.transitionPath || transitionPath || "brownfield"} transition, ${currentPlan.totalWeeks || "?"} weeks total.
+Phases:\n${phaseCtx}
+
+When the user asks you to list, add, or refine activities for one or more phases:
+1. Return ONLY valid JSON in this exact structure (no markdown, no extra text):
+{
+  "message": "brief natural language explanation of what you changed",
+  "phases": {
+    "Phase Name": [
+      {"category":"...","activity":"...","description":"...","workstream":"...","responsible":"...","accountable":"...","consulted":"...","informed":"...","milestone":false}
+    ]
+  }
+}
+2. Include 5–12 activities per modified phase. Be specific and realistic.
+3. Workstream values: Finance, Procurement, Sales, Operations, Technical, Data Management, Project Management, Quality Assurance, Change Management, Cross-Stream, Support, AI & Analytics.
+4. Only include the phases you are modifying in the response — omit unchanged phases.
+5. Set milestone:true for: kickoff, sign-offs, go-live, closure.
+If the user asks a general question (not requesting plan changes), still return JSON with:
+{ "message": "your answer here", "phases": {} }`;
+
+    const response = await client.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message },
+      ],
+      max_completion_tokens: 2500,
+    });
+
+    const raw = (response.choices[0]?.message?.content || "").replace(/```json\n?|\n?```/g, "").trim();
+    let parsed: any = { message: "Done!", phases: {} };
+    try { parsed = JSON.parse(raw); } catch {
+      const msgMatch = raw.match(/"message"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (msgMatch) parsed.message = msgMatch[1];
+    }
+
+    let updatedPlan: any = null;
+    if (parsed.phases && Object.keys(parsed.phases).length > 0) {
+      updatedPlan = JSON.parse(JSON.stringify(currentPlan));
+      for (const phase of updatedPlan.phases) {
+        const aiActs: any[] = parsed.phases[phase.name];
+        if (Array.isArray(aiActs) && aiActs.length > 0) {
+          const w0: number = phase.weekStart;
+          const n = aiActs.length;
+          phase.activities = aiActs.map((act: any, idx: number) => ({
+            category:    act.category    || "General",
+            activity:    act.activity    || `Activity ${idx + 1}`,
+            description: act.description || "",
+            workstream:  act.workstream  || "Cross-Stream",
+            responsible: act.responsible || "SAP Consultant",
+            accountable: act.accountable || "Project Manager",
+            consulted:   act.consulted   || "Business SMEs",
+            informed:    act.informed    || "Stakeholders",
+            milestone:   !!act.milestone,
+            startWeek: w0 + 1 + Math.floor(idx * phase.weeks / n),
+            endWeek:   w0 + Math.min(phase.weeks, Math.ceil((idx + 1) * phase.weeks / n)),
+            duration:  `${Math.ceil(phase.weeks / n)} weeks`,
+          }));
+        }
+      }
+      if (planId) planStore.set(planId, updatedPlan);
+    }
+
+    res.json({ assistantMessage: parsed.message || "Done!", updatedPlan });
+  } catch (err) {
+    logger.error({ err }, "Chat error");
+    res.status(500).json({ error: "Failed to process chat message" });
+  }
+});
+
 export default router;
