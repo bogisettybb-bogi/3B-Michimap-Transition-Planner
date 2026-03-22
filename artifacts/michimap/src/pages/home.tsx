@@ -135,8 +135,8 @@ function CalendarPicker({ value, onChange }: { value: string; onChange: (v: stri
                 onClick={() => selectDay(day)}
                 className={cn(
                   "w-7 h-7 rounded-full text-xs font-medium transition-colors",
-                  isSelected(day) ? "bg-green-600 text-white" :
-                  isToday(day) ? "font-bold text-foreground" :
+                  isSelected(day) ? "bg-green-600 text-white font-bold" :
+                  isToday(day) ? "ring-2 ring-primary font-bold text-primary hover:bg-primary/10" :
                   "hover:bg-muted text-foreground"
                 )}
               >
