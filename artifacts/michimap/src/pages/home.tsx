@@ -344,7 +344,7 @@ export default function Home() {
   };
 
   const appUrl = typeof window !== "undefined" ? window.location.origin : "https://3bmichimap.replit.app";
-  const shareText = `Just generated my SAP S/4HANA ${transitionPath} project plan in seconds using 3B Michimap - a free AI-powered pre-sales planning tool built on SAP Activate. Try it → ${appUrl} 💡 Drop a comment if you'd like to learn more! #SAP #S4HANA #SAPActivate #PreSales`;
+  const shareText = `Presales for S/4HANA usually means building plans under time pressure with limited clarity.\nTried this 3B Michimap. It helps structure the plan, activities, and effort in a more grounded way.\nFeels useful for early-stage discussions.\n${appUrl}\n#SAP #S4HANA #SAPPresales #Transformation #3BMichimap`;
   const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
   const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}&summary=${encodeURIComponent(shareText)}`;
 

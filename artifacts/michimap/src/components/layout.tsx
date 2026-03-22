@@ -4,7 +4,7 @@ import { useGetMe } from "@workspace/api-client-react";
 import { LayoutDashboard } from "lucide-react";
 
 const APP_URL = typeof window !== "undefined" ? window.location.origin : "https://3bmichimap.replit.app";
-const SHARE_TEXT = `I just generated an AI-powered SAP S/4HANA project plan in seconds using 3B Michimap - a free pre-sales planning tool built on SAP Activate. Try it → ${APP_URL} #SAP #S4HANA #SAPActivate #PreSales`;
+const SHARE_TEXT = `Presales for S/4HANA usually means building plans under time pressure with limited clarity.\nTried this 3B Michimap. It helps structure the plan, activities, and effort in a more grounded way.\nFeels useful for early-stage discussions.\n${APP_URL}\n#SAP #S4HANA #SAPPresales #Transformation #3BMichimap`;
 const X_URL = `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}`;
 const LI_URL = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(APP_URL)}`;
 
