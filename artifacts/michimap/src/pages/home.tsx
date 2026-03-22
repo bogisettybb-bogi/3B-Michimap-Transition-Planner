@@ -1,7 +1,7 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { format, addWeeks } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Share2, MessageSquare, Send, Bot, User } from "lucide-react";
+import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { PlanPreview } from "@/components/plan-preview";
 import { MODELS, TRANSITION_PATHS, PHASES_META, cn } from "@/lib/utils";
@@ -279,15 +279,6 @@ export default function Home() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [hasDownloaded, setHasDownloaded] = useState(false);
 
-  // Chat state
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [isChatting, setIsChatting] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
 
 
   const isPaidModel = MODELS.paid.some(m => m.id === aiModel);
@@ -349,38 +340,6 @@ export default function Home() {
       toast({ title: "Download Started", description: "Your SAP Activate plan is downloading." });
     } catch {
       toast({ title: "Download Failed", description: "Please try again or regenerate the plan.", variant: "destructive" });
-    }
-  };
-
-  const handleChat = async () => {
-    const msg = chatInput.trim();
-    if (!msg || isChatting) return;
-    setChatInput("");
-    setChatMessages(prev => [...prev, { role: "user", content: msg }]);
-    setIsChatting(true);
-    try {
-      const base = typeof window !== "undefined" ? window.location.origin : "";
-      const resp = await fetch(`${base}/api/generate/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId: generatedResult?.planId,
-          message: msg,
-          plan: generatedResult?.plan,
-          aiModel,
-          apiKey: isPaidModel ? apiKey : undefined,
-          transitionPath,
-        }),
-      });
-      const data = await resp.json();
-      if (data.updatedPlan) {
-        setGeneratedResult(prev => prev ? { ...prev, plan: data.updatedPlan } : prev);
-      }
-      setChatMessages(prev => [...prev, { role: "assistant", content: data.assistantMessage || "Plan updated!" }]);
-    } catch {
-      setChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
-    } finally {
-      setIsChatting(false);
     }
   };
 
@@ -463,96 +422,6 @@ export default function Home() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
-
-                  {/* PLAN CHAT — AI assistant to refine activities */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                      <label className="text-xs font-bold text-primary uppercase tracking-wider">Plan Assistant</label>
-                      <span className="text-[10px] text-muted-foreground font-normal normal-case">(refine activities &amp; content)</span>
-                    </div>
-
-                    {/* Hint chips */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {[
-                        "List 8 activities for Explore phase with responsible roles",
-                        "Add data migration tasks to Realize - Develop",
-                        "Add more testing activities to Realize - UAT",
-                        "Show security & authorization activities for each phase",
-                      ].map(hint => (
-                        <button
-                          key={hint}
-                          onClick={() => setChatInput(hint)}
-                          className="text-[10px] px-2 py-1 rounded-full bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors text-left"
-                        >
-                          {hint}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Message history */}
-                    {chatMessages.length > 0 && (
-                      <div className="max-h-48 overflow-y-auto space-y-2 border border-border rounded-xl p-3 bg-background">
-                        {chatMessages.map((m, i) => (
-                          <div key={i} className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}>
-                            {m.role === "assistant" && (
-                              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <Bot className="w-3 h-3 text-primary" />
-                              </div>
-                            )}
-                            <div className={cn(
-                              "max-w-[80%] text-xs rounded-xl px-3 py-2 leading-relaxed",
-                              m.role === "user"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-foreground"
-                            )}>
-                              {m.content}
-                            </div>
-                            {m.role === "user" && (
-                              <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <User className="w-3 h-3 text-secondary-foreground" />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        {isChatting && (
-                          <div className="flex gap-2 justify-start">
-                            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <Bot className="w-3 h-3 text-primary" />
-                            </div>
-                            <div className="bg-muted text-foreground text-xs rounded-xl px-3 py-2 flex items-center gap-1.5">
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                              Thinking…
-                            </div>
-                          </div>
-                        )}
-                        <div ref={chatEndRef} />
-                      </div>
-                    )}
-
-                    {/* Input row */}
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder={generatedResult ? "Ask to refine activities, add tasks, change responsible…" : "Generate a plan first, then refine it here…"}
-                        value={chatInput}
-                        onChange={e => setChatInput(e.target.value)}
-                        onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleChat()}
-                        disabled={!generatedResult || isChatting}
-                        className="flex-1 bg-background border border-border rounded-xl px-3 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                      <button
-                        onClick={handleChat}
-                        disabled={!generatedResult || !chatInput.trim() || isChatting}
-                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
-                      >
-                        {isChatting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground/70 leading-snug">
-                      Tip: Ask for specific activities with responsible roles (e.g. "List 6 cutover activities in Deploy with accountable roles"). The plan preview and Excel will update automatically.
-                    </p>
                   </div>
 
                   {/* TRANSITION PATH */}
