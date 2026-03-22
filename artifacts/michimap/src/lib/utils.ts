@@ -57,11 +57,11 @@ export const TRANSITION_PATHS = {
 };
 
 export const PHASES_META: Record<string, { color: string; desc: string; label?: string }> = {
-  discover:       { color: "bg-blue-400",   desc: "Value discovery, solution trials, business case",                               label: "Discover" },
-  prepare:        { color: "bg-green-500",  desc: "Project initiation, governance, system provisioning, initial backlog",          label: "Prepare" },
-  explore:        { color: "bg-orange-400", desc: "Fit-to-standard workshops, gap analysis, solution backlog finalization",        label: "Explore" },
-  realizeDevelop: { color: "bg-yellow-500", desc: "Configuration, custom development, unit and string testing",                   label: "Realize - Develop" },
-  realizeUat:     { color: "bg-red-400",    desc: "UAT, defect resolution, end-user training",                                    label: "Realize - UAT" },
+  discover:       { color: "bg-blue-400",   desc: "Value discovery, solution trials, biz case",  label: "Discover" },
+  prepare:        { color: "bg-green-500",  desc: "Initiation, governance, provisioning, backlog", label: "Prepare" },
+  explore:        { color: "bg-orange-400", desc: "FTS workshops, gap analysis, backlog",          label: "Explore" },
+  realizeDevelop: { color: "bg-yellow-500", desc: "Config, custom dev, unit & string testing",     label: "Realize - Develop" },
+  realizeUat:     { color: "bg-red-400",    desc: "UAT, defect resolution, end-user training",     label: "Realize - UAT" },
   deploy:         { color: "bg-teal-500",   desc: "Cutover and go-live",                  label: "Deploy" },
   run:            { color: "bg-purple-500", desc: "Hypercare and stabilisation",          label: "Run" },
 };
