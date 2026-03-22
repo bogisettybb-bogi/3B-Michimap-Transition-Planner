@@ -4,8 +4,6 @@ import { useGetMe } from "@workspace/api-client-react";
 import { LayoutDashboard } from "lucide-react";
 
 const APP_URL     = "https://3bmichimap.replit.app";
-const X_TWEET     = `AI-generated SAP S/4HANA project plans in minutes. No guesswork.\n\n3B Michimap structures your Activate roadmap with phases, activities and resource effort by level.\n\n#SAP #S4HANA #SAPActivate #SAPPresales #3BMichimap`;
-const X_URL       = `https://twitter.com/intent/tweet?text=${encodeURIComponent(X_TWEET)}&url=${encodeURIComponent(APP_URL)}`;
 const LI_TITLE    = "3B Michimap — AI-Powered SAP S/4HANA Project Planner";
 const LI_SUMMARY  = `SAP S/4HANA pre-sales planning just got a lot faster.\n\n3B Michimap generates a fully structured SAP Activate project plan in minutes. Choose your transition path (Greenfield, Brownfield, or Bluefield), set your phases and timeline, and get a detailed plan with resource effort estimates broken down by level and phase.\n\nPerfect for consulting teams who need to move fast in pre-sales without sacrificing structure.\n\n#SAP #S4HANA #SAPActivate #SAPConsulting #SAPPresales #DigitalTransformation #3BMichimap`;
 const LI_URL      = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(APP_URL)}&title=${encodeURIComponent(LI_TITLE)}&summary=${encodeURIComponent(LI_SUMMARY)}&source=3BMichimap`;
@@ -31,19 +29,6 @@ export function Layout({ children }: { children: ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-3">
-            {/* Share buttons - always visible */}
-            <a
-              href={X_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Share on X"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black text-white text-xs font-bold hover:bg-black/75 transition-colors"
-            >
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L2.25 2.25h6.986l4.263 5.637L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
-              </svg>
-              <span className="hidden sm:inline">Share</span>
-            </a>
             <a
               href={LI_URL}
               target="_blank"

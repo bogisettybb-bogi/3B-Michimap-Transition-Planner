@@ -34,7 +34,6 @@ export interface ResourceEffortsProps {
   isDownloading: boolean;
   onDownload: () => void;
   hasDownloaded: boolean;
-  xShareUrl: string;
   linkedInShareUrl: string;
   onConfirm: () => void;
   onUnconfirm: () => void;
@@ -88,7 +87,7 @@ const round1 = (v: number) => Math.round(v * 10) / 10;
 
 export function ResourceEffortsPanel({
   plan, agreedToTerms, setAgreedToTerms, onOpenDisclaimers,
-  isDownloading, onDownload, hasDownloaded, xShareUrl, linkedInShareUrl,
+  isDownloading, onDownload, hasDownloaded, linkedInShareUrl,
   onConfirm, onUnconfirm, onDataChange,
 }: ResourceEffortsProps) {
   const [resources,      setResources     ] = useState<ResourceRow[]>(DEFAULT_RESOURCES);
@@ -696,17 +695,6 @@ export function ResourceEffortsPanel({
                     Found this useful? Share on social media and invite your colleagues to try it. Leave a comment - feedback helps improve the tool!
                   </p>
                   <div className="flex gap-2">
-                    <a
-                      href={xShareUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-black text-white text-xs font-bold rounded-lg py-2.5 hover:bg-black/80 transition-colors"
-                    >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L2.25 2.25h6.986l4.263 5.637L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
-                      </svg>
-                      Share on X
-                    </a>
                     <a
                       href={linkedInShareUrl}
                       target="_blank"
