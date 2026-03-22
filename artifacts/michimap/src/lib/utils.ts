@@ -13,15 +13,18 @@ export function formatDate(dateString: string) {
 
 export const MODELS = {
   free: [
-    { id: "gpt-4o-mini", name: "GPT-4o mini (OpenAI)" },
-    { id: "gpt-4o-free", name: "GPT-4o (OpenAI)" },
-    { id: "o3-mini", name: "o3-mini — Reasoning (OpenAI)" },
+    { id: "gpt-4o-mini", name: "GPT-4o mini · 2024  (ChatGPT free tier)" },
+    { id: "gpt-4o-free", name: "GPT-4o · 2024  (ChatGPT free tier)" },
+    { id: "claude-3-5-haiku", name: "Claude 3.5 Haiku · 2024  (Claude free tier)" },
+    { id: "gemini-2-flash", name: "Gemini 2.0 Flash · 2025  (Gemini free tier)" },
+    { id: "deepseek-v3", name: "DeepSeek-V3 · 2024  (DeepSeek free tier)" },
+    { id: "llama-3-3-70b", name: "Llama 3.3 70B · 2024  (Meta, open source)" },
   ],
   paid: [
-    { id: "gpt-4o", name: "GPT-4o (OpenAI key)" },
-    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet (Anthropic key)" },
-    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro (Google key)" },
-    { id: "deepseek-v3", name: "DeepSeek-V3 (DeepSeek key)" },
+    { id: "gpt-4o", name: "GPT-4o · 2024  (OpenAI API key)" },
+    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet · 2024  (Anthropic API key)" },
+    { id: "gemini-1-5-pro", name: "Gemini 1.5 Pro · 2024  (Google API key)" },
+    { id: "deepseek-r1", name: "DeepSeek-R1 · 2025  (DeepSeek API key)" },
   ],
 };
 

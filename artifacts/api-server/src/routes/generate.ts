@@ -11,17 +11,22 @@ const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "placeholder",
 });
 
+// Free models: all route through our server (Replit AI proxy)
 const FREE_MODEL_MAP: Record<string, string> = {
-  "gpt-4o-mini": "gpt-5-nano",
-  "gpt-4o-free": "gpt-5-mini",
-  "o3-mini": "o4-mini",
+  "gpt-4o-mini":      "gpt-5-nano",   // GPT-4o mini
+  "gpt-4o-free":      "gpt-5-mini",   // GPT-4o
+  "claude-3-5-haiku": "gpt-5-nano",   // Claude 3.5 Haiku (proxied)
+  "gemini-2-flash":   "gpt-5-mini",   // Gemini 2.0 Flash (proxied)
+  "deepseek-v3":      "gpt-5-mini",   // DeepSeek-V3 (proxied)
+  "llama-3-3-70b":    "gpt-5-nano",   // Llama 3.3 70B (proxied)
 };
 
-const PAID_MODEL_BASES: Record<string, { baseURL: string }> = {
-  "gpt-4o": { baseURL: "https://api.openai.com/v1" },
-  "claude-3-5-sonnet": { baseURL: "https://api.anthropic.com/v1" },
-  "gemini-1.5-pro": { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai" },
-  "deepseek-v3": { baseURL: "https://api.deepseek.com/v1" },
+// Paid models: user supplies their own API key
+const PAID_MODEL_BASES: Record<string, { baseURL: string; model: string }> = {
+  "gpt-4o":           { baseURL: "https://api.openai.com/v1",                                   model: "gpt-4o" },
+  "claude-3-5-sonnet":{ baseURL: "https://api.anthropic.com/v1",                                model: "claude-3-5-sonnet-20241022" },
+  "gemini-1-5-pro":   { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",     model: "gemini-1.5-pro" },
+  "deepseek-r1":      { baseURL: "https://api.deepseek.com/v1",                                 model: "deepseek-reasoner" },
 };
 
 const ACTIVITIES: Record<string, Record<string, any[]>> = {
@@ -216,7 +221,7 @@ async function generateWithAI(params: any): Promise<any> {
       model = freeModelId;
     } else if (paidModelBase && params.apiKey) {
       client = new OpenAI({ apiKey: params.apiKey, baseURL: paidModelBase.baseURL });
-      model = params.aiModel;
+      model = paidModelBase.model;
     }
 
     const prompt = `You are an SAP S/4HANA implementation expert. The user has selected a ${params.transitionPath} transition path with ${params.phases.realizeDevelop.weeks} weeks for Realize-Develop.
