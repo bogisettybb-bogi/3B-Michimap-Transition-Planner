@@ -647,27 +647,32 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   // ── Resource rows ──
   // Derive category from level (used for "Summary by Category" pivot)
   const levelToCategory: Record<string, string> = {
-    "Sol. Architect": "Functional", "Sr": "Functional", "Jr": "Technical",
-    "PM": "Governance", "SDM": "Governance", "SME": "Functional", "AI": "AI",
+    "Solution Architect":      "Functional",
+    "Senior Consultant":       "Functional",
+    "Junior Consultant":       "Technical",
+    "Project Manager":         "Governance",
+    "Service Delivery Manager":"Governance",
+    "Functional Consultant":   "Functional",
+    "AI Consultant":           "AI",
   };
 
   // Use real user data when available, otherwise fall back to template
   const DEFAULT_RES = [
-    { role: "Solution Architect",           desc: "Functional",  loc: "Onsite",   level: "Sol. Architect", weekEfforts: {} as Record<number,number> },
-    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Onsite",   level: "Sr",             weekEfforts: {} },
-    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Offshore", level: "Sr",             weekEfforts: {} },
-    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Offshore", level: "Jr",             weekEfforts: {} },
-    { role: "SAP Technical Consultant",     desc: "Technical",   loc: "Offshore", level: "Sr",             weekEfforts: {} },
-    { role: "ABAP / BTP Developer",         desc: "Technical",   loc: "Offshore", level: "Jr",             weekEfforts: {} },
-    { role: "Integration Developer (CPI)",  desc: "Technical",   loc: "Offshore", level: "Sr",             weekEfforts: {} },
-    { role: "SAP Basis Administrator",      desc: "Platform",    loc: "Offshore", level: "Sr",             weekEfforts: {} },
-    { role: "Security Consultant",          desc: "Technical",   loc: "Onsite",   level: "Sr",             weekEfforts: {} },
-    { role: "Project Manager",              desc: "Governance",  loc: "Onsite",   level: "PM",             weekEfforts: {} },
-    { role: "Service Delivery Manager",     desc: "Governance",  loc: "Onsite",   level: "SDM",            weekEfforts: {} },
-    { role: "Change Management Lead",       desc: "Governance",  loc: "Onsite",   level: "Sr",             weekEfforts: {} },
-    { role: "QA / Test Lead",               desc: "Quality",     loc: "Onsite",   level: "Sr",             weekEfforts: {} },
-    { role: "Infra / Cloud Engineer",       desc: "Platform",    loc: "Offshore", level: "Sr",             weekEfforts: {} },
-    { role: "AI / Analytics Consultant",    desc: "AI",          loc: "Offshore", level: "Sr",             weekEfforts: {} },
+    { role: "Solution Architect",           desc: "Functional",  loc: "Onsite",   level: "Solution Architect",       weekEfforts: {} as Record<number,number> },
+    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Onsite",   level: "Senior Consultant",        weekEfforts: {} },
+    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Offshore", level: "Senior Consultant",        weekEfforts: {} },
+    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Offshore", level: "Junior Consultant",        weekEfforts: {} },
+    { role: "SAP Technical Consultant",     desc: "Technical",   loc: "Offshore", level: "Senior Consultant",        weekEfforts: {} },
+    { role: "ABAP / BTP Developer",         desc: "Technical",   loc: "Offshore", level: "Junior Consultant",        weekEfforts: {} },
+    { role: "Integration Developer (CPI)",  desc: "Technical",   loc: "Offshore", level: "Senior Consultant",        weekEfforts: {} },
+    { role: "SAP Basis Administrator",      desc: "Platform",    loc: "Offshore", level: "Senior Consultant",        weekEfforts: {} },
+    { role: "Security Consultant",          desc: "Technical",   loc: "Onsite",   level: "Senior Consultant",        weekEfforts: {} },
+    { role: "Project Manager",              desc: "Governance",  loc: "Onsite",   level: "Project Manager",          weekEfforts: {} },
+    { role: "Service Delivery Manager",     desc: "Governance",  loc: "Onsite",   level: "Service Delivery Manager", weekEfforts: {} },
+    { role: "Change Management Lead",       desc: "Governance",  loc: "Onsite",   level: "Senior Consultant",        weekEfforts: {} },
+    { role: "QA / Test Lead",               desc: "Quality",     loc: "Onsite",   level: "Senior Consultant",        weekEfforts: {} },
+    { role: "Infra / Cloud Engineer",       desc: "Platform",    loc: "Offshore", level: "Senior Consultant",        weekEfforts: {} },
+    { role: "AI / Analytics Consultant",    desc: "AI",          loc: "Offshore", level: "AI Consultant",            weekEfforts: {} },
   ];
 
   const RESOURCES: { role: string; desc: string; loc: string; level: string; weekEfforts: Record<number,number> }[] =
@@ -729,7 +734,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   } as any);
   pivot.dataValidations.add(`E${dropStart}:E${dropEnd}`, {
     type: "list" as any, allowBlank: true, showDropDown: false,
-    formulae: ['"Sol. Architect,Sr,Jr,PM,SDM"'],
+    formulae: ['"Solution Architect,Senior Consultant,Junior Consultant,Project Manager,Service Delivery Manager,Functional Consultant,AI Consultant"'],
   } as any);
 
   // ── TOTAL row ──
@@ -763,12 +768,12 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   const LOC_GAP = totRow + 2;
 
   const LOC_COMBOS: { loc: string; level: string }[] = [
-    { loc: "Onsite",   level: "Sol. Architect" },
-    { loc: "Onsite",   level: "Sr" },
-    { loc: "Onsite",   level: "PM" },
-    { loc: "Onsite",   level: "SDM" },
-    { loc: "Offshore", level: "Sr" },
-    { loc: "Offshore", level: "Jr" },
+    { loc: "Onsite",   level: "Solution Architect"       },
+    { loc: "Onsite",   level: "Senior Consultant"        },
+    { loc: "Onsite",   level: "Project Manager"          },
+    { loc: "Onsite",   level: "Service Delivery Manager" },
+    { loc: "Offshore", level: "Senior Consultant"        },
+    { loc: "Offshore", level: "Junior Consultant"        },
   ];
 
   // Number of year columns

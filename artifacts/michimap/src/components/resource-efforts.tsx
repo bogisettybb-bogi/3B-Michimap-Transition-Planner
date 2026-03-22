@@ -10,7 +10,7 @@ interface Phase { name: string; weeks: number; startDate: string; endDate: strin
 interface Plan  { projectStartDate: string; phases: Phase[]; totalWeeks: number }
 
 type Loc   = "Onsite" | "Offshore";
-type Level = "Sol. Architect" | "Sr" | "Jr" | "PM" | "SDM" | "SME" | "AI";
+type Level = "Solution Architect" | "Senior Consultant" | "Junior Consultant" | "Project Manager" | "Service Delivery Manager" | "Functional Consultant" | "AI Consultant";
 
 interface ResourceRow {
   id: number; role: string; location: Loc; level: Level; remarks: string;
@@ -43,7 +43,7 @@ export interface ResourceEffortsProps {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const LEVELS: Level[] = ["Sol. Architect", "Sr", "Jr", "PM", "SDM", "SME", "AI"];
+const LEVELS: Level[] = ["Solution Architect", "Senior Consultant", "Junior Consultant", "Project Manager", "Service Delivery Manager", "Functional Consultant", "AI Consultant"];
 
 const PHASE_PALETTE: Record<string, { hdr: string; text: string }> = {
   "Discover":          { hdr: "#3B82F6", text: "#1D4ED8" },
@@ -57,12 +57,12 @@ const PHASE_PALETTE: Record<string, { hdr: string; text: string }> = {
 const DEFAULT_PAL = { hdr: "#6B7280", text: "#374151" };
 
 const DEFAULT_RESOURCES: ResourceRow[] = [
-  { id: 1, role: "Solution Architect",  location: "Onsite",  level: "Sol. Architect", remarks: "" },
-  { id: 2, role: "Sr. Consultant",      location: "Onsite",  level: "Sr",             remarks: "" },
-  { id: 3, role: "Project Manager",     location: "Onsite",  level: "PM",             remarks: "" },
-  { id: 4, role: "Delivery Manager",    location: "Onsite",  level: "SDM",            remarks: "" },
-  { id: 5, role: "Sr. Consultant",      location: "Offshore", level: "Sr",            remarks: "" },
-  { id: 6, role: "Jr. Consultant",      location: "Offshore", level: "Jr",            remarks: "" },
+  { id: 1, role: "Solution Architect",  location: "Onsite",   level: "Solution Architect",      remarks: "" },
+  { id: 2, role: "Sr. Consultant",      location: "Onsite",   level: "Senior Consultant",       remarks: "" },
+  { id: 3, role: "Project Manager",     location: "Onsite",   level: "Project Manager",         remarks: "" },
+  { id: 4, role: "Delivery Manager",    location: "Onsite",   level: "Service Delivery Manager", remarks: "" },
+  { id: 5, role: "Sr. Consultant",      location: "Offshore", level: "Senior Consultant",       remarks: "" },
+  { id: 6, role: "Jr. Consultant",      location: "Offshore", level: "Junior Consultant",       remarks: "" },
 ];
 
 const DARK = "#1A1A2E";
