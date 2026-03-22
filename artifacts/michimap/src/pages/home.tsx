@@ -297,7 +297,6 @@ export default function Home() {
     setGeneratedResult(null);
     setShowEfforts(false);
     setConfirmedEfforts(false);
-    setAgreedToTerms(false);
     setHasDownloaded(false);
     setHasPlanDownloaded(false);
   };
