@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import { format, addDays } from "date-fns";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Download, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -9,88 +9,103 @@ interface Phase { name: string; weeks: number; startDate: string; endDate: strin
 interface Plan  { projectStartDate: string; phases: Phase[]; totalWeeks: number }
 
 type Loc   = "Onsite" | "Offshore";
-type Level = "Sol. Architect" | "Sr" | "Jr" | "PM" | "SDM";
+type Level = "Sol. Architect" | "Sr" | "Jr" | "PM" | "SDM" | "SME" | "AI";
 
 interface ResourceRow { id: number; role: string; location: Loc; level: Level }
-interface WeekInfo    { weekNum: number; startDate: Date; phaseName: string; phaseHdr: string; phaseLight: string; phaseText: string; year: number }
+interface WeekInfo    { weekNum: number; startDate: Date; phaseName: string; phaseHdr: string; year: number }
 
 type EffortMap = Record<number, Record<number, number>>;
 
+export interface ResourceEffortsProps {
+  plan: Plan;
+  agreedToTerms: boolean;
+  isDownloading: boolean;
+  onDownload: () => void;
+}
+
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const LEVELS: Level[] = ["Sol. Architect", "Sr", "Jr", "PM", "SDM"];
+const LEVELS: Level[] = ["Sol. Architect", "Sr", "Jr", "PM", "SDM", "SME", "AI"];
 
-const PHASE_PALETTE: Record<string, { hdr: string; light: string; text: string }> = {
-  "Discover":          { hdr: "#3B82F6", light: "#EFF6FF", text: "#1D4ED8" },
-  "Prepare":           { hdr: "#16A34A", light: "#F0FDF4", text: "#15803D" },
-  "Explore":           { hdr: "#EA580C", light: "#FFF7ED", text: "#C2410C" },
-  "Realize - Develop": { hdr: "#CA8A04", light: "#FEFCE8", text: "#92400E" },
-  "Realize - UAT":     { hdr: "#DC2626", light: "#FEF2F2", text: "#B91C1C" },
-  "Deploy":            { hdr: "#0D9488", light: "#F0FDFA", text: "#0F766E" },
-  "Run":               { hdr: "#7C3AED", light: "#FAF5FF", text: "#6D28D9" },
+const PHASE_PALETTE: Record<string, { hdr: string; text: string }> = {
+  "Discover":          { hdr: "#3B82F6", text: "#1D4ED8" },
+  "Prepare":           { hdr: "#16A34A", text: "#15803D" },
+  "Explore":           { hdr: "#EA580C", text: "#C2410C" },
+  "Realize - Develop": { hdr: "#CA8A04", text: "#92400E" },
+  "Realize - UAT":     { hdr: "#DC2626", text: "#B91C1C" },
+  "Deploy":            { hdr: "#0D9488", text: "#0F766E" },
+  "Run":               { hdr: "#7C3AED", text: "#6D28D9" },
 };
-const DEFAULT_PALETTE = { hdr: "#6B7280", light: "#F9FAFB", text: "#374151" };
+const DEFAULT_PAL = { hdr: "#6B7280", text: "#374151" };
 
 const DEFAULT_RESOURCES: ResourceRow[] = [
   { id: 1, role: "Solution Architect",  location: "Onsite",  level: "Sol. Architect" },
-  { id: 2, role: "Sr. Consultant",      location: "Onsite",  level: "Sr" },
-  { id: 3, role: "Project Manager",     location: "Onsite",  level: "PM" },
-  { id: 4, role: "Delivery Manager",    location: "Onsite",  level: "SDM" },
-  { id: 5, role: "Sr. Consultant",      location: "Offshore", level: "Sr" },
-  { id: 6, role: "Jr. Consultant",      location: "Offshore", level: "Jr" },
+  { id: 2, role: "Sr. Consultant",      location: "Onsite",  level: "Sr"             },
+  { id: 3, role: "Project Manager",     location: "Onsite",  level: "PM"             },
+  { id: 4, role: "Delivery Manager",    location: "Onsite",  level: "SDM"            },
+  { id: 5, role: "Sr. Consultant",      location: "Offshore", level: "Sr"            },
+  { id: 6, role: "Jr. Consultant",      location: "Offshore", level: "Jr"            },
 ];
 
 const DARK = "#1A1A2E";
 const GOLD = "#E9A944";
 
+// Column widths (px)
+const ROLE_W = 124;
+const LOC_W  = 78;
+const LEV_W  = 104;
+const WK_W   = 46;
+const TOT_W  = 50;
+const ACT_W  = 44;   // action column (+ / trash)
+
 // ── Main component ─────────────────────────────────────────────────────────
 
-export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
+export function ResourceEffortsPanel({ plan, agreedToTerms, isDownloading, onDownload }: ResourceEffortsProps) {
   const [resources, setResources] = useState<ResourceRow[]>(DEFAULT_RESOURCES);
   const [efforts,   setEfforts  ] = useState<EffortMap>({});
   const [locFilter, setLocFilter] = useState<"All" | "Onsite" | "Offshore">("All");
+  const [confirmed, setConfirmed] = useState(false);
   const nextId = useRef(DEFAULT_RESOURCES.length + 1);
 
-  // Build ordered week list from plan phases
+  // ── Week list ────────────────────────────────────────────────────────────
+
   const weeks = useMemo<WeekInfo[]>(() => {
     const start = new Date(plan.projectStartDate + "T12:00:00");
     const out: WeekInfo[] = [];
     let offset = 0;
     for (const ph of plan.phases) {
-      const pal = PHASE_PALETTE[ph.name] || DEFAULT_PALETTE;
+      const pal = PHASE_PALETTE[ph.name] || DEFAULT_PAL;
       for (let pw = 0; pw < ph.weeks; pw++) {
         const wn = offset + pw + 1;
         const sd = addDays(start, (wn - 1) * 7);
-        out.push({ weekNum: wn, startDate: sd, phaseName: ph.name,
-                   phaseHdr: pal.hdr, phaseLight: pal.light, phaseText: pal.text,
-                   year: sd.getFullYear() });
+        out.push({ weekNum: wn, startDate: sd, phaseName: ph.name, phaseHdr: pal.hdr, year: sd.getFullYear() });
       }
       offset += ph.weeks;
     }
     return out;
   }, [plan]);
 
-  // Collapsed phase groups for header colspan
+  // Grouped phase headers (for colspan)
   const phaseGroups = useMemo(() => {
-    const groups: { name: string; hdr: string; count: number }[] = [];
+    const gs: { name: string; hdr: string; count: number }[] = [];
     for (const w of weeks) {
-      const last = groups[groups.length - 1];
-      if (last && last.name === w.phaseName) { last.count++; }
-      else groups.push({ name: w.phaseName, hdr: w.phaseHdr, count: 1 });
+      const last = gs[gs.length - 1];
+      if (last && last.name === w.phaseName) last.count++;
+      else gs.push({ name: w.phaseName, hdr: w.phaseHdr, count: 1 });
     }
-    return groups;
+    return gs;
   }, [weeks]);
 
-  // Helpers
-  const setEffort = useCallback((rowId: number, weekNum: number, val: number) => {
-    setEfforts(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [weekNum]: val } }));
-  }, []);
+  // ── Row operations ───────────────────────────────────────────────────────
 
-  const getRowTotal = (id: number) =>
-    Object.values(efforts[id] || {}).reduce((s, v) => s + v, 0);
-
-  const addRow = () => {
-    setResources(prev => [...prev, { id: nextId.current++, role: "Consultant", location: "Onsite", level: "Sr" }]);
+  const insertRowAfter = (afterId: number) => {
+    setResources(prev => {
+      const idx = prev.findIndex(r => r.id === afterId);
+      const newRow: ResourceRow = { id: nextId.current++, role: "Consultant", location: "Onsite", level: "Sr" };
+      const next = [...prev];
+      next.splice(idx + 1, 0, newRow);
+      return next;
+    });
   };
 
   const removeRow = (id: number) => {
@@ -101,7 +116,16 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
   const updateRes = (id: number, patch: Partial<ResourceRow>) =>
     setResources(prev => prev.map(r => r.id === id ? { ...r, ...patch } : r));
 
-  // Filtered rows for pivot
+  const setEffort = useCallback((rowId: number, weekNum: number, val: number) => {
+    setEfforts(prev => ({ ...prev, [rowId]: { ...(prev[rowId] || {}), [weekNum]: val } }));
+    setConfirmed(false); // reset confirmation when data changes
+  }, []);
+
+  const getRowTotal = (id: number) =>
+    Object.values(efforts[id] || {}).reduce((s, v) => s + v, 0);
+
+  // ── Pivot rows ───────────────────────────────────────────────────────────
+
   const pivotRows = useMemo(
     () => locFilter === "All" ? resources : resources.filter(r => r.location === locFilter),
     [resources, locFilter]
@@ -118,13 +142,13 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
       const re = efforts[res.id] || {};
       for (const w of weeks) {
         const d = re[w.weekNum] || 0;
-        if (d && p[w.phaseName]) p[w.phaseName][res.level] += d;
+        if (d && p[w.phaseName]) p[w.phaseName][res.level] = (p[w.phaseName][res.level] || 0) + d;
       }
     }
     return p;
   }, [pivotRows, efforts, weeks, plan.phases]);
 
-  // Pivot 2: Year × Level
+  // Pivot 2: Year × Level (years derived from plan span)
   const { yearPivot, years } = useMemo(() => {
     const ys = [...new Set(weeks.map(w => w.year))].sort();
     const yp: Record<number, Record<Level, number>> = {};
@@ -133,52 +157,45 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
       const re = efforts[res.id] || {};
       for (const w of weeks) {
         const d = re[w.weekNum] || 0;
-        if (d) yp[w.year][res.level] += d;
+        if (d) yp[w.year][res.level] = (yp[w.year][res.level] || 0) + d;
       }
     }
     return { yearPivot: yp, years: ys };
   }, [pivotRows, efforts, weeks]);
 
-  const phaseTotal  = (ph: string)  => LEVELS.reduce((s, l) => s + (phasePivot[ph]?.[l] || 0), 0);
-  const levelPhTot  = (lv: Level)   => plan.phases.reduce((s, p) => s + (phasePivot[p.name]?.[lv] || 0), 0);
-  const grandTotal  = ()            => LEVELS.reduce((s, l) => s + levelPhTot(l), 0);
-  const yearLvTot   = (y: number)   => LEVELS.reduce((s, l) => s + (yearPivot[y]?.[l] || 0), 0);
-  const lvAllYrTot  = (lv: Level)   => years.reduce((s, y) => s + (yearPivot[y]?.[lv] || 0), 0);
-  const grandYrTot  = ()            => years.reduce((s, y) => s + yearLvTot(y), 0);
+  // Aggregation helpers
+  const phaseTotal   = (ph: string) => LEVELS.reduce((s, l) => s + (phasePivot[ph]?.[l] || 0), 0);
+  const levelPhTot   = (lv: Level)  => plan.phases.reduce((s, p) => s + (phasePivot[p.name]?.[lv] || 0), 0);
+  const grandTotal   = ()           => LEVELS.reduce((s, l) => s + levelPhTot(l), 0);
+  const yearLvTot    = (y: number)  => LEVELS.reduce((s, l) => s + (yearPivot[y]?.[l] || 0), 0);
+  const lvAllYrTot   = (lv: Level)  => years.reduce((s, y) => s + (yearPivot[y]?.[lv] || 0), 0);
+  const grandYrTot   = ()           => years.reduce((s, y) => s + yearLvTot(y), 0);
 
-  // Fixed column widths
-  const ROLE_W = 120;
-  const LOC_W  = 80;
-  const LEV_W  = 100;
-  const WK_W   = 46;
-  const TOT_W  = 52;
+  const hasEfforts = grandTotal() > 0;
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-5">
 
-      {/* ── Gantt Table ─────────────────────────────────────────────── */}
+      {/* ── Gantt ──────────────────────────────────────────────────────── */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-card">
-          <div>
-            <p className="font-bold text-sm text-foreground">Resource Effort Gantt</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Enter days (0–5) per week. Phase bands are colour-coded. Pivots update live.
-            </p>
-          </div>
-          <button onClick={addRow}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors">
-            <Plus className="w-3.5 h-3.5" /> Add Row
-          </button>
+        <div className="px-5 py-3 border-b border-border bg-card">
+          <p className="font-bold text-sm text-foreground">Resource Effort Gantt</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Enter days (0–5) per week. Use <strong>+</strong> to insert a row below. Pivots update live.
+          </p>
         </div>
 
         <div className="overflow-x-auto">
           <table className="border-collapse"
-            style={{ minWidth: `${ROLE_W + LOC_W + LEV_W + weeks.length * WK_W + TOT_W}px` }}>
+            style={{ minWidth: `${ROLE_W + LOC_W + LEV_W + weeks.length * WK_W + TOT_W + ACT_W}px` }}>
             <thead>
-              {/* Row 1 — phase bands */}
+              {/* Phase band row */}
               <tr>
-                <th colSpan={3} style={{ width: ROLE_W + LOC_W + LEV_W, minWidth: ROLE_W + LOC_W + LEV_W,
-                    position: "sticky", left: 0, zIndex: 30, backgroundColor: DARK, color: "#fff" }}
+                <th colSpan={3}
+                  style={{ width: ROLE_W + LOC_W + LEV_W, minWidth: ROLE_W + LOC_W + LEV_W,
+                           position: "sticky", left: 0, zIndex: 30, backgroundColor: DARK, color: "#fff" }}
                   className="text-left px-3 py-2 text-[11px] font-bold border-r-2 border-[#333]">
                   Resource
                 </th>
@@ -189,12 +206,11 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
                     {g.name}
                   </th>
                 ))}
-                <th style={{ width: TOT_W, backgroundColor: DARK, color: "#fff" }}
-                  className="text-center px-2 py-2 text-[11px] font-bold">
-                  Total
-                </th>
+                <th colSpan={2} style={{ backgroundColor: DARK, color: "#fff" }}
+                  className="text-center px-1 py-2 text-[11px] font-bold" />
               </tr>
-              {/* Row 2 — column headers */}
+
+              {/* Column label row */}
               <tr>
                 <th style={{ width: ROLE_W, minWidth: ROLE_W, position: "sticky", left: 0, zIndex: 30, backgroundColor: DARK, color: "#fff" }}
                   className="text-left px-3 py-1.5 text-[10px] font-semibold border-r border-[#333]">Role</th>
@@ -207,11 +223,15 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
                     style={{ width: WK_W, minWidth: WK_W, backgroundColor: `${w.phaseHdr}28`, color: "#374151" }}
                     className="text-center py-1 border-r border-border">
                     <div className="text-[10px] font-bold leading-tight">W{w.weekNum}</div>
-                    <div className="text-[8px] text-muted-foreground leading-tight">{format(w.startDate, "MMM d")}</div>
+                    <div className="text-[8px] text-muted-foreground leading-tight">
+                      {format(w.startDate, "MMM yy")}
+                    </div>
                   </th>
                 ))}
                 <th style={{ width: TOT_W, backgroundColor: DARK, color: "#fff" }}
-                  className="text-center px-2 py-1.5 text-[10px] font-semibold">Days</th>
+                  className="text-center px-1 py-1.5 text-[10px] font-semibold">Days</th>
+                <th style={{ width: ACT_W, backgroundColor: DARK, color: "#fff" }}
+                  className="text-center px-1 py-1.5 text-[10px] font-semibold" />
               </tr>
             </thead>
 
@@ -238,22 +258,16 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
                         <option>Offshore</option>
                       </select>
                     </td>
-                    {/* Level + delete */}
+                    {/* Level */}
                     <td style={{ width: LEV_W, minWidth: LEV_W, position: "sticky", left: ROLE_W + LOC_W, zIndex: 10, backgroundColor: rowBg }}
-                      className="border-r-2 border-[#D1D5DB] px-1 py-1">
-                      <div className="flex items-center gap-1">
-                        <select value={res.level}
-                          onChange={e => updateRes(res.id, { level: e.target.value as Level })}
-                          className="flex-1 bg-transparent text-[10px] text-foreground focus:outline-none cursor-pointer appearance-none">
-                          {LEVELS.map(l => <option key={l}>{l}</option>)}
-                        </select>
-                        <button onClick={() => removeRow(res.id)}
-                          className="text-muted-foreground hover:text-destructive transition-colors shrink-0 p-0.5">
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
+                      className="border-r-2 border-[#D1D5DB] px-1 py-1 text-center">
+                      <select value={res.level}
+                        onChange={e => updateRes(res.id, { level: e.target.value as Level })}
+                        className="w-full bg-transparent text-[10px] text-foreground focus:outline-none cursor-pointer appearance-none text-center">
+                        {LEVELS.map(l => <option key={l}>{l}</option>)}
+                      </select>
                     </td>
-                    {/* Week cells */}
+                    {/* Week effort cells */}
                     {weeks.map(w => {
                       const val = (efforts[res.id] || {})[w.weekNum] || 0;
                       return (
@@ -272,8 +286,22 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
                     })}
                     {/* Total */}
                     <td style={{ width: TOT_W, color: total > 0 ? "#15803D" : "#9CA3AF" }}
-                      className="text-center px-2 py-1 font-bold text-xs tabular-nums">
+                      className="text-center px-1 py-1 font-bold text-xs tabular-nums border-l border-border">
                       {total || "-"}
+                    </td>
+                    {/* Actions: insert below + delete */}
+                    <td style={{ width: ACT_W }}
+                      className="text-center px-1 py-1 border-l border-border">
+                      <div className="flex items-center justify-center gap-1">
+                        <button title="Insert row below" onClick={() => insertRowAfter(res.id)}
+                          className="w-5 h-5 flex items-center justify-center rounded bg-primary/10 text-primary hover:bg-primary/25 transition-colors text-[10px] font-bold">
+                          <Plus className="w-3 h-3" />
+                        </button>
+                        <button title="Delete row" onClick={() => removeRow(res.id)}
+                          className="w-5 h-5 flex items-center justify-center rounded bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -283,7 +311,7 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
         </div>
       </div>
 
-      {/* ── Pivot section ───────────────────────────────────────────── */}
+      {/* ── Pivot section ──────────────────────────────────────────────── */}
       <div className="space-y-4">
         {/* Location filter */}
         <div className="flex items-center gap-3">
@@ -312,7 +340,7 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="bg-muted/40">
-                    <th className="text-left px-3 py-2 font-bold text-foreground border-b border-border">Phase</th>
+                    <th className="text-left px-3 py-2 font-bold text-foreground border-b border-border whitespace-nowrap">Phase</th>
                     {LEVELS.map(l => (
                       <th key={l} className="text-center px-2 py-2 font-bold text-foreground border-b border-border whitespace-nowrap">{l}</th>
                     ))}
@@ -323,13 +351,13 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
                   {plan.phases.map((ph, pi) => {
                     const row = phasePivot[ph.name] || {};
                     const tot = phaseTotal(ph.name);
-                    const pal = PHASE_PALETTE[ph.name] || DEFAULT_PALETTE;
+                    const pal = PHASE_PALETTE[ph.name] || DEFAULT_PAL;
                     return (
                       <tr key={pi} style={{ backgroundColor: pi % 2 === 0 ? "#fff" : "#F9FAFB" }}>
-                        <td className="px-3 py-2 font-semibold" style={{ color: pal.text }}>{ph.name}</td>
+                        <td className="px-3 py-2 font-semibold whitespace-nowrap" style={{ color: pal.text }}>{ph.name}</td>
                         {LEVELS.map(l => (
                           <td key={l} className="text-center px-2 py-2 tabular-nums"
-                            style={{ color: (row[l] || 0) > 0 ? "#111827" : "#9CA3AF" }}>
+                            style={{ color: (row[l] || 0) > 0 ? "#111827" : "#D1D5DB" }}>
                             {row[l] || 0}
                           </td>
                         ))}
@@ -339,7 +367,7 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
                     );
                   })}
                   <tr style={{ backgroundColor: DARK, color: "#fff" }}>
-                    <td className="px-3 py-2 font-bold text-[11px]">TOTAL</td>
+                    <td className="px-3 py-2 font-bold text-[11px] whitespace-nowrap">TOTAL</td>
                     {LEVELS.map(l => (
                       <td key={l} className="text-center px-2 py-2 font-bold tabular-nums">{levelPhTot(l)}</td>
                     ))}
@@ -354,6 +382,7 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
           <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="px-4 py-2.5" style={{ backgroundColor: DARK }}>
               <p className="text-xs font-bold text-white">Effort by Year &amp; Level (days)</p>
+              <p className="text-[10px] text-white/60 mt-0.5">Years shown based on project duration</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs border-collapse">
@@ -374,7 +403,7 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
                         <td className="px-3 py-2 font-semibold text-foreground">{lv}</td>
                         {years.map(y => (
                           <td key={y} className="text-center px-2 py-2 tabular-nums"
-                            style={{ color: (yearPivot[y]?.[lv] || 0) > 0 ? "#111827" : "#9CA3AF" }}>
+                            style={{ color: (yearPivot[y]?.[lv] || 0) > 0 ? "#111827" : "#D1D5DB" }}>
                             {yearPivot[y]?.[lv] || 0}
                           </td>
                         ))}
@@ -397,6 +426,66 @@ export function ResourceEffortsPanel({ plan }: { plan: Plan }) {
 
         </div>
       </div>
+
+      {/* ── Confirm + Download ─────────────────────────────────────────── */}
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+        {!confirmed ? (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              When you are done filling efforts, confirm to proceed to download.
+            </p>
+            <button
+              disabled={!hasEfforts}
+              onClick={() => setConfirmed(true)}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all",
+                hasEfforts
+                  ? "bg-primary text-primary-foreground shadow hover:opacity-90"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              )}>
+              <CheckCircle2 className="w-4 h-4" />
+              Confirm Resource Efforts
+            </button>
+            {!hasEfforts && (
+              <p className="text-center text-[11px] text-muted-foreground">Fill in at least one effort cell to enable confirmation.</p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-green-700">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <p className="text-xs font-semibold">
+                Resource efforts confirmed — <span className="font-bold">{grandTotal()} days</span> total across {plan.phases.length} phases.
+              </p>
+              <button onClick={() => setConfirmed(false)}
+                className="ml-auto text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors shrink-0">
+                Edit
+              </button>
+            </div>
+
+            {!agreedToTerms && (
+              <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                Please agree to the Disclaimers &amp; Terms of Use in the form above before downloading.
+              </p>
+            )}
+
+            <button
+              onClick={onDownload}
+              disabled={!agreedToTerms || isDownloading}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all shadow",
+                agreedToTerms && !isDownloading
+                  ? "bg-green-600 text-white hover:bg-green-700"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              )}>
+              {isDownloading
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing Excel...</>
+                : <><Download className="w-4 h-4" /> Download Excel Plan</>}
+            </button>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

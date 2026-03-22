@@ -737,7 +737,12 @@ export default function Home() {
                               <X className="w-3.5 h-3.5" /> Hide
                             </button>
                           </div>
-                          <ResourceEffortsPanel plan={generatedResult.plan} />
+                          <ResourceEffortsPanel
+                            plan={generatedResult.plan}
+                            agreedToTerms={agreedToTerms}
+                            isDownloading={isDownloading}
+                            onDownload={handleDownload}
+                          />
                         </motion.div>
                       )}
                     </AnimatePresence>
