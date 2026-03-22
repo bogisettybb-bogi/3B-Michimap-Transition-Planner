@@ -39,9 +39,6 @@ export interface ResourceRowExport {
 
 export interface ResourceEffortsProps {
   plan: Plan;
-  agreedToTerms: boolean;
-  setAgreedToTerms: (v: boolean) => void;
-  onOpenDisclaimers: () => void;
   isDownloading: boolean;
   onDownload: () => void;
   hasDownloaded: boolean;
@@ -97,8 +94,7 @@ const round1 = (v: number) => Math.round(v * 10) / 10;
 // ── Main component ─────────────────────────────────────────────────────────
 
 export function ResourceEffortsPanel({
-  plan, agreedToTerms, setAgreedToTerms, onOpenDisclaimers,
-  isDownloading, onDownload, hasDownloaded, linkedInShareUrl,
+  plan, isDownloading, onDownload, hasDownloaded, linkedInShareUrl,
   onConfirm, onUnconfirm, onDataChange,
 }: ResourceEffortsProps) {
   const [resources,      setResources     ] = useState<ResourceRow[]>(DEFAULT_RESOURCES);
@@ -658,30 +654,13 @@ export function ResourceEffortsPanel({
               </button>
             </div>
 
-            {/* Disclaimer checkbox */}
-            <label className="flex items-start gap-2.5 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={agreedToTerms}
-                onChange={e => setAgreedToTerms(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer"
-              />
-              <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
-                I agree to the{" "}
-                <button type="button" onClick={onOpenDisclaimers} className="text-primary font-semibold hover:underline">
-                  Disclaimers &amp; Terms of Use
-                </button>
-                {" "}- this plan is for internal pre-sales use only.
-              </span>
-            </label>
-
             {/* Download button */}
             <button
               onClick={onDownload}
-              disabled={!agreedToTerms || isDownloading}
+              disabled={isDownloading}
               className={cn(
                 "w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all shadow",
-                agreedToTerms && !isDownloading
+                !isDownloading
                   ? "bg-green-600 text-white hover:bg-green-700"
                   : "bg-muted text-muted-foreground cursor-not-allowed"
               )}>
