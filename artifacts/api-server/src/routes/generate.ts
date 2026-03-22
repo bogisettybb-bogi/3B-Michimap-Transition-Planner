@@ -41,42 +41,41 @@ const ACTIVITIES: Record<string, Record<string, any[]>> = {
       { category: "Demo", activity: "S/4HANA Demo and Value Discovery", description: "Conduct S/4HANA best practices demo to key stakeholders to validate scope and build buy-in", workstream: "Project Management", responsible: "SAP Consultant", accountable: "Business Sponsor", consulted: "Business Leads", informed: "Stakeholders", milestone: false },
     ],
     prepare: [
-      { category: "Governance", activity: "Project Governance Structure and RACI", description: "Establish project governance structure, define RACI matrix, and finalize detailed project plan with phase-wise milestones", workstream: "Project Management", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Stream Leads", informed: "Steering Committee", milestone: true },
-      { category: "Infrastructure", activity: "System Landscape Provisioning", description: "Provision S/4HANA system landscape (DEV, QAS, PRD) and configure initial transport routes", workstream: "Technical", responsible: "Basis / Platform", accountable: "Technical Lead", consulted: "SAP Consultant", informed: "Project Manager", milestone: false },
-      { category: "Infrastructure", activity: "Initial System Configuration", description: "Configure initial system settings including client setup, transport management system (TMS), and user access roles", workstream: "Technical", responsible: "Basis", accountable: "Technical Lead", consulted: "IT Security", informed: "Project Manager", milestone: false },
-      { category: "Data Management", activity: "Data Migration Approach Definition", description: "Define data migration approach including object scoping, legacy system identification, and migration sequencing", workstream: "Data Management", responsible: "Technical Consultant", accountable: "Project Manager", consulted: "Business SMEs", informed: "Steering Committee", milestone: false },
-      { category: "Integration", activity: "Integration Architecture Definition", description: "Define integration architecture including middleware selection and interface communication patterns for all upstream and downstream systems", workstream: "Technical", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
+      { category: "Governance", activity: "Establish governance model, define RACI, and finalize detailed project plan with milestones and delivery model", description: "Approved execution plan", workstream: "Project Management", effortPct: "4%", notes: "Risk: unclear governance delays decisions", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Stream Leads", informed: "Steering Committee", milestone: true },
+      { category: "Infrastructure", activity: "Provision S/4HANA system landscape (DEV, QAS, PRD) and configure transport routes using TMS", description: "Landscape ready", workstream: "Technical", effortPct: "4%", notes: "Tool: STMS", responsible: "Basis", accountable: "Technical Lead", consulted: "SAP Consultant", informed: "Project Manager", milestone: false },
+      { category: "Infrastructure", activity: "Configure client settings, user roles, authorizations, and transport layers", description: "System baseline", workstream: "Technical", effortPct: "3%", notes: "TCode: SCC4, SU01, PFCG", responsible: "Basis", accountable: "Technical Lead", consulted: "IT Security", informed: "Project Manager", milestone: false },
+      { category: "Data Management", activity: "Define data migration approach including object scoping, sequencing, and legacy system connectivity", description: "Migration strategy", workstream: "Data Management", effortPct: "4%", notes: "Tool: Migration Cockpit", responsible: "Technical Consultant", accountable: "Project Manager", consulted: "Business SMEs", informed: "Steering Committee", milestone: false },
+      { category: "Integration", activity: "Define integration architecture including middleware selection and communication protocols", description: "Integration baseline", workstream: "Technical", effortPct: "3%", notes: "Tool: SAP Integration Suite", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
     ],
     explore: [
-      { category: "Fit-to-Standard", activity: "Fit-to-Standard Workshops", description: "Conduct fit-to-standard workshops in DEV system using SAP Best Practices and document delta requirements for all process areas", workstream: "Cross-Stream", responsible: "Functional Consultant", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Configuration", activity: "Baseline Configuration and Validation", description: "Configure baseline business processes in DEV system to validate standard process fitment against business requirements", workstream: "Cross-Stream", responsible: "Functional Consultant", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Design", activity: "Functional and Technical Design Documents", description: "Finalize functional and technical design documents including WRICEF object identification and sign-off", workstream: "Cross-Stream", responsible: "Functional + Technical", accountable: "Solution Architect", consulted: "Business SMEs", informed: "Project Manager", milestone: true },
-      { category: "Data Management", activity: "Data Migration Object and Mapping Design", description: "Define data migration objects, field mappings, and transformation rules based on source-to-target mapping from legacy systems", workstream: "Data Management", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Integration", activity: "Integration Interface Design Specifications", description: "Define integration interfaces, APIs, and data exchange formats for all upstream and downstream systems", workstream: "Technical", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
+      { category: "Fit-to-Standard", activity: "Conduct fit-to-standard workshops in DEV system using SAP Best Practices and capture delta requirements", description: "Gap list", workstream: "Cross-Stream", effortPct: "6%", notes: "Accelerator: SAP Best Practices", responsible: "Functional Consultant", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Configuration", activity: "Configure baseline business processes in DEV system to validate standard process fitment", description: "Validated flows", workstream: "Cross-Stream", effortPct: "5%", notes: "Risk: over-customization", responsible: "Functional Consultant", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Design", activity: "Finalize functional and technical design including WRICEF object identification and approvals", description: "Signed-off design", workstream: "Cross-Stream", effortPct: "5%", notes: "Risk: scope creep", responsible: "Functional + Technical", accountable: "Solution Architect", consulted: "Business SMEs", informed: "Project Manager", milestone: true },
+      { category: "Data Management", activity: "Define data migration objects, mappings, and transformation logic", description: "Migration repository", workstream: "Data Management", effortPct: "4%", notes: "", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Sign-off", activity: "Conduct design authority reviews and obtain formal customer sign-off on solution scope", description: "Design baseline locked", workstream: "Project Management", effortPct: "5%", notes: "Risk: sign-off delays", responsible: "Customer + PM", accountable: "Business Sponsor", consulted: "All Stream Leads", informed: "Steering Committee", milestone: true },
     ],
     realizeDevelop: [
-      { category: "Configuration", activity: "Business Process Configuration", description: "Perform detailed configuration of business processes in DEV system using IMG and transport all configuration changes to QAS", workstream: "Cross-Stream", responsible: "Functional Consultant", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Development", activity: "WRICEF Object Development", description: "Develop WRICEF objects (Reports, Interfaces, Conversions, Enhancements, Forms, Workflows) in DEV and transport to QAS", workstream: "Technical", responsible: "Technical Consultant", accountable: "Technical Lead", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
-      { category: "Data Management", activity: "Data Migration Mock Cycles", description: "Execute data migration mock cycles using Migration Cockpit from legacy systems into QAS environment and validate data quality", workstream: "Data Management", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Integration", activity: "Integration Interface Build and Validation", description: "Build and deploy integration interfaces using middleware and validate message flows across all connected systems", workstream: "Technical", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
-      { category: "Testing", activity: "Unit Testing and System Integration Testing", description: "Execute unit testing in DEV and system integration testing (SIT) in QAS environment across all business process streams", workstream: "Quality Assurance", responsible: "Functional + Technical", accountable: "QA Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Configuration", activity: "Configure business processes in DEV using IMG and transport configurations to QAS", description: "Configured solution", workstream: "Cross-Stream", effortPct: "6%", notes: "TCode: SPRO", responsible: "Functional Consultant", accountable: "Stream Leads", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Development", activity: "Develop WRICEF objects in DEV and transport to QAS following transport management procedures", description: "Custom developments", workstream: "Technical", effortPct: "7%", notes: "", responsible: "Technical Consultant", accountable: "Technical Lead", consulted: "Functional Consultants", informed: "Project Manager", milestone: false },
+      { category: "Data Management", activity: "Execute data migration mock cycles into QAS using Migration Cockpit and validate results", description: "Validated data", workstream: "Data Management", effortPct: "6%", notes: "", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Integration", activity: "Build and validate integration interfaces using middleware and APIs across systems", description: "Integrated system", workstream: "Technical", effortPct: "5%", notes: "", responsible: "Integration Consultant", accountable: "Technical Lead", consulted: "External System Owners", informed: "Project Manager", milestone: false },
+      { category: "Testing", activity: "Execute unit testing in DEV and SIT in QAS including end-to-end validation scenarios", description: "Tested solution", workstream: "Quality Assurance", effortPct: "5%", notes: "", responsible: "All", accountable: "QA Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
     ],
     realizeUat: [
-      { category: "UAT", activity: "User Acceptance Testing", description: "Support user acceptance testing (UAT) in QAS system and resolve identified defects to achieve business sign-off", workstream: "Quality Assurance", responsible: "Functional Consultant", accountable: "Business Sponsor", consulted: "Business Users", informed: "Steering Committee", milestone: true },
-      { category: "Cutover", activity: "Cutover Planning and Rehearsal", description: "Finalize cutover plan, execute cutover rehearsals and validate go/no-go criteria with all teams", workstream: "Project Management", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Teams", informed: "Board", milestone: false },
-      { category: "Training", activity: "End User Training Delivery", description: "Deliver role-based end-user training and confirm system access readiness for production go-live", workstream: "Change Management", responsible: "Functional Consultant", accountable: "Change Manager", consulted: "Department Heads", informed: "All Users", milestone: false },
+      { category: "UAT", activity: "Execute UAT cycles in QAS, manage defect resolution, and obtain formal customer sign-off", description: "UAT sign-off", workstream: "Quality Assurance", effortPct: "6%", notes: "Critical dependency", responsible: "Customer + Functional", accountable: "Business Sponsor", consulted: "Business Users", informed: "Steering Committee", milestone: true },
+      { category: "Cutover", activity: "Finalize cutover plan, rehearse cutover execution, and validate go/no-go criteria with all teams", description: "Cutover readiness", workstream: "Project Management", effortPct: "2%", notes: "", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Teams", informed: "Board", milestone: false },
+      { category: "Training", activity: "Deliver end-user training and confirm system access readiness for production go-live", description: "Users trained", workstream: "Change Management", effortPct: "2%", notes: "", responsible: "Functional Consultant", accountable: "Change Manager", consulted: "Department Heads", informed: "All Users", milestone: false },
     ],
     deploy: [
-      { category: "Cutover", activity: "Cutover and Transport Execution", description: "Execute cutover plan including transport of all approved objects from QAS to PRD using a controlled release strategy", workstream: "Project Management", responsible: "Project Manager + Basis", accountable: "Project Manager", consulted: "All Teams", informed: "Organization", milestone: false },
-      { category: "Data Management", activity: "Final Data Migration to Production", description: "Perform final data migration from legacy systems into PRD environment ensuring full data reconciliation and sign-off", workstream: "Data Management", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Change Management", activity: "End-User Training and System Access", description: "Conduct final end-user training and provide system access in PRD environment ahead of go-live", workstream: "Change Management", responsible: "Functional Consultant", accountable: "Change Manager", consulted: "Department Heads", informed: "All Users", milestone: false },
-      { category: "Go-Live", activity: "Go-Live and Hypercare Activation", description: "Execute go-live and provide hypercare support with real-time issue resolution in PRD to ensure stable production system", workstream: "Cross-Stream", responsible: "All", accountable: "Project Manager", consulted: "Business Sponsor", informed: "Organization", milestone: true },
+      { category: "Cutover", activity: "Execute cutover plan including transport movement from QAS to PRD and production readiness validation", description: "Go-live readiness", workstream: "Project Management", effortPct: "4%", notes: "", responsible: "PM + Basis", accountable: "Project Manager", consulted: "All Teams", informed: "Organization", milestone: false },
+      { category: "Data Management", activity: "Perform final data migration into PRD system and execute reconciliation checks", description: "Production data ready", workstream: "Data Management", effortPct: "4%", notes: "Risk: data inconsistency", responsible: "Technical Consultant", accountable: "Data Lead", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
+      { category: "Validation", activity: "Conduct go-live readiness assessment including business, integration, and technical validation", description: "Go-live approval", workstream: "Cross-Stream", effortPct: "3%", notes: "", responsible: "PM + All", accountable: "Project Manager", consulted: "Business Sponsor", informed: "Steering Committee", milestone: false },
+      { category: "Go-Live", activity: "Execute go-live with command center support and hypercare stabilization in PRD", description: "Stable production", workstream: "Cross-Stream", effortPct: "3%", notes: "Accelerator: war room", responsible: "All", accountable: "Project Manager", consulted: "Business Sponsor", informed: "Organization", milestone: true },
     ],
     run: [
-      { category: "Support", activity: "System Performance and Incident Monitoring", description: "Monitor system performance, background jobs, and interfaces in PRD environment and resolve incidents promptly", workstream: "Support", responsible: "Basis / Support", accountable: "IT Manager", consulted: "Business Users", informed: "Project Manager", milestone: false },
-      { category: "Optimization", activity: "Continuous Improvements and Enhancements", description: "Perform continuous improvements including minor enhancements and transport changes across the system landscape", workstream: "Cross-Stream", responsible: "Functional + Technical", accountable: "IT Manager", consulted: "Business SMEs", informed: "Project Manager", milestone: false },
-      { category: "Knowledge Transfer", activity: "Knowledge Transfer to Internal Team", description: "Complete knowledge transfer documentation and formal handover to BAU support team", workstream: "Change Management", responsible: "Consultants", accountable: "Internal IT Lead", consulted: "Support Team", informed: "Management", milestone: false },
-      { category: "Closure", activity: "Project Closure and Lessons Learned", description: "Formal project closure, benefits realization review and lessons learned documentation", workstream: "Project Management", responsible: "Project Manager", accountable: "Business Sponsor", consulted: "All Teams", informed: "Board", milestone: true },
+      { category: "Support", activity: "Establish AMS support model including SLA definition and ticketing processes", description: "Support model", workstream: "Support", effortPct: "3%", notes: "Tool: ServiceNow", responsible: "PM + Customer", accountable: "IT Manager", consulted: "Business Users", informed: "Project Manager", milestone: false },
+      { category: "Knowledge Transfer", activity: "Execute knowledge transfer to AMS team including functional, technical, and operational areas", description: "KT completed", workstream: "Change Management", effortPct: "2%", notes: "", responsible: "Functional + Technical", accountable: "Internal IT Lead", consulted: "Support Team", informed: "Management", milestone: false },
+      { category: "Optimization", activity: "Transition system ownership to AMS and execute continuous improvements and support", description: "Stable operations", workstream: "Cross-Stream", effortPct: "2%", notes: "", responsible: "Support", accountable: "IT Manager", consulted: "Business SMEs", informed: "Project Manager", milestone: true },
     ],
   },
   brownfield: {
@@ -361,15 +360,17 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   // ────────────────────────────────────────────────
   const gantt = wb.addWorksheet("Project Plan", {
     pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 },
-    views: [{ state: "frozen", xSplit: 3, ySplit: 5 }],
+    views: [{ state: "frozen", xSplit: 5, ySplit: 5 }],
   });
 
-  const FIXED = 3; // Phase | Activity | Responsible
+  const FIXED = 5; // Phase | Activity | Responsible | Effort % | Notes / Tools / Risks
 
   // Set column widths
   gantt.getColumn(1).width = 16;
-  gantt.getColumn(2).width = 34;
-  gantt.getColumn(3).width = 20;
+  gantt.getColumn(2).width = 48;
+  gantt.getColumn(3).width = 22;
+  gantt.getColumn(4).width = 8;
+  gantt.getColumn(5).width = 30;
   for (let w = 1; w <= totalWeeks; w++) gantt.getColumn(FIXED + w).width = 3.6;
 
   // ── Row 1: Main Title ──
@@ -424,13 +425,14 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   gantt.getRow(4).height = 14;
 
   // ── Row 5: Calendar dates + column headers ──
-  const hdrLabels = ["Phase", "Activity", "Responsible"];
+  const hdrLabels = ["Phase", "Activity", "Responsible", "Effort %", "Notes / Tools / Risks"];
+  const hdrAligns = ["center", "left", "left", "center", "left"] as const;
   for (let c = 1; c <= FIXED; c++) {
     const cell = gantt.getCell(5, c);
     cell.value = hdrLabels[c - 1];
     cell.font  = { bold: true, size: 9, color: { argb: WHITE } };
     cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.alignment = { horizontal: hdrAligns[c - 1], vertical: "middle" };
     cell.border = { right: { style: "thin", color: { argb: "FF444444" } } };
   }
   for (let w = 1; w <= totalWeeks; w++) {
@@ -481,7 +483,23 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
       respCell.font  = { size: 8, color: { argb: "FF555555" } };
       respCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: i % 2 === 0 ? WHITE : GREY_LIGHT } };
       respCell.alignment = { vertical: "middle", horizontal: "left" };
-      respCell.border    = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: GREY_MID } } };
+      respCell.border    = { right: { style: "hair", color: { argb: GREY_MID } }, bottom: { style: "hair", color: { argb: GREY_MID } } };
+
+      // Effort % cell
+      const effortCell = gantt.getCell(dataRow, 4);
+      effortCell.value = act.effortPct || "";
+      effortCell.font  = { size: 8, bold: true, color: { argb: "FF374151" } };
+      effortCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: i % 2 === 0 ? WHITE : GREY_LIGHT } };
+      effortCell.alignment = { vertical: "middle", horizontal: "center" };
+      effortCell.border    = { right: { style: "hair", color: { argb: GREY_MID } }, bottom: { style: "hair", color: { argb: GREY_MID } } };
+
+      // Notes / Tools / Risks cell
+      const notesCell = gantt.getCell(dataRow, 5);
+      notesCell.value = act.notes || "";
+      notesCell.font  = { size: 7, italic: true, color: { argb: "FF555555" } };
+      notesCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: i % 2 === 0 ? WHITE : GREY_LIGHT } };
+      notesCell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      notesCell.border    = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: GREY_MID } } };
 
       // Week cells
       for (let w = 1; w <= totalWeeks; w++) {
@@ -534,8 +552,25 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
 
   // Fixed cols: No(1) Role(2) Description(3) Location(4) Level(5)
   const FIXED_P = 5;
-  const TOTAL_COL = FIXED_P + totalWeeks + 1;  // +1 for Total
-  const pivotTotalCols = TOTAL_COL;
+  const TOTAL_COL = FIXED_P + totalWeeks + 1;
+
+  // Build year-range columns (one column per calendar year the project spans)
+  interface YearRange { year: number; firstWeek: number; lastWeek: number; col: number; }
+  const YEAR_RANGES: YearRange[] = [];
+  {
+    const sy = startDate.getFullYear();
+    const ey = new Date(startDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000).getFullYear();
+    let yOff = 1;
+    for (let y = sy; y <= ey; y++) {
+      const wks: number[] = [];
+      for (let w = 1; w <= totalWeeks; w++) {
+        if (new Date(startDate.getTime() + (w - 1) * 7 * 24 * 60 * 60 * 1000).getFullYear() === y) wks.push(w);
+      }
+      if (wks.length) YEAR_RANGES.push({ year: y, firstWeek: wks[0], lastWeek: wks[wks.length - 1], col: TOTAL_COL + yOff++ });
+    }
+  }
+  const LAST_COL = YEAR_RANGES.length ? YEAR_RANGES[YEAR_RANGES.length - 1].col : TOTAL_COL;
+  const pivotTotalCols = LAST_COL;
 
   pivot.getColumn(1).width = 4;
   pivot.getColumn(2).width = 28;
@@ -544,6 +579,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   pivot.getColumn(5).width = 15;
   for (let w = 1; w <= totalWeeks; w++) pivot.getColumn(FIXED_P + w).width = 4;
   pivot.getColumn(TOTAL_COL).width = 8;
+  for (const yr of YEAR_RANGES) pivot.getColumn(yr.col).width = 12;
 
   // Build week → phase lookup
   const weekPhase: string[] = new Array(totalWeeks + 1).fill("");
@@ -612,6 +648,14 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   // Total header col (row 3)
   const rtc = pivot.getCell(3, TOTAL_COL);
   rtc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+  // Year column headers (row 3)
+  for (const yr of YEAR_RANGES) {
+    const yrc = pivot.getCell(3, yr.col);
+    yrc.value = String(yr.year);
+    yrc.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    yrc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF374151" } };
+    yrc.alignment = { horizontal: "center", vertical: "middle" };
+  }
   pivot.getRow(3).height = 18;
 
   // ── Row 4: Column headers (No, Role, Description, Location, Level, W1…Wn, Total) ──
@@ -625,7 +669,10 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     const bg = PHASE_SOLID[phName] || "FF444444";
     pCell(4, FIXED_P + w, `W${w}`, { bg, fontColor: WHITE, bold: true, size: 7 });
   }
-  pCell(4, TOTAL_COL, "Total", { bg: "FF2D7A4F", fontColor: WHITE, bold: true, size: 9 });
+  pCell(4, TOTAL_COL, "Total Days", { bg: "FF2D7A4F", fontColor: WHITE, bold: true, size: 9 });
+  for (const yr of YEAR_RANGES) {
+    pCell(4, yr.col, `${yr.year} Efforts`, { bg: "FF374151", fontColor: WHITE, bold: true, size: 9 });
+  }
   pivot.getRow(4).height = 24;
 
   // ── Resource rows ──
@@ -689,7 +736,32 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     totCell.alignment = { horizontal: "center", vertical: "middle" };
     totCell.numFmt = "0";
     totCell.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
+
+    // Year effort columns
+    for (const yr of YEAR_RANGES) {
+      const yrFirst = colToLetter(FIXED_P + yr.firstWeek);
+      const yrLast  = colToLetter(FIXED_P + yr.lastWeek);
+      const yrCell  = pivot.getCell(rowNum, yr.col);
+      yrCell.value  = res ? { formula: `SUM(${yrFirst}${rowNum}:${yrLast}${rowNum})` } : "";
+      yrCell.font   = { bold: true, size: 9, color: { argb: "FF374151" } };
+      yrCell.fill   = { type: "pattern", pattern: "solid", fgColor: { argb: rowBg } };
+      yrCell.alignment = { horizontal: "center", vertical: "middle" };
+      yrCell.numFmt = "0";
+      yrCell.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
+    }
   }
+
+  // Dropdown validation for Location (col D) and Level (col E)
+  const dropStart = `${DATA_START}`;
+  const dropEnd   = `${DATA_START + NUM_ROWS - 1}`;
+  pivot.dataValidations.add(`D${dropStart}:D${dropEnd}`, {
+    type: "list" as any, allowBlank: true, showDropDown: false,
+    formulae: ['"Onsite,Offshore"'],
+  } as any);
+  pivot.dataValidations.add(`E${dropStart}:E${dropEnd}`, {
+    type: "list" as any, allowBlank: true, showDropDown: false,
+    formulae: ['"Sol. Architect,Sr,Jr,PM,SDM"'],
+  } as any);
 
   // ── TOTAL row ──
   const totRow = DATA_START + NUM_ROWS;
@@ -717,6 +789,17 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   grandCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
   grandCell.alignment = { horizontal: "center", vertical: "middle" };
   grandCell.numFmt = "0";
+
+  // Year totals in TOTAL row
+  for (const yr of YEAR_RANGES) {
+    const yrColLet = colToLetter(yr.col);
+    const yrTotCell = pivot.getCell(totRow, yr.col);
+    yrTotCell.value = { formula: `SUM(${yrColLet}${DATA_START}:${yrColLet}${DATA_START + NUM_ROWS - 1})` };
+    yrTotCell.font  = { bold: true, size: 10, color: { argb: WHITE } };
+    yrTotCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF374151" } };
+    yrTotCell.alignment = { horizontal: "center", vertical: "middle" };
+    yrTotCell.numFmt = "0";
+  }
 
   // ── Summary section (below the matrix) ──
   const SUM_GAP = totRow + 2;
