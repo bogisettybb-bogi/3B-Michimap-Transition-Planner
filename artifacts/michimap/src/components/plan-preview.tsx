@@ -1,5 +1,6 @@
+import React from "react";
 import { format, addWeeks } from "date-fns";
-import { PHASES_META, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface Activity {
   category: string;
@@ -87,33 +88,86 @@ export function PlanPreview({ plan }: { plan: Plan }) {
           </div>
         )}
 
-        {/* Phase timeline */}
+        {/* Phase timeline — cascading waterfall */}
         <div>
-          <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">Phase Timeline</div>
-          <div className="space-y-2">
-            {plan.phases.map(phase => {
-              const colors = PHASE_COLORS[phase.name] || { bg: "bg-gray-100", text: "text-gray-700", bar: "bg-gray-400" };
-              const pct = Math.round((phase.weeks / plan.totalWeeks) * 100);
-              const acts = phase.activities.length;
-              return (
-                <div key={phase.name} className="flex items-center gap-3">
-                  <div className={cn("text-[10px] font-semibold w-28 shrink-0 truncate", colors.text)}>
-                    {phase.name}
-                  </div>
-                  <div className="flex-1 h-5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={cn("h-full rounded-full flex items-center justify-end pr-2 transition-all", colors.bar)}
-                      style={{ width: `${Math.max(pct, 6)}%` }}
-                    >
-                      <span className="text-[9px] text-white font-bold">{phase.weeks}w</span>
+          <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-3">Phase Timeline</div>
+          <div className="space-y-1.5">
+            {(() => {
+              let weekOffset = 0;
+              const rows: React.ReactNode[] = [];
+
+              plan.phases.forEach((phase) => {
+                const colors = PHASE_COLORS[phase.name] || { bg: "bg-gray-100", text: "text-gray-700", bar: "bg-gray-400" };
+                const offsetPct = (weekOffset / plan.totalWeeks) * 100;
+                const widthPct  = Math.max((phase.weeks / plan.totalWeeks) * 100, 5);
+                const acts = phase.activities.length;
+                const isDeployPhase = phase.name === "Deploy";
+
+                rows.push(
+                  <div key={phase.name} className="flex items-center gap-3">
+                    {/* Phase label */}
+                    <div className={cn("text-[10px] font-bold w-28 shrink-0 truncate", colors.text)}>
+                      {phase.name}
+                    </div>
+
+                    {/* Track */}
+                    <div className="flex-1 relative h-6">
+                      {/* Background track */}
+                      <div className="absolute inset-y-0 left-0 right-0 bg-muted rounded-full" />
+
+                      {/* Colored phase bar */}
+                      <div
+                        className={cn("absolute inset-y-0 rounded-full flex items-center justify-center transition-all", colors.bar)}
+                        style={{ left: `${offsetPct}%`, width: `${widthPct}%` }}
+                      >
+                        <span className="text-[9px] text-white font-bold px-1 truncate">{phase.weeks}w</span>
+                      </div>
+
+                      {/* GO-LIVE marker — pin at end of Deploy */}
+                      {isDeployPhase && (
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center z-10"
+                          style={{ left: `${offsetPct + widthPct}%`, transform: "translateX(-50%) translateY(-50%)" }}
+                        >
+                          <div className="w-0.5 h-6 bg-red-500" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Activity count */}
+                    <div className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">
+                      {acts} {acts === 1 ? "activity" : "activities"}
                     </div>
                   </div>
-                  <div className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">
-                    {acts} {acts === 1 ? "activity" : "activities"}
-                  </div>
-                </div>
-              );
-            })}
+                );
+
+                // GO-LIVE banner inserted after Deploy row
+                if (isDeployPhase) {
+                  const goLivePct = offsetPct + widthPct;
+                  rows.push(
+                    <div key="go-live" className="flex items-center gap-3 py-1">
+                      <div className="w-28 shrink-0" />
+                      <div className="flex-1 relative">
+                        <div
+                          className="absolute flex items-center gap-1.5"
+                          style={{ left: `${goLivePct}%`, transform: "translateX(-50%)" }}
+                        >
+                          <div className="flex items-center gap-1 bg-red-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full shadow-md whitespace-nowrap">
+                            <span>★</span>
+                            <span>GO-LIVE</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="w-16 shrink-0" />
+                    </div>
+                  );
+                }
+
+                weekOffset += phase.weeks;
+              });
+
+              return rows;
+            })()}
           </div>
         </div>
 
