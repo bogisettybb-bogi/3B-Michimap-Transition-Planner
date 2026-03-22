@@ -32,24 +32,27 @@ export const MODELS = {
 export const TRANSITION_PATHS = {
   greenfield: {
     id: "greenfield",
-    name: "Greenfield",
-    subtitle: "Net-new, Best Practices, Clean slate",
+    name: "Greenfield (New Implementation)",
+    subtitle: "Build clean. Scale fast. Innovate continuously.",
     description:
-      "Begin a net-new S/4HANA implementation using SAP Best Practices. Ideal for organisations seeking to transform business processes and adopt standard SAP without legacy constraints.",
+      "Greenfield implementation enables organizations to design SAP S/4HANA from scratch using standard best practices while adopting a Clean Core strategy, keeping the digital core free from heavy customizations. Extensions are built on SAP Business Technology Platform (BTP), enabling agility and future upgrades without disruption. This approach aligns with both RISE with SAP and GROW with SAP. Notably, GROW with SAP exclusively supports Greenfield on S/4HANA Cloud Public Edition, making it the natural home for cloud-first, standardized transformation.",
+    tip: "GROW with SAP is the only migration path that supports SAP S/4HANA Cloud, Public Edition, meaning Greenfield is the only valid approach for organizations choosing the Public Cloud deployment model.",
   },
   brownfield: {
     id: "brownfield",
-    name: "Brownfield",
-    subtitle: "System conversion, Keep existing data, Faster go-live",
+    name: "Brownfield (System Conversion)",
+    subtitle: "Modernize fast without breaking what works.",
     description:
-      "Convert your existing SAP landscape to S/4HANA while retaining historical data and configurations. Minimal business disruption, faster timeline, lower risk.",
+      "Brownfield focuses on converting an existing ECC system to S/4HANA while preserving historical data and processes, with a gradual shift toward Clean Core principles by identifying and decoupling custom code over time. Post-conversion, organizations typically leverage SAP Business Technology Platform (BTP) to offload enhancements and move toward side-by-side extensions. It is commonly adopted under RISE with SAP, especially when speed to go-live is critical but a full business process redesign is not feasible.",
+    tip: "SAP's own Custom Code Migration toolset automatically scans existing ABAP code to classify what can be retained, must be adapted, or eliminated entirely, giving teams a clear remediation roadmap before conversion even begins.",
   },
   bluefield: {
     id: "bluefield",
-    name: "Bluefield",
-    subtitle: "Selective migration, Hybrid approach, Data continuity",
+    name: "Bluefield (Selective Data Transition)",
+    subtitle: "Transform selectively. Innovate strategically.",
     description:
-      "Selectively migrate data and processes from your existing SAP system. Combines the clean-slate simplicity of Greenfield with the data continuity of Brownfield.",
+      "Bluefield enables selective migration of data and processes into S/4HANA, allowing organizations to redesign critical business areas while retaining valuable historical data, making it the most flexible migration path toward a Clean Core. By combining selective data transition tools with SAP Business Technology Platform (BTP) for extensions and integrations, enterprises can build a hybrid architecture that balances innovation and continuity. This approach fits well within RISE with SAP for complex enterprises requiring phased transformation across multiple business units or geographies.",
+    tip: "Bluefield is the only approach that allows organizations to merge, split, or restructure company codes and legal entities during the migration itself, making it particularly powerful for post-merger integration scenarios.",
   },
 };
 

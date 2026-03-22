@@ -213,7 +213,7 @@ function LiveSummary({ phases, projectStartDate, transitionPath }: { phases: Rec
   const endStr = format(endDate, "MMM yyyy");
   const startStr = format(startDate, "MMM yyyy");
 
-  const PATH_LABEL: Record<string, string> = { greenfield: "Greenfield", brownfield: "Brownfield", bluefield: "Bluefield" };
+  const PATH_LABEL: Record<string, string> = { greenfield: "Greenfield", brownfield: "Brownfield", bluefield: "Bluefield (SDT)" };
 
   return (
     <div className="space-y-4">
@@ -507,7 +507,7 @@ export default function Home() {
                         return (
                           <button key={pathId} onClick={() => selectPath(pathId)}
                             className={cn("text-left p-4 rounded-xl border-2 transition-all duration-200", isSelected ? c.selected : "border-border bg-background hover:border-border/80 hover:bg-muted/30")}>
-                            <div className={cn("font-bold text-sm mb-1", isSelected ? c.title : "text-foreground")}>{path.name}</div>
+                            <div className={cn("font-bold text-sm mb-1", isSelected ? c.title : "text-foreground")}>{path.name.split(" (")[0]}</div>
                             <div className={cn("text-[11px] leading-tight", isSelected ? c.subtitle : "text-muted-foreground")}>{path.subtitle}</div>
                           </button>
                         );
@@ -515,11 +515,22 @@ export default function Home() {
                     </div>
                     <AnimatePresence mode="wait">
                       <motion.div key={transitionPath} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-                        className={cn("rounded-xl border p-4", colors.desc)}>
-                        <p className={cn("text-sm leading-relaxed", colors.descText)}>
-                          <span className={cn("font-bold mr-1", colors.descLabel)}>{TRANSITION_PATHS[transitionPath].name}:</span>
-                          {TRANSITION_PATHS[transitionPath].description}
-                        </p>
+                        className={cn("rounded-xl border p-4 space-y-3", colors.desc)}>
+                        <div>
+                          <p className={cn("text-xs font-bold uppercase tracking-wide mb-1", colors.descLabel)}>{TRANSITION_PATHS[transitionPath].name}</p>
+                          <p className={cn("text-sm leading-relaxed", colors.descText)}>
+                            {TRANSITION_PATHS[transitionPath].description}
+                          </p>
+                        </div>
+                        {TRANSITION_PATHS[transitionPath].tip && (
+                          <div className={cn("rounded-lg border px-3 py-2.5 flex gap-2", colors.desc)}>
+                            <span className="text-base leading-none mt-0.5 shrink-0">💡</span>
+                            <p className={cn("text-[11px] leading-relaxed", colors.descText)}>
+                              <span className={cn("font-bold", colors.descLabel)}>Did you know? </span>
+                              {TRANSITION_PATHS[transitionPath].tip}
+                            </p>
+                          </div>
+                        )}
                       </motion.div>
                     </AnimatePresence>
                   </div>
