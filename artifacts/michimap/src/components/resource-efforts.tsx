@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays } from "date-fns";
-import { Plus, Trash2, Download, CheckCircle2, Loader2, Share2, Copy } from "lucide-react";
+import { Plus, Trash2, Download, CheckCircle2, Loader2, Share2, Copy, Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -91,10 +91,11 @@ export function ResourceEffortsPanel({
   isDownloading, onDownload, hasDownloaded, xShareUrl, linkedInShareUrl,
   onConfirm, onUnconfirm, onDataChange,
 }: ResourceEffortsProps) {
-  const [resources, setResources] = useState<ResourceRow[]>(DEFAULT_RESOURCES);
-  const [efforts,   setEfforts  ] = useState<EffortMap>({});
-  const [locFilter, setLocFilter] = useState<"All" | "Onsite" | "Offshore">("All");
-  const [confirmed, setConfirmed] = useState(false);
+  const [resources,      setResources     ] = useState<ResourceRow[]>(DEFAULT_RESOURCES);
+  const [efforts,        setEfforts       ] = useState<EffortMap>({});
+  const [locFilter,      setLocFilter     ] = useState<"All" | "Onsite" | "Offshore">("All");
+  const [confirmed,      setConfirmed     ] = useState(false);
+  const [ganttMaximized, setGanttMaximized] = useState(false);
   const nextId = useRef(DEFAULT_RESOURCES.length + 1);
 
   // ── Notify parent of current data whenever resources/efforts change ───────
@@ -104,6 +105,13 @@ export function ResourceEffortsPanel({
       resources.map(r => ({ role: r.role, location: r.location, level: r.level, remarks: r.remarks, weekEfforts: efforts[r.id] || {} }))
     );
   }, [resources, efforts, onDataChange]);
+
+  // ── ESC to close full-screen Gantt ───────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setGanttMaximized(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   // ── Week list ─────────────────────────────────────────────────────────────
 
@@ -246,16 +254,34 @@ export function ResourceEffortsPanel({
     <div className="space-y-5 min-w-0 overflow-x-hidden">
 
       {/* ── Gantt ─────────────────────────────────────────────────────────── */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm" style={{ maxWidth: "100%" }}>
-        <div className="px-5 py-3 border-b border-border bg-card">
-          <p className="font-bold text-sm text-foreground">Resource Effort Gantt</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            Enter days per week (max 5, 1 decimal). Use <strong>+</strong> to insert a row below; resource columns are frozen.
-          </p>
+      <div className={cn(
+        "bg-card border border-border overflow-hidden shadow-sm",
+        ganttMaximized
+          ? "fixed inset-0 z-50 flex flex-col rounded-none"
+          : "rounded-2xl"
+      )} style={ganttMaximized ? {} : { maxWidth: "100%" }}>
+
+        {/* Header */}
+        <div className="px-5 py-3 border-b border-border bg-card flex items-start justify-between gap-4 shrink-0">
+          <div>
+            <p className="font-bold text-sm text-foreground">Resource Effort Gantt</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Enter days per week (max 5, 1 decimal). Use <strong>+</strong> to insert a row below; resource columns are frozen.
+            </p>
+          </div>
+          <button
+            onClick={() => setGanttMaximized(v => !v)}
+            title={ganttMaximized ? "Minimize" : "Maximize"}
+            className="shrink-0 mt-0.5 p-1.5 rounded-lg border border-border bg-muted hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+          >
+            {ganttMaximized
+              ? <Minimize2 className="w-4 h-4" />
+              : <Maximize2 className="w-4 h-4" />}
+          </button>
         </div>
 
         {/* Scrollable area — does NOT affect page width */}
-        <div className="overflow-x-auto">
+        <div className={cn("overflow-x-auto", ganttMaximized && "flex-1 overflow-y-auto")}>
           <table className="border-collapse text-xs"
             style={{ minWidth: `${FROZEN + weeks.length * WK_W + TOT_W}px` }}>
 
