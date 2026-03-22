@@ -209,12 +209,13 @@ function LiveSummary({ phases, projectStartDate, transitionPath }: { phases: Rec
   const total = list.reduce((s, [, v]) => s + v.weeks, 0);
   const months = (total / 4.33).toFixed(1);
 
-  const startDate = projectStartDate ? new Date(projectStartDate + "T12:00:00") : new Date();
+  const hasStart = Boolean(projectStartDate);
+  const startDate = hasStart ? new Date(projectStartDate + "T12:00:00") : null;
   const runWeeks  = (phases.run?.weeks ?? 0);
-  const goLiveDate   = addWeeks(startDate, total - runWeeks);
-  const endOfRunDate = addWeeks(startDate, total);
+  const goLiveDate   = startDate ? addWeeks(startDate, total - runWeeks) : null;
+  const endOfRunDate = startDate ? addWeeks(startDate, total) : null;
 
-  const fmt = (d: Date) => format(d, "d MMM yyyy");
+  const fmt = (d: Date | null) => d ? format(d, "d MMM yyyy") : "--";
 
   const PATH_LABEL: Record<string, string> = { greenfield: "Greenfield", brownfield: "Brownfield", bluefield: "Bluefield (SDT)" };
 
@@ -285,7 +286,7 @@ export default function Home() {
   const [aiModel, setAiModel] = useState("gpt-5-mini");
   const [apiKey, setApiKey] = useState("");
   const [transitionPath, setTransitionPath] = useState<GeneratePlanRequestTransitionPath | null>(null);
-  const [projectStartDate, setProjectStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [projectStartDate, setProjectStartDate] = useState("");
 
   const [phases, setPhases] = useState({
     discover:       { weeks: 0, included: false },
