@@ -1,0 +1,24 @@
+| Phase   | Activity                                                                                                                  | Responsible             | Outcome                                |
+| ------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------------------------------- |
+| Prepare | Establish project governance structure, define RACI matrix, and finalize detailed project plan with phase-wise milestones | Project Manager         | Approved governance and execution plan |
+| Prepare | Provision S/4HANA system landscape (DEV, QAS, PRD) and configure initial transport routes                                 | Basis / Platform        | Landscapes ready for implementation    |
+| Prepare | Configure initial system settings including client setup, transport management system (TMS), and user access roles        | Basis                   | System baseline established            |
+| Prepare | Define data migration approach including object scoping, legacy system identification, and migration sequencing           | Technical Consultant    | Migration strategy document            |
+| Prepare | Define integration architecture including middleware selection and interface communication patterns                       | Integration Consultant  | Integration architecture defined       |
+| Explore | Conduct fit-to-standard workshops in DEV system using SAP Best Practices and document delta requirements                  | Functional Consultant   | Gap list and delta design              |
+| Explore | Configure baseline business processes in DEV system to validate standard process fitment                                  | Functional Consultant   | Baseline configuration validated       |
+| Explore | Finalize functional and technical design documents including WRICEF object identification                                 | Functional + Technical  | Signed-off solution design             |
+| Explore | Define data migration objects, field mappings, and transformation rules based on source-to-target mapping                 | Technical Consultant    | Migration object repository            |
+| Explore | Define integration interfaces, APIs, and data exchange formats for all upstream and downstream systems                    | Integration Consultant  | Interface design specifications        |
+| Realize | Perform detailed configuration of business processes in DEV system using IMG and transport changes to QAS                 | Functional Consultant   | Configured business processes          |
+| Realize | Develop WRICEF objects (Reports, Interfaces, Conversions, Enhancements, Forms, Workflows) in DEV and transport to QAS     | Technical Consultant    | Custom developments completed          |
+| Realize | Execute data migration mock cycles using Migration Cockpit from legacy systems into QAS environment                       | Technical Consultant    | Validated migrated data                |
+| Realize | Build and deploy integration interfaces using middleware and validate message flows across systems                        | Integration Consultant  | Integrated system landscape            |
+| Realize | Execute unit testing in DEV and system integration testing (SIT) in QAS environment                                       | Functional + Technical  | Tested end-to-end processes            |
+| Realize | Support user acceptance testing (UAT) in QAS system and resolve identified defects                                        | Functional Consultant   | Business-validated solution            |
+| Deploy  | Execute cutover plan including transport of all approved objects from QAS to PRD using controlled release strategy        | Project Manager + Basis | Production readiness achieved          |
+| Deploy  | Perform final data migration from legacy systems into PRD environment ensuring data reconciliation                        | Technical Consultant    | Production data consistency            |
+| Deploy  | Conduct end-user training and provide system access in PRD environment                                                    | Functional Consultant   | Business readiness                     |
+| Deploy  | Execute go-live and provide hypercare support with real-time issue resolution in PRD                                      | All                     | Stable production system               |
+| Run     | Monitor system performance, background jobs, and interfaces in PRD environment and resolve incidents                      | Basis / Support         | Stable operations                      |
+| Run     | Perform continuous improvements including minor enhancements and transport changes across landscape                       | Functional + Technical  | Optimized system                       |
