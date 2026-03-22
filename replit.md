@@ -16,12 +16,22 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
+## Project: 3B Michimap
+
+AI-powered SAP S/4HANA pre-sales tool. Users select AI model, transition path (Greenfield/Brownfield/Bluefield), set SAP Activate phase durations, generate a project plan with AI, sign in via Google/LinkedIn, and download as Excel.
+
+- **Admin email**: bogisettybb@gmail.com (set as ADMIN_EMAIL env var)
+- **Auth**: Google OAuth + LinkedIn OAuth via raw fetch (no Passport.js), session cookies
+- **AI**: OpenAI via Replit AI integration (AI_INTEGRATIONS_OPENAI_BASE_URL), also supports paid user-provided keys
+- **Download**: ExcelJS generates multi-sheet XLSX with RACI matrix, per-phase tabs, disclaimers
+
 ## Structure
 
 ```text
 artifacts-monorepo/
 ├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
+│   ├── api-server/         # Express API server
+│   └── michimap/           # React + Vite frontend (3B Michimap)
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks

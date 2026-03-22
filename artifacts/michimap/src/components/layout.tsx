@@ -8,48 +8,59 @@ export function Layout({ children }: { children: ReactNode }) {
   const { mutate: logout } = useLogout();
 
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-            <div className="bg-primary text-primary-foreground font-display font-bold text-xl px-2 py-1 rounded-md shadow-sm">
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* HEADER */}
+      <header className="sticky top-0 z-50 w-full bg-background border-b border-border">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 hover:opacity-85 transition-opacity">
+            <div className="bg-[#5C3D11] text-white font-extrabold text-sm px-2.5 py-1.5 rounded-lg leading-none">
               3B
             </div>
-            <div className="flex flex-col">
-              <span className="font-display font-bold text-lg leading-none tracking-tight">Michimap</span>
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">SAP S/4HANA Pre-sales Tool</span>
+            <div>
+              <div className="font-bold text-base text-foreground leading-none">Michimap</div>
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground font-medium leading-tight">
+                SAP S/4HANA Pre-sales Tool
+              </div>
             </div>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             ) : user ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 {user.isAdmin && (
-                  <Link href="/admin" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5">
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
                     <LayoutDashboard className="w-4 h-4" />
                     Admin
                   </Link>
                 )}
-                <div className="flex items-center gap-2 border-l border-border pl-4">
+                <div className="flex items-center gap-2 pl-3 border-l border-border">
                   {user.avatarUrl && (
-                    <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full border border-border" />
+                    <img src={user.avatarUrl} alt={user.name} className="w-7 h-7 rounded-full border border-border" />
                   )}
-                  <span className="text-sm font-medium hidden sm:block">{user.name}</span>
-                  <button 
+                  <span className="text-sm font-medium text-foreground hidden sm:block max-w-[120px] truncate">
+                    {user.name}
+                  </span>
+                  <button
                     onClick={() => logout({})}
-                    className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted/50"
                     title="Sign out"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground font-medium">
-                Guest Mode
-              </div>
+              <a
+                href="/api/auth/google"
+                className="text-sm font-medium px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-foreground"
+              >
+                Sign in
+              </a>
             )}
           </div>
         </div>
@@ -59,10 +70,11 @@ export function Layout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      <footer className="border-t border-border bg-card mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
-          <p className="text-sm text-muted-foreground font-medium">
-            Dedicated to the SAP Pre-sales community by Bharath Bhushan Bogi Setty.
+      {/* FOOTER */}
+      <footer className="border-t border-border bg-background py-6 mt-6">
+        <div className="max-w-2xl mx-auto px-4 text-center space-y-1">
+          <p className="text-sm text-muted-foreground">
+            Dedicated to the SAP Pre-sales community by <strong className="text-foreground font-bold">Bharath Bhushan Bogi Setty</strong>.
           </p>
           <p className="text-xs text-muted-foreground/70">
             Free and open source. SAP and SAP Activate are trademarks of SAP SE.
