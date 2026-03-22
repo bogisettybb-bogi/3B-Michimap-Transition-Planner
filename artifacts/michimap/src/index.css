@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: hsl(40 30% 96%); /* #F5F0E8 slightly adjusted for better contrast */
+  --color-foreground: hsl(0 0% 10%);   /* #1A1A1A */
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(0 0% 10%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(0 0% 10%);
+  --color-primary: hsl(42 77% 44%);    /* #C8941A Amber/Gold */
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(225 21% 10%); /* #0F1117 Dark Navy */
+  --color-secondary-foreground: hsl(0 0% 100%);
+  --color-muted: hsl(40 20% 90%);
+  --color-muted-foreground: hsl(40 5% 45%);
+  --color-accent: hsl(42 77% 95%);
+  --color-accent-foreground: hsl(42 77% 30%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(40 15% 85%);
+  --color-input: hsl(40 15% 85%);
+  --color-ring: hsl(42 77% 44%);
+  
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+
+  --radius-xl: 1rem;
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply font-bold tracking-tight text-foreground;
+  }
+
+  /* Custom scrollbar for tables */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-muted/50 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full hover:bg-muted-foreground/50 transition-colors;
+  }
+}

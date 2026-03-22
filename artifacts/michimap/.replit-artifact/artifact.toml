@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "3B Michimap"
+version = "1.0.0"
+id = "artifacts/michimap"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20502
+
+[services.development]
+run = "pnpm --filter @workspace/michimap run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/michimap", "run", "build" ]
+publicDir = "artifacts/michimap/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20502"
+BASE_PATH = "/"

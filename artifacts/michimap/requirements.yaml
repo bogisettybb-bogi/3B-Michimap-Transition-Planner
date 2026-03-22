@@ -1,0 +1,20 @@
+packages:
+  "recharts": "Admin dashboard charts"
+  "date-fns": "Date formatting and calculations"
+  "framer-motion": "Smooth page transitions and component reveals"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes safely"
+  "@hookform/resolvers": "Form validation"
+  "zod": "Schema validation"
+  "lucide-react": "Icons"
+
+images:
+  - path: "artifacts/michimap/public/images/auth-bg.png"
+    description: "Abstract warm gradient mesh with soft amber and cream tones, professional corporate feel"
+    aspect_ratio: "16:9"
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react
+  - React Query v5 is provided by base stack
+  - Assuming standard Shadcn-like structure is mostly available or we can use native Tailwind HTML elements for simple things
+  - OAuth login requires standard browser navigation to /api/auth/google, not fetch

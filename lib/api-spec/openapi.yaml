@@ -1,22 +1,28 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: 3B Michimap API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: generate
+    description: Plan generation operations
+  - name: admin
+    description: Admin operations
+  - name: users
+    description: User operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +30,195 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/google:
+    get:
+      operationId: initiateGoogleAuth
+      tags: [auth]
+      summary: Initiate Google OAuth
+      responses:
+        "302":
+          description: Redirect to Google
+
+  /auth/google/callback:
+    get:
+      operationId: googleAuthCallback
+      tags: [auth]
+      summary: Google OAuth callback
+      parameters:
+        - name: code
+          in: query
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect after auth
+
+  /auth/linkedin:
+    get:
+      operationId: initiateLinkedInAuth
+      tags: [auth]
+      summary: Initiate LinkedIn OAuth
+      responses:
+        "302":
+          description: Redirect to LinkedIn
+
+  /auth/linkedin/callback:
+    get:
+      operationId: linkedInAuthCallback
+      tags: [auth]
+      summary: LinkedIn OAuth callback
+      parameters:
+        - name: code
+          in: query
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect after auth
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserOrNull"
+        "401":
+          description: Not authenticated
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+
+  /generate/plan:
+    post:
+      operationId: generatePlan
+      tags: [generate]
+      summary: Generate SAP Activate project plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePlanRequest"
+      responses:
+        "200":
+          description: Generated plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratePlanResponse"
+        "400":
+          description: Bad request
+
+  /generate/download:
+    post:
+      operationId: downloadPlan
+      tags: [generate]
+      summary: Download plan as Excel (requires auth)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DownloadPlanRequest"
+      responses:
+        "200":
+          description: Excel file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Not authenticated
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get admin dashboard stats
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+        "403":
+          description: Forbidden
+
+  /admin/users:
+    get:
+      operationId: getAdminUsers
+      tags: [admin]
+      summary: Get all users
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersResponse"
+        "403":
+          description: Forbidden
+
+  /admin/generations:
+    get:
+      operationId: getAdminGenerations
+      tags: [admin]
+      summary: Get all plan generations
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Generations list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminGenerationsResponse"
+        "403":
+          description: Forbidden
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +229,392 @@ components:
       required:
         - status
 
+    UserOrNull:
+      oneOf:
+        - $ref: "#/components/schemas/User"
+        - type: "null"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        provider:
+          type: string
+        isAdmin:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - name
+        - provider
+        - isAdmin
+        - createdAt
+
+    GeneratePlanRequest:
+      type: object
+      properties:
+        aiModel:
+          type: string
+          description: AI model identifier
+        apiKey:
+          type: string
+          nullable: true
+          description: User's own API key (optional for paid models)
+        transitionPath:
+          type: string
+          enum: [greenfield, brownfield, bluefield]
+        projectStartDate:
+          type: string
+          description: Project start date (YYYY-MM-DD)
+        phases:
+          type: object
+          properties:
+            discover:
+              type: object
+              properties:
+                weeks:
+                  type: integer
+                included:
+                  type: boolean
+              required: [weeks, included]
+            prepare:
+              type: object
+              properties:
+                weeks:
+                  type: integer
+              required: [weeks]
+            explore:
+              type: object
+              properties:
+                weeks:
+                  type: integer
+              required: [weeks]
+            realizeDevelop:
+              type: object
+              properties:
+                weeks:
+                  type: integer
+              required: [weeks]
+            deploy:
+              type: object
+              properties:
+                weeks:
+                  type: integer
+              required: [weeks]
+            run:
+              type: object
+              properties:
+                weeks:
+                  type: integer
+              required: [weeks]
+          required: [discover, prepare, explore, realizeDevelop, deploy, run]
+      required:
+        - aiModel
+        - transitionPath
+        - projectStartDate
+        - phases
+
+    GeneratePlanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        planId:
+          type: string
+        plan:
+          $ref: "#/components/schemas/ProjectPlan"
+      required:
+        - success
+        - planId
+        - plan
+
+    ProjectPlan:
+      type: object
+      properties:
+        title:
+          type: string
+        transitionPath:
+          type: string
+        projectStartDate:
+          type: string
+        phases:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanPhase"
+        totalWeeks:
+          type: integer
+        summary:
+          type: string
+      required:
+        - title
+        - transitionPath
+        - projectStartDate
+        - phases
+        - totalWeeks
+
+    PlanPhase:
+      type: object
+      properties:
+        name:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        weeks:
+          type: integer
+        activities:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanActivity"
+      required:
+        - name
+        - startDate
+        - endDate
+        - weeks
+        - activities
+
+    PlanActivity:
+      type: object
+      properties:
+        category:
+          type: string
+        activity:
+          type: string
+        description:
+          type: string
+        workstream:
+          type: string
+        effort:
+          type: string
+        responsible:
+          type: string
+        accountable:
+          type: string
+        consulted:
+          type: string
+        informed:
+          type: string
+        startWeek:
+          type: integer
+        endWeek:
+          type: integer
+        duration:
+          type: string
+        milestone:
+          type: boolean
+      required:
+        - category
+        - activity
+        - description
+        - workstream
+        - effort
+        - responsible
+        - accountable
+        - consulted
+        - informed
+        - startWeek
+        - endWeek
+        - duration
+        - milestone
+
+    DownloadPlanRequest:
+      type: object
+      properties:
+        planId:
+          type: string
+      required:
+        - planId
+
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalGenerations:
+          type: integer
+        totalDownloads:
+          type: integer
+        generationsToday:
+          type: integer
+        usersByProvider:
+          type: object
+          additionalProperties:
+            type: integer
+        generationsByTransitionPath:
+          type: object
+          additionalProperties:
+            type: integer
+        generationsByModel:
+          type: object
+          additionalProperties:
+            type: integer
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityItem"
+        weeklyGenerations:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeeklyCount"
+      required:
+        - totalUsers
+        - totalGenerations
+        - totalDownloads
+        - generationsToday
+        - usersByProvider
+        - generationsByTransitionPath
+        - generationsByModel
+        - recentActivity
+        - weeklyGenerations
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        userName:
+          type: string
+        userEmail:
+          type: string
+        transitionPath:
+          type: string
+          nullable: true
+        model:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - userName
+        - userEmail
+        - createdAt
+
+    WeeklyCount:
+      type: object
+      properties:
+        week:
+          type: string
+        count:
+          type: integer
+      required:
+        - week
+        - count
+
+    AdminUsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUser"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - users
+        - total
+        - page
+        - limit
+
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        provider:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+        generationCount:
+          type: integer
+        downloadCount:
+          type: integer
+      required:
+        - id
+        - email
+        - name
+        - provider
+        - createdAt
+        - generationCount
+        - downloadCount
+
+    AdminGenerationsResponse:
+      type: object
+      properties:
+        generations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminGeneration"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - generations
+        - total
+        - page
+        - limit
+
+    AdminGeneration:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+          nullable: true
+        userName:
+          type: string
+          nullable: true
+        userEmail:
+          type: string
+          nullable: true
+        transitionPath:
+          type: string
+        aiModel:
+          type: string
+        totalWeeks:
+          type: integer
+        downloaded:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - transitionPath
+        - aiModel
+        - totalWeeks
+        - downloaded
+        - createdAt

@@ -24,3 +24,10 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+ADMIN_EMAIL = "bogisettybb@gmail.com"
+GOOGLE_CALLBACK_URL = "/api/auth/google/callback"
+LINKEDIN_CALLBACK_URL = "/api/auth/linkedin/callback"
