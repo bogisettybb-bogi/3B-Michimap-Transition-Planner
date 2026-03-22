@@ -7,7 +7,7 @@ import adminRouter from "./admin";
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use("/auth", authRouter);
+router.use(authRouter);
 router.use("/generate", generateRouter);
 router.use("/admin", adminRouter);
 

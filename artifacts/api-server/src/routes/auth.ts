@@ -1,242 +1,182 @@
-import { Router } from "express";
-import { db, usersTable, sessionsTable } from "@workspace/db";
+import * as oidc from "openid-client";
+import { Router, type Request, type Response } from "express";
+import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import {
+  clearSession,
+  createSession,
+  getOidcConfig,
+  getSessionId,
+  SESSION_COOKIE,
+  SESSION_TTL,
+  type AuthUser,
+  type SessionData,
+} from "../lib/auth";
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "bogisettybb@gmail.com";
+const OIDC_COOKIE_TTL = 10 * 60 * 1000;
 
 const router = Router();
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
-const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID || "";
-const LINKEDIN_CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET || "";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "bogisettybb@gmail.com";
-
-function getBaseUrl(req: any): string {
-  const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
-  const host = req.headers["x-forwarded-host"] || req.headers.host || "";
-  return `${protocol}://${host}`;
+function getOrigin(req: Request): string {
+  const proto = req.headers["x-forwarded-proto"] || "https";
+  const host = req.headers["x-forwarded-host"] || req.headers["host"] || "localhost";
+  return `${proto}://${host}`;
 }
 
-function randomState() {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-}
-
-async function createSession(userId: number): Promise<string> {
-  const token = `sess_${Math.random().toString(36).substring(2)}${Date.now().toString(36)}${Math.random().toString(36).substring(2)}`;
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-  await db.insert(sessionsTable).values({ userId, sessionToken: token, expiresAt });
-  return token;
-}
-
-async function getUserFromRequest(req: any) {
-  const token = req.cookies?.session_token || req.headers.authorization?.replace("Bearer ", "");
-  if (!token) return null;
-  const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.sessionToken, token));
-  const session = sessions[0];
-  if (!session || session.expiresAt < new Date()) return null;
-  const users = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
-  return users[0] || null;
-}
-
-// Google OAuth
-router.get("/google", (req, res) => {
-  if (!GOOGLE_CLIENT_ID) {
-    return res.status(503).json({ error: "Google OAuth not configured. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET secrets." });
-  }
-  const state = randomState();
-  const redirectUri = `${getBaseUrl(req)}/api/auth/google/callback`;
-  const params = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: redirectUri,
-    response_type: "code",
-    scope: "openid email profile",
-    state,
-    access_type: "offline",
+function setSessionCookie(res: Response, sid: string) {
+  res.cookie(SESSION_COOKIE, sid, {
+    httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: SESSION_TTL,
   });
-  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+}
+
+function setOidcCookie(res: Response, name: string, value: string) {
+  res.cookie(name, value, {
+    httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: OIDC_COOKIE_TTL,
+  });
+}
+
+function getSafeReturnTo(value: unknown): string {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) return "/";
+  return value;
+}
+
+async function upsertUser(claims: Record<string, unknown>): Promise<AuthUser> {
+  const id = claims.sub as string;
+  const email = (claims.email as string) || null;
+  const name = (claims.name as string) || [claims.first_name, claims.last_name].filter(Boolean).join(" ") || null;
+  const avatarUrl = ((claims.profile_image_url || claims.picture) as string) || null;
+  const isAdmin = !!(email && email === ADMIN_EMAIL);
+
+  const [user] = await db
+    .insert(usersTable)
+    .values({ id, email, name, avatarUrl, isAdmin })
+    .onConflictDoUpdate({
+      target: usersTable.id,
+      set: { email, name, avatarUrl, isAdmin, updatedAt: new Date() },
+    })
+    .returning();
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    avatarUrl: user.avatarUrl,
+    isAdmin: user.isAdmin,
+    createdAt: user.createdAt,
+  };
+}
+
+router.get("/auth/me", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) return res.json(null);
+  res.json(req.user);
 });
 
-router.get("/google/callback", async (req, res) => {
-  const { code } = req.query as { code?: string };
-  if (!code) {
-    return res.redirect("/?error=google_auth_failed");
-  }
+router.get("/login", async (req: Request, res: Response) => {
   try {
-    const redirectUri = `${getBaseUrl(req)}/api/auth/google/callback`;
-    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        client_id: GOOGLE_CLIENT_ID,
-        client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: redirectUri,
-        grant_type: "authorization_code",
-      }),
-    });
-    const tokenData = await tokenRes.json() as any;
-    if (!tokenData.access_token) throw new Error("No access token");
+    const config = await getOidcConfig();
+    const callbackUrl = `${getOrigin(req)}/api/callback`;
+    const returnTo = getSafeReturnTo(req.query.returnTo);
 
-    const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` }
-    });
-    const googleUser = await userRes.json() as any;
+    const state = oidc.randomState();
+    const nonce = oidc.randomNonce();
+    const codeVerifier = oidc.randomPKCECodeVerifier();
+    const codeChallenge = await oidc.calculatePKCECodeChallenge(codeVerifier);
 
-    const isAdmin = googleUser.email === ADMIN_EMAIL;
-    const existing = await db.select().from(usersTable).where(eq(usersTable.email, googleUser.email));
-    let user;
-    if (existing.length > 0) {
-      await db.update(usersTable).set({
-        name: googleUser.name,
-        avatarUrl: googleUser.picture,
-        lastLoginAt: new Date(),
-        isAdmin,
-        updatedAt: new Date(),
-      }).where(eq(usersTable.email, googleUser.email));
-      user = { ...existing[0], isAdmin };
-    } else {
-      const inserted = await db.insert(usersTable).values({
-        email: googleUser.email,
-        name: googleUser.name,
-        avatarUrl: googleUser.picture,
-        provider: "google",
-        providerId: googleUser.sub,
-        isAdmin,
-        lastLoginAt: new Date(),
-      }).returning();
-      user = inserted[0];
-    }
-
-    const token = await createSession(user.id);
-    res.cookie("session_token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      path: "/",
+    const redirectTo = oidc.buildAuthorizationUrl(config, {
+      redirect_uri: callbackUrl,
+      scope: "openid email profile offline_access",
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
+      prompt: "login consent",
+      state,
+      nonce,
     });
-    res.redirect("/?auth=success");
+
+    setOidcCookie(res, "code_verifier", codeVerifier);
+    setOidcCookie(res, "nonce", nonce);
+    setOidcCookie(res, "state", state);
+    setOidcCookie(res, "return_to", returnTo);
+
+    res.redirect(redirectTo.href);
   } catch (err) {
-    logger.error({ err }, "Google auth callback error");
+    logger.error({ err }, "Login initiation error");
     res.redirect("/?error=auth_failed");
   }
 });
 
-// LinkedIn OAuth
-router.get("/linkedin", (req, res) => {
-  if (!LINKEDIN_CLIENT_ID) {
-    return res.status(503).json({ error: "LinkedIn OAuth not configured. Please add LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET secrets." });
-  }
-  const state = randomState();
-  const redirectUri = `${getBaseUrl(req)}/api/auth/linkedin/callback`;
-  const params = new URLSearchParams({
-    response_type: "code",
-    client_id: LINKEDIN_CLIENT_ID,
-    redirect_uri: redirectUri,
-    state,
-    scope: "openid profile email",
-  });
-  res.redirect(`https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`);
-});
-
-router.get("/linkedin/callback", async (req, res) => {
-  const { code } = req.query as { code?: string };
-  if (!code) {
-    return res.redirect("/?error=linkedin_auth_failed");
-  }
+router.get("/callback", async (req: Request, res: Response) => {
   try {
-    const redirectUri = `${getBaseUrl(req)}/api/auth/linkedin/callback`;
-    const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: redirectUri,
-        client_id: LINKEDIN_CLIENT_ID,
-        client_secret: LINKEDIN_CLIENT_SECRET,
-      }),
-    });
-    const tokenData = await tokenRes.json() as any;
-    if (!tokenData.access_token) throw new Error("No access token");
+    const config = await getOidcConfig();
+    const callbackUrl = `${getOrigin(req)}/api/callback`;
 
-    const profileRes = await fetch("https://api.linkedin.com/v2/userinfo", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` }
-    });
-    const profile = await profileRes.json() as any;
+    const codeVerifier = req.cookies?.code_verifier;
+    const nonce = req.cookies?.nonce;
+    const expectedState = req.cookies?.state;
+    const returnTo = req.cookies?.return_to || "/";
 
-    const email = profile.email;
-    const name = profile.name || `${profile.given_name || ""} ${profile.family_name || ""}`.trim();
-    const isAdmin = email === ADMIN_EMAIL;
-
-    const existing = await db.select().from(usersTable).where(eq(usersTable.email, email));
-    let user;
-    if (existing.length > 0) {
-      await db.update(usersTable).set({
-        name,
-        avatarUrl: profile.picture,
-        lastLoginAt: new Date(),
-        isAdmin,
-        updatedAt: new Date(),
-      }).where(eq(usersTable.email, email));
-      user = { ...existing[0], isAdmin };
-    } else {
-      const inserted = await db.insert(usersTable).values({
-        email,
-        name,
-        avatarUrl: profile.picture,
-        provider: "linkedin",
-        providerId: profile.sub || email,
-        isAdmin,
-        lastLoginAt: new Date(),
-      }).returning();
-      user = inserted[0];
+    if (!codeVerifier || !expectedState) {
+      return res.redirect("/api/login");
     }
 
-    const token = await createSession(user.id);
-    res.cookie("session_token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      path: "/",
+    const currentUrl = new URL(
+      `${callbackUrl}?${new URL(req.url, `http://${req.headers.host}`).searchParams}`,
+    );
+
+    const tokens = await oidc.authorizationCodeGrant(config, currentUrl, {
+      pkceCodeVerifier: codeVerifier,
+      expectedNonce: nonce,
+      expectedState,
     });
-    res.redirect("/?auth=success");
+
+    const claims = tokens.claims();
+    if (!claims) {
+      return res.redirect("/?error=auth_failed");
+    }
+
+    const dbUser = await upsertUser(claims as unknown as Record<string, unknown>);
+
+    const now = Math.floor(Date.now() / 1000);
+    const sessionData: SessionData = {
+      user: dbUser,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: tokens.expiresIn() ? now + tokens.expiresIn()! : (claims.exp as number),
+    };
+
+    const sid = await createSession(sessionData);
+    setSessionCookie(res, sid);
+
+    ["code_verifier", "nonce", "state", "return_to"].forEach(c =>
+      res.clearCookie(c, { path: "/" })
+    );
+
+    res.redirect(returnTo);
   } catch (err) {
-    logger.error({ err }, "LinkedIn auth callback error");
+    logger.error({ err }, "Auth callback error");
     res.redirect("/?error=auth_failed");
   }
 });
 
-// Get current user
-router.get("/me", async (req, res) => {
+router.post("/auth/logout", async (req: Request, res: Response) => {
   try {
-    const user = await getUserFromRequest(req);
-    if (!user) return res.json(null);
-    res.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      avatarUrl: user.avatarUrl,
-      provider: user.provider,
-      isAdmin: user.isAdmin,
-      createdAt: user.createdAt,
-    });
+    const sid = getSessionId(req);
+    await clearSession(res, sid);
+    const config = await getOidcConfig().catch(() => null);
+    if (config?.serverMetadata().end_session_endpoint) {
+      const endUrl = new URL(config.serverMetadata().end_session_endpoint!);
+      return res.redirect(endUrl.href);
+    }
+    res.json({ success: true });
   } catch (err) {
-    logger.error({ err }, "Get me error");
-    res.json(null);
+    logger.error({ err }, "Logout error");
+    res.json({ success: true });
   }
 });
 
-// Logout
-router.post("/logout", async (req, res) => {
-  const token = req.cookies?.session_token;
-  if (token) {
-    await db.delete(sessionsTable).where(eq(sessionsTable.sessionToken, token));
-  }
-  res.clearCookie("session_token", { path: "/" });
-  res.json({ success: true });
-});
+export function getUserFromRequest(req: Request) {
+  return req.isAuthenticated() ? req.user : null;
+}
 
-export { getUserFromRequest };
 export default router;

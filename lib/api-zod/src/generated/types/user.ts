@@ -7,11 +7,10 @@
  */
 
 export interface User {
-  id: number;
-  email: string;
-  name: string;
+  id: string;
+  email?: string | null;
+  name?: string | null;
   avatarUrl?: string | null;
-  provider: string;
   isAdmin: boolean;
   createdAt: Date;
 }

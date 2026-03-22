@@ -19,6 +19,7 @@
     "express": "^5",
     "express-session": "^1.19.0",
     "openai": "^6.32.0",
+    "openid-client": "^6.8.2",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-linkedin-oauth2": "^2.0.0",

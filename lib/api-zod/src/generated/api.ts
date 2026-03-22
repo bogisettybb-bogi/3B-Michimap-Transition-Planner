@@ -15,31 +15,14 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * @summary Google OAuth callback
- */
-export const GoogleAuthCallbackQueryParams = zod.object({
-  code: zod.coerce.string().optional(),
-  state: zod.coerce.string().optional(),
-});
-
-/**
- * @summary LinkedIn OAuth callback
- */
-export const LinkedInAuthCallbackQueryParams = zod.object({
-  code: zod.coerce.string().optional(),
-  state: zod.coerce.string().optional(),
-});
-
-/**
  * @summary Get current user
  */
 export const GetMeResponse = zod.union([
   zod.object({
-    id: zod.number(),
-    email: zod.string(),
-    name: zod.string(),
+    id: zod.string(),
+    email: zod.string().nullish(),
+    name: zod.string().nullish(),
     avatarUrl: zod.string().nullish(),
-    provider: zod.string(),
     isAdmin: zod.boolean(),
     createdAt: zod.date(),
   }),

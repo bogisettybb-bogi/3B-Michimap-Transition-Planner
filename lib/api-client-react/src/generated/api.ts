@@ -25,9 +25,7 @@ import type {
   GeneratePlanResponse,
   GetAdminGenerationsParams,
   GetAdminUsersParams,
-  GoogleAuthCallbackParams,
   HealthStatus,
-  LinkedInAuthCallbackParams,
   UserOrNull,
 } from "./api.schemas";
 
@@ -116,31 +114,92 @@ export function useHealthCheck<
 }
 
 /**
- * @summary Initiate Google OAuth
+ * @summary Initiate login (redirects to Replit OIDC)
  */
-export const getInitiateGoogleAuthUrl = () => {
-  return `/api/auth/google`;
+export const getLoginUrl = () => {
+  return `/api/login`;
 };
 
-export const initiateGoogleAuth = async (
-  options?: RequestInit,
-): Promise<unknown> => {
-  return customFetch<unknown>(getInitiateGoogleAuthUrl(), {
+export const login = async (options?: RequestInit): Promise<unknown> => {
+  return customFetch<unknown>(getLoginUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getInitiateGoogleAuthQueryKey = () => {
-  return [`/api/auth/google`] as const;
+export const getLoginQueryKey = () => {
+  return [`/api/login`] as const;
 };
 
-export const getInitiateGoogleAuthQueryOptions = <
-  TData = Awaited<ReturnType<typeof initiateGoogleAuth>>,
+export const getLoginQueryOptions = <
+  TData = Awaited<ReturnType<typeof login>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof login>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getLoginQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof login>>> = ({
+    signal,
+  }) => login({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof login>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LoginQueryResult = NonNullable<Awaited<ReturnType<typeof login>>>;
+export type LoginQueryError = ErrorType<void>;
+
+/**
+ * @summary Initiate login (redirects to Replit OIDC)
+ */
+
+export function useLogin<
+  TData = Awaited<ReturnType<typeof login>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof login>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLoginQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary OIDC callback
+ */
+export const getAuthCallbackUrl = () => {
+  return `/api/callback`;
+};
+
+export const authCallback = async (options?: RequestInit): Promise<unknown> => {
+  return customFetch<unknown>(getAuthCallbackUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAuthCallbackQueryKey = () => {
+  return [`/api/callback`] as const;
+};
+
+export const getAuthCallbackQueryOptions = <
+  TData = Awaited<ReturnType<typeof authCallback>>,
   TError = ErrorType<void>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof initiateGoogleAuth>>,
+    Awaited<ReturnType<typeof authCallback>>,
     TError,
     TData
   >;
@@ -148,312 +207,40 @@ export const getInitiateGoogleAuthQueryOptions = <
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getInitiateGoogleAuthQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getAuthCallbackQueryKey();
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof initiateGoogleAuth>>
-  > = ({ signal }) => initiateGoogleAuth({ signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof authCallback>>> = ({
+    signal,
+  }) => authCallback({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof initiateGoogleAuth>>,
+    Awaited<ReturnType<typeof authCallback>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type InitiateGoogleAuthQueryResult = NonNullable<
-  Awaited<ReturnType<typeof initiateGoogleAuth>>
+export type AuthCallbackQueryResult = NonNullable<
+  Awaited<ReturnType<typeof authCallback>>
 >;
-export type InitiateGoogleAuthQueryError = ErrorType<void>;
+export type AuthCallbackQueryError = ErrorType<void>;
 
 /**
- * @summary Initiate Google OAuth
+ * @summary OIDC callback
  */
 
-export function useInitiateGoogleAuth<
-  TData = Awaited<ReturnType<typeof initiateGoogleAuth>>,
+export function useAuthCallback<
+  TData = Awaited<ReturnType<typeof authCallback>>,
   TError = ErrorType<void>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof initiateGoogleAuth>>,
+    Awaited<ReturnType<typeof authCallback>>,
     TError,
     TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getInitiateGoogleAuthQueryOptions(options);
-
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
- * @summary Google OAuth callback
- */
-export const getGoogleAuthCallbackUrl = (params?: GoogleAuthCallbackParams) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/auth/google/callback?${stringifiedParams}`
-    : `/api/auth/google/callback`;
-};
-
-export const googleAuthCallback = async (
-  params?: GoogleAuthCallbackParams,
-  options?: RequestInit,
-): Promise<unknown> => {
-  return customFetch<unknown>(getGoogleAuthCallbackUrl(params), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGoogleAuthCallbackQueryKey = (
-  params?: GoogleAuthCallbackParams,
-) => {
-  return [`/api/auth/google/callback`, ...(params ? [params] : [])] as const;
-};
-
-export const getGoogleAuthCallbackQueryOptions = <
-  TData = Awaited<ReturnType<typeof googleAuthCallback>>,
-  TError = ErrorType<void>,
->(
-  params?: GoogleAuthCallbackParams,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof googleAuthCallback>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getGoogleAuthCallbackQueryKey(params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof googleAuthCallback>>
-  > = ({ signal }) => googleAuthCallback(params, { signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof googleAuthCallback>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type GoogleAuthCallbackQueryResult = NonNullable<
-  Awaited<ReturnType<typeof googleAuthCallback>>
->;
-export type GoogleAuthCallbackQueryError = ErrorType<void>;
-
-/**
- * @summary Google OAuth callback
- */
-
-export function useGoogleAuthCallback<
-  TData = Awaited<ReturnType<typeof googleAuthCallback>>,
-  TError = ErrorType<void>,
->(
-  params?: GoogleAuthCallbackParams,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof googleAuthCallback>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGoogleAuthCallbackQueryOptions(params, options);
-
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
- * @summary Initiate LinkedIn OAuth
- */
-export const getInitiateLinkedInAuthUrl = () => {
-  return `/api/auth/linkedin`;
-};
-
-export const initiateLinkedInAuth = async (
-  options?: RequestInit,
-): Promise<unknown> => {
-  return customFetch<unknown>(getInitiateLinkedInAuthUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getInitiateLinkedInAuthQueryKey = () => {
-  return [`/api/auth/linkedin`] as const;
-};
-
-export const getInitiateLinkedInAuthQueryOptions = <
-  TData = Awaited<ReturnType<typeof initiateLinkedInAuth>>,
-  TError = ErrorType<void>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof initiateLinkedInAuth>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getInitiateLinkedInAuthQueryKey();
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof initiateLinkedInAuth>>
-  > = ({ signal }) => initiateLinkedInAuth({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof initiateLinkedInAuth>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type InitiateLinkedInAuthQueryResult = NonNullable<
-  Awaited<ReturnType<typeof initiateLinkedInAuth>>
->;
-export type InitiateLinkedInAuthQueryError = ErrorType<void>;
-
-/**
- * @summary Initiate LinkedIn OAuth
- */
-
-export function useInitiateLinkedInAuth<
-  TData = Awaited<ReturnType<typeof initiateLinkedInAuth>>,
-  TError = ErrorType<void>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof initiateLinkedInAuth>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getInitiateLinkedInAuthQueryOptions(options);
-
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
- * @summary LinkedIn OAuth callback
- */
-export const getLinkedInAuthCallbackUrl = (
-  params?: LinkedInAuthCallbackParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/auth/linkedin/callback?${stringifiedParams}`
-    : `/api/auth/linkedin/callback`;
-};
-
-export const linkedInAuthCallback = async (
-  params?: LinkedInAuthCallbackParams,
-  options?: RequestInit,
-): Promise<unknown> => {
-  return customFetch<unknown>(getLinkedInAuthCallbackUrl(params), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getLinkedInAuthCallbackQueryKey = (
-  params?: LinkedInAuthCallbackParams,
-) => {
-  return [`/api/auth/linkedin/callback`, ...(params ? [params] : [])] as const;
-};
-
-export const getLinkedInAuthCallbackQueryOptions = <
-  TData = Awaited<ReturnType<typeof linkedInAuthCallback>>,
-  TError = ErrorType<void>,
->(
-  params?: LinkedInAuthCallbackParams,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof linkedInAuthCallback>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getLinkedInAuthCallbackQueryKey(params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof linkedInAuthCallback>>
-  > = ({ signal }) =>
-    linkedInAuthCallback(params, { signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof linkedInAuthCallback>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type LinkedInAuthCallbackQueryResult = NonNullable<
-  Awaited<ReturnType<typeof linkedInAuthCallback>>
->;
-export type LinkedInAuthCallbackQueryError = ErrorType<void>;
-
-/**
- * @summary LinkedIn OAuth callback
- */
-
-export function useLinkedInAuthCallback<
-  TData = Awaited<ReturnType<typeof linkedInAuthCallback>>,
-  TError = ErrorType<void>,
->(
-  params?: LinkedInAuthCallbackParams,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof linkedInAuthCallback>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getLinkedInAuthCallbackQueryOptions(params, options);
+  const queryOptions = getAuthCallbackQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -31,56 +31,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
-  /auth/google:
+  /login:
     get:
-      operationId: initiateGoogleAuth
+      operationId: login
       tags: [auth]
-      summary: Initiate Google OAuth
+      summary: Initiate login (redirects to Replit OIDC)
       responses:
         "302":
-          description: Redirect to Google
+          description: Redirect to OIDC provider
 
-  /auth/google/callback:
+  /callback:
     get:
-      operationId: googleAuthCallback
+      operationId: authCallback
       tags: [auth]
-      summary: Google OAuth callback
-      parameters:
-        - name: code
-          in: query
-          schema:
-            type: string
-        - name: state
-          in: query
-          schema:
-            type: string
-      responses:
-        "302":
-          description: Redirect after auth
-
-  /auth/linkedin:
-    get:
-      operationId: initiateLinkedInAuth
-      tags: [auth]
-      summary: Initiate LinkedIn OAuth
-      responses:
-        "302":
-          description: Redirect to LinkedIn
-
-  /auth/linkedin/callback:
-    get:
-      operationId: linkedInAuthCallback
-      tags: [auth]
-      summary: LinkedIn OAuth callback
-      parameters:
-        - name: code
-          in: query
-          schema:
-            type: string
-        - name: state
-          in: query
-          schema:
-            type: string
+      summary: OIDC callback
       responses:
         "302":
           description: Redirect after auth
@@ -238,16 +202,16 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
         email:
           type: string
+          nullable: true
         name:
           type: string
+          nullable: true
         avatarUrl:
           type: string
           nullable: true
-        provider:
-          type: string
         isAdmin:
           type: boolean
         createdAt:
@@ -255,9 +219,6 @@ components:
           format: date-time
       required:
         - id
-        - email
-        - name
-        - provider
         - isAdmin
         - createdAt
 

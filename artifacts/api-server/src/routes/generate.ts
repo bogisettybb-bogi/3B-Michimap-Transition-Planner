@@ -2,7 +2,6 @@ import { Router } from "express";
 import { db, generationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
-import { getUserFromRequest } from "./auth";
 import OpenAI from "openai";
 
 const router = Router();
@@ -241,7 +240,7 @@ router.post("/plan", async (req, res) => {
     const planId = `plan_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
     // Track generation in DB (best-effort)
-    const user = await getUserFromRequest(req);
+    const user = req.isAuthenticated() ? req.user : null;
     const realizeUatWeeks = phases.realizeUat?.weeks || 6;
     const totalWeeks = (phases.discover?.included ? phases.discover.weeks : 0) +
       phases.prepare.weeks + phases.explore.weeks + phases.realizeDevelop.weeks +
@@ -273,8 +272,8 @@ router.post("/plan", async (req, res) => {
 });
 
 router.post("/download", async (req, res) => {
-  const user = await getUserFromRequest(req);
-  if (!user) return res.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
+  const user = req.user;
 
   const { planId } = req.body;
   if (!planId) return res.status(400).json({ error: "planId required" });

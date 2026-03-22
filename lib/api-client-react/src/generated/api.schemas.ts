@@ -10,11 +10,10 @@ export interface HealthStatus {
 }
 
 export interface User {
-  id: number;
-  email: string;
-  name: string;
+  id: string;
+  email?: string | null;
+  name?: string | null;
   avatarUrl?: string | null;
-  provider: string;
   isAdmin: boolean;
   createdAt: string;
 }
@@ -187,16 +186,6 @@ export interface AdminGenerationsResponse {
   page: number;
   limit: number;
 }
-
-export type GoogleAuthCallbackParams = {
-  code?: string;
-  state?: string;
-};
-
-export type LinkedInAuthCallbackParams = {
-  code?: string;
-  state?: string;
-};
 
 export type GetAdminUsersParams = {
   page?: number;
