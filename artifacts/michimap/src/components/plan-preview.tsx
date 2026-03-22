@@ -208,7 +208,7 @@ export function PlanPreview({ plan }: { plan: Plan }) {
                     <th className="text-left px-2.5 py-2 font-semibold w-[105px] shrink-0">Phase</th>
                     <th className="text-left px-2.5 py-2 font-semibold">Activity</th>
                     <th className="text-left px-2.5 py-2 font-semibold w-[110px]">Responsible</th>
-                    <th className="text-center px-2 py-2 font-semibold w-[52px]">Effort</th>
+                    <th className="text-center px-2 py-2 font-semibold w-[80px]">Effort guideline</th>
                   </tr>
                 </thead>
                 <tbody>
