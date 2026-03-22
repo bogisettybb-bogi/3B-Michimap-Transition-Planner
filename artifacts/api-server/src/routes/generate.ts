@@ -348,17 +348,16 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   // ────────────────────────────────────────────────
   const gantt = wb.addWorksheet("Project Plan", {
     pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 },
-    views: [{ state: "frozen", xSplit: 5, ySplit: 5 }],
+    views: [{ state: "frozen", xSplit: 4, ySplit: 5 }],
   });
 
-  const FIXED = 5; // Phase | Activity | Responsible | Effort % | Notes / Tools / Risks
+  const FIXED = 4; // Phase | Activity | Responsible | Notes / Tools / Risks
 
   // Set column widths
   gantt.getColumn(1).width = 16;
   gantt.getColumn(2).width = 48;
   gantt.getColumn(3).width = 22;
-  gantt.getColumn(4).width = 8;
-  gantt.getColumn(5).width = 30;
+  gantt.getColumn(4).width = 32;
   for (let w = 1; w <= totalWeeks; w++) gantt.getColumn(FIXED + w).width = 3.6;
 
   // ── Row 1: Main Title ──
@@ -416,8 +415,8 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   gantt.getRow(4).height = 28;
 
   // ── Row 5: Column headers only (no dates — now embedded in row 4) ──
-  const hdrLabels = ["Phase", "Activity", "Responsible", "Effort %", "Notes / Tools / Risks"];
-  const hdrAligns = ["center", "left", "left", "center", "left"] as const;
+  const hdrLabels = ["Phase", "Activity", "Responsible", "Notes / Tools / Risks"];
+  const hdrAligns = ["center", "left", "left", "left"] as const;
   for (let c = 1; c <= FIXED; c++) {
     const cell = gantt.getCell(5, c);
     cell.value = hdrLabels[c - 1];
@@ -471,16 +470,8 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
       respCell.alignment = { vertical: "middle", horizontal: "left" };
       respCell.border    = { right: { style: "hair", color: { argb: GREY_MID } }, bottom: { style: "hair", color: { argb: GREY_MID } } };
 
-      // Effort % cell
-      const effortCell = gantt.getCell(dataRow, 4);
-      effortCell.value = act.effortPct || "";
-      effortCell.font  = { size: 8, bold: true, color: { argb: "FF374151" } };
-      effortCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: i % 2 === 0 ? WHITE : GREY_LIGHT } };
-      effortCell.alignment = { vertical: "middle", horizontal: "center" };
-      effortCell.border    = { right: { style: "hair", color: { argb: GREY_MID } }, bottom: { style: "hair", color: { argb: GREY_MID } } };
-
       // Notes / Tools / Risks cell
-      const notesCell = gantt.getCell(dataRow, 5);
+      const notesCell = gantt.getCell(dataRow, 4);
       notesCell.value = act.notes || "";
       notesCell.font  = { size: 7, italic: true, color: { argb: "FF555555" } };
       notesCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: i % 2 === 0 ? WHITE : GREY_LIGHT } };

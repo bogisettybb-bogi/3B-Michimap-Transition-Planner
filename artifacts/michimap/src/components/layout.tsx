@@ -80,7 +80,7 @@ export function Layout({ children }: { children: ReactNode }) {
               rel="noopener noreferrer"
               className="font-bold text-foreground hover:text-primary transition-colors underline underline-offset-2"
             >
-              Bharath Bhushan Bogi Setty
+              3B
             </a>.
           </p>
           <p className="text-xs text-muted-foreground/70">

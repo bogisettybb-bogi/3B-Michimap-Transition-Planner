@@ -207,8 +207,7 @@ export function PlanPreview({ plan }: { plan: Plan }) {
                   <tr className="bg-[#1A1A2E] text-white">
                     <th className="text-left px-2.5 py-2 font-semibold w-[105px] shrink-0">Phase</th>
                     <th className="text-left px-2.5 py-2 font-semibold">Activity</th>
-                    <th className="text-left px-2.5 py-2 font-semibold w-[110px]">Responsible</th>
-                    <th className="text-center px-2 py-2 font-semibold w-[80px]">Effort guideline</th>
+                    <th className="text-left px-2.5 py-2 font-semibold w-[120px]">Responsible</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -240,7 +239,6 @@ export function PlanPreview({ plan }: { plan: Plan }) {
                           {act.activity}
                         </td>
                         <td className="px-2.5 py-1.5 text-muted-foreground">{act.responsible || "-"}</td>
-                        <td className="px-2 py-1.5 text-center font-bold text-muted-foreground">{act.effortPct || "-"}</td>
                       </tr>
                     ));
                   })}

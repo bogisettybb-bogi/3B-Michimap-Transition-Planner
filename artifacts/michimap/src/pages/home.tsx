@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { format, addWeeks } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
@@ -77,6 +77,8 @@ function CalendarPicker({ value, onChange }: { value: string; onChange: (v: stri
   const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
   const firstDay = new Date(view.year, view.month, 1).getDay();
 
+  const prevYear  = () => setView(v => ({ ...v, year: v.year - 1 }));
+  const nextYear  = () => setView(v => ({ ...v, year: v.year + 1 }));
   const prevMonth = () => setView(v => v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 });
   const nextMonth = () => setView(v => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 });
 
@@ -102,14 +104,24 @@ function CalendarPicker({ value, onChange }: { value: string; onChange: (v: stri
 
   return (
     <div className="bg-background border border-border rounded-xl p-3 w-full select-none">
-      <div className="flex items-center justify-between mb-3">
-        <button onClick={prevMonth} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-0.5">
+          <button onClick={prevYear} title="Previous year" className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
+            <ChevronLeft className="w-3 h-3" /><ChevronLeft className="w-3 h-3 -ml-2" />
+          </button>
+          <button onClick={prevMonth} title="Previous month" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </div>
         <span className="text-sm font-semibold text-foreground">{MONTHS[view.month]} {view.year}</span>
-        <button onClick={nextMonth} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
-          <ChevronRight className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button onClick={nextMonth} title="Next month" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <button onClick={nextYear} title="Next year" className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
+            <ChevronRight className="w-3 h-3" /><ChevronRight className="w-3 h-3 -ml-2" />
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-7 mb-1">
         {DAYS.map(d => <div key={d} className="text-center text-[10px] font-bold text-muted-foreground py-1">{d}</div>)}
@@ -255,7 +267,7 @@ function LiveSummary({ phases, projectStartDate, transitionPath }: { phases: Rec
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function Home() {
-  const { mutateAsync: generatePlan, isPending: isGenerating } = useGeneratePlan();
+  const { mutateAsync: generatePlan } = useGeneratePlan();
   const { mutateAsync: downloadPlan, isPending: isDownloading } = useDownloadPlan();
   const { toast } = useToast();
 
@@ -278,6 +290,15 @@ export default function Home() {
   const [isDisclaimersOpen, setIsDisclaimersOpen] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [hasDownloaded, setHasDownloaded] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const stopRef = useRef(false);
+
+  const selectPath = (path: GeneratePlanRequestTransitionPath) => {
+    setTransitionPath(path);
+    setGeneratedResult(null);
+    setAgreedToTerms(false);
+    setHasDownloaded(false);
+  };
 
 
 
@@ -294,11 +315,18 @@ export default function Home() {
     setPhases(prev => ({ ...prev, [key]: { ...prev[key], weeks: Math.max(1, prev[key].weeks + delta) } }));
   };
 
+  const handleStop = () => {
+    stopRef.current = true;
+    setIsGenerating(false);
+  };
+
   const handleGenerate = async () => {
     if (isPaidModel && !apiKey.trim()) {
       toast({ title: "API Key Required", description: "Please enter your API key for the selected paid model.", variant: "destructive" });
       return;
     }
+    stopRef.current = false;
+    setIsGenerating(true);
     try {
       const res = await generatePlan({
         data: {
@@ -317,10 +345,16 @@ export default function Home() {
           },
         },
       });
-      setGeneratedResult(res);
-      setTimeout(() => document.getElementById("plan-preview")?.scrollIntoView({ behavior: "smooth" }), 200);
+      if (!stopRef.current) {
+        setGeneratedResult(res);
+        setTimeout(() => document.getElementById("plan-preview")?.scrollIntoView({ behavior: "smooth" }), 200);
+      }
     } catch (err: any) {
-      toast({ title: "Generation Failed", description: err.message || "Failed to generate project plan.", variant: "destructive" });
+      if (!stopRef.current) {
+        toast({ title: "Generation Failed", description: err.message || "Failed to generate project plan.", variant: "destructive" });
+      }
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -433,7 +467,7 @@ export default function Home() {
                         const c = PATH_COLORS[pathId];
                         const isSelected = transitionPath === pathId;
                         return (
-                          <button key={pathId} onClick={() => setTransitionPath(pathId)}
+                          <button key={pathId} onClick={() => selectPath(pathId)}
                             className={cn("text-left p-4 rounded-xl border-2 transition-all duration-200", isSelected ? c.selected : "border-border bg-background hover:border-border/80 hover:bg-muted/30")}>
                             <div className={cn("font-bold text-sm mb-1", isSelected ? c.title : "text-foreground")}>{path.name}</div>
                             <div className={cn("text-[11px] leading-tight", isSelected ? c.subtitle : "text-muted-foreground")}>{path.subtitle}</div>
@@ -511,13 +545,18 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* GENERATE BUTTON */}
-                  <button onClick={handleGenerate} disabled={isGenerating}
-                    className="w-full flex items-center justify-center gap-3 bg-secondary text-secondary-foreground font-bold text-base rounded-2xl py-5 shadow-lg hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed">
-                    {isGenerating
-                      ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating Plan with AI...</>
-                      : <><Sparkles className="w-5 h-5" /> Generate Project Plan</>}
-                  </button>
+                  {/* GENERATE / STOP BUTTON */}
+                  {isGenerating ? (
+                    <button onClick={handleStop}
+                      className="w-full flex items-center justify-center gap-3 bg-destructive text-destructive-foreground font-bold text-base rounded-2xl py-5 shadow-lg hover:opacity-90 active:scale-[0.99] transition-all">
+                      <X className="w-5 h-5" /> Stop Generation
+                    </button>
+                  ) : (
+                    <button onClick={handleGenerate}
+                      className="w-full flex items-center justify-center gap-3 bg-secondary text-secondary-foreground font-bold text-base rounded-2xl py-5 shadow-lg hover:opacity-90 active:scale-[0.99] transition-all">
+                      <Sparkles className="w-5 h-5" /> Generate Project Plan
+                    </button>
+                  )}
                 </div>
 
                 {/* DOWNLOAD SECTION */}
