@@ -652,7 +652,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     "Junior Consultant":       "Technical",
     "Project Manager":         "Governance",
     "Service Delivery Manager":"Governance",
-    "Functional Consultant":   "Functional",
+    "Subject Matter Expert":   "Functional",
     "AI Consultant":           "AI",
   };
 
@@ -734,7 +734,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   } as any);
   pivot.dataValidations.add(`E${dropStart}:E${dropEnd}`, {
     type: "list" as any, allowBlank: true, showDropDown: false,
-    formulae: ['"Solution Architect,Senior Consultant,Junior Consultant,Project Manager,Service Delivery Manager,Functional Consultant,AI Consultant"'],
+    formulae: ['"Solution Architect,Senior Consultant,Junior Consultant,Project Manager,Service Delivery Manager,Subject Matter Expert,AI Consultant"'],
   } as any);
 
   // ── TOTAL row ──

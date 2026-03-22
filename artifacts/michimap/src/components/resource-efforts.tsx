@@ -10,7 +10,7 @@ interface Phase { name: string; weeks: number; startDate: string; endDate: strin
 interface Plan  { projectStartDate: string; phases: Phase[]; totalWeeks: number }
 
 type Loc   = "Onsite" | "Offshore";
-type Level = "Solution Architect" | "Senior Consultant" | "Junior Consultant" | "Project Manager" | "Service Delivery Manager" | "Functional Consultant" | "AI Consultant";
+type Level = "Solution Architect" | "Senior Consultant" | "Junior Consultant" | "Project Manager" | "Service Delivery Manager" | "Subject Matter Expert" | "AI Consultant";
 
 interface ResourceRow {
   id: number; role: string; location: Loc; level: Level; remarks: string;
@@ -43,7 +43,7 @@ export interface ResourceEffortsProps {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const LEVELS: Level[] = ["Solution Architect", "Senior Consultant", "Junior Consultant", "Project Manager", "Service Delivery Manager", "Functional Consultant", "AI Consultant"];
+const LEVELS: Level[] = ["Solution Architect", "Senior Consultant", "Junior Consultant", "Project Manager", "Service Delivery Manager", "Subject Matter Expert", "AI Consultant"];
 
 const PHASE_PALETTE: Record<string, { hdr: string; text: string }> = {
   "Discover":          { hdr: "#3B82F6", text: "#1D4ED8" },
