@@ -1,12 +1,10 @@
 import { ReactNode, useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { useGetMe } from "@workspace/api-client-react";
-import { LayoutDashboard, Copy, Check } from "lucide-react";
-import { TermsGate } from "@/components/terms-gate";
+import { LayoutDashboard, Copy, Check, X } from "lucide-react";
 
 const APP_URL = "https://3bmichimap.replit.app";
 const LI_URL  = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(APP_URL)}`;
-
 
 const DRAFT_TEXT = `S/4HANA Transition Planning. Simplified.
 
@@ -18,10 +16,38 @@ This is what accelerated presales looks like. : ${APP_URL}
 
 #S4HANA #SAP #Presales #Transformation #SAPCommunity`;
 
+export const TERMS_CLAUSES = [
+  {
+    title: "Disclaimer of Warranty",
+    text: `The project plans, effort estimates, activity listings, and associated deliverables made available through 3B Michimap are generated wholly or partly by artificial intelligence language models. All such outputs are provided strictly on an "as is" and "as available" basis, without any warranty of any nature, whether express, implied, statutory, or otherwise, including but not limited to any warranty as to accuracy, completeness, fitness for a particular purpose, or non-infringement. The operator makes no representation that any AI-generated content accurately reflects the actual effort, timelines, or resource requirements of any specific SAP S/4HANA engagement.`,
+  },
+  {
+    title: "No Commercial Reliance",
+    text: "Outputs produced by this tool are intended solely for internal pre-sales planning and estimation purposes. They shall not be submitted to clients, incorporated into binding commercial proposals, Statements of Work, or contracts without prior independent review and validation by a qualified SAP professional. The operator disclaims all liability, whether in contract, tort, or otherwise, for any loss, damage, or claim arising from reliance on AI-generated outputs in any commercial or contractual context.",
+  },
+  {
+    title: "Acceptable Use Policy",
+    text: `By accessing and using 3B Michimap, you represent and warrant that: (a) you are an SAP pre-sales or delivery professional using this tool solely for internal planning purposes within your organisation; (b) you will not use this tool to generate outputs intended to deceive, mislead, or defraud any third party; (c) you will not reverse-engineer, scrape, reproduce, redistribute, resell, or sublicense any part of this tool, its underlying technology, or its generated outputs for commercial gain; (d) you will not use this tool in any manner that violates applicable law, regulation, or the rights of any third party; (e) you acknowledge that AI systems may produce plausible but factually incorrect outputs ("hallucinations") and you accept full responsibility for verifying the accuracy of all outputs before use.`,
+  },
+  {
+    title: "Acknowledgement of AI Limitations",
+    text: "The AI language models used within this tool have inherent limitations and may produce outputs that are inaccurate, outdated, inconsistent, or contextually inappropriate. In particular, AI-generated SAP Activate activities, effort estimates, and resource allocations may not reflect current SAP methodology guidance, applicable compliance requirements, or client-specific constraints. Users must apply professional judgement and independent validation to all outputs. This tool does not replace the expertise of a qualified SAP consultant, and no consulting relationship is created by its use.",
+  },
+  {
+    title: "Data Collection and Privacy",
+    text: "Certain usage metadata, including transition path selected, AI model used, total estimated weeks, device type, and approximate location derived from IP address, is collected solely for product improvement and usage analytics. This is undertaken in accordance with the Digital Personal Data Protection Act, 2023. No personally identifiable information is required to use the core planning functionality of this tool. By using this tool, you consent to the collection and processing of this anonymised usage data.",
+  },
+  {
+    title: "Intellectual Property",
+    text: "SAP, SAP Activate, SAP Cloud ALM, and S/4HANA are trademarks or registered trademarks of SAP SE in Germany and other countries. 3B Michimap is an independent community resource and is not affiliated with, endorsed by, or sponsored by SAP SE. All intellectual property rights in the tool's original design and code vest in the operator and are protected under the Copyright Act, 1957.",
+  },
+];
+
 export function Layout({ children }: { children: ReactNode }) {
   const { data: user } = useGetMe();
   const [open, setOpen]                   = useState(false);
   const [copied, setCopied]               = useState(false);
+  const [activeClause, setActiveClause]   = useState<number | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,7 +69,6 @@ export function Layout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <TermsGate>
     <div className="min-h-screen flex flex-col bg-background">
       {/* HEADER */}
       <header className="sticky top-0 z-50 w-full bg-background border-b border-border">
@@ -116,8 +141,8 @@ export function Layout({ children }: { children: ReactNode }) {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-border bg-background py-5 mt-6">
-        <div className="max-w-screen-xl mx-auto px-4 text-center">
+      <footer className="border-t border-border bg-background py-6 mt-6">
+        <div className="max-w-screen-xl mx-auto px-4 text-center space-y-3">
           <p className="text-sm text-muted-foreground">
             Dedicated to the SAP Pre-sales community by{" "}
             <a
@@ -129,9 +154,62 @@ export function Layout({ children }: { children: ReactNode }) {
               3B
             </a>.
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <span className="text-xs text-muted-foreground/60 font-medium">Terms &amp; Disclaimers:</span>
+            {TERMS_CLAUSES.map((c, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveClause(i)}
+                className="text-xs text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors"
+              >
+                {c.title}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground/50">Governed by the Laws of India · AI-generated outputs are for pre-sales use only.</p>
         </div>
       </footer>
+
+      {/* CLAUSE DETAIL MODAL */}
+      {activeClause !== null && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setActiveClause(null)}
+        >
+          <div
+            className="bg-background rounded-2xl shadow-2xl max-w-lg w-full"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-border">
+              <div>
+                <h2 className="text-base font-bold text-foreground">{TERMS_CLAUSES[activeClause].title}</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Governed by the Laws of India · 3B Michimap</p>
+              </div>
+              <button onClick={() => setActiveClause(null)} className="text-muted-foreground hover:text-foreground transition-colors ml-4 mt-0.5">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-muted-foreground leading-relaxed">{TERMS_CLAUSES[activeClause].text}</p>
+            </div>
+            <div className="px-6 pb-5 flex gap-2 justify-end">
+              {activeClause > 0 && (
+                <button onClick={() => setActiveClause(i => i! - 1)} className="px-4 py-2 rounded-lg border border-border text-xs font-semibold hover:bg-muted transition-colors">
+                  Previous
+                </button>
+              )}
+              {activeClause < TERMS_CLAUSES.length - 1 && (
+                <button onClick={() => setActiveClause(i => i! + 1)} className="px-4 py-2 rounded-lg border border-border text-xs font-semibold hover:bg-muted transition-colors">
+                  Next
+                </button>
+              )}
+              <button onClick={() => setActiveClause(null)} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-    </TermsGate>
   );
 }

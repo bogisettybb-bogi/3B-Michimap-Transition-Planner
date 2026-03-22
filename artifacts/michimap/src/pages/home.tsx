@@ -1,8 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { format, addWeeks } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Share2, Check } from "lucide-react";
-import { Layout } from "@/components/layout";
+import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Layout, TERMS_CLAUSES } from "@/components/layout";
 import { PlanPreview } from "@/components/plan-preview";
 import { ResourceEffortsPanel, type ResourceRowExport } from "@/components/resource-efforts";
 import { MODELS, TRANSITION_PATHS, PHASES_META, cn } from "@/lib/utils";
@@ -245,6 +245,8 @@ export default function Home() {
     run:            { weeks: 0 },
   });
 
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [activeClause, setActiveClause] = useState<number | null>(null);
   const [generatedResult, setGeneratedResult] = useState<GeneratePlanResponse | null>(null);
   const [showEfforts, setShowEfforts] = useState(false);
   const [confirmedEfforts, setConfirmedEfforts] = useState(false);
@@ -297,6 +299,7 @@ export default function Home() {
     setGeneratedResult(null);
     setShowEfforts(false);
     setConfirmedEfforts(false);
+    setTermsChecked(false);
     setHasDownloaded(false);
     setHasPlanDownloaded(false);
   };
@@ -671,13 +674,35 @@ export default function Home() {
                       </div>
                     </div>
                   ) : (
-                    <button onClick={handleGenerate} disabled={!transitionPath}
-                      className={cn("w-full flex items-center justify-center gap-3 font-bold text-base rounded-2xl py-5 shadow-lg transition-all",
-                        transitionPath
-                          ? "bg-secondary text-secondary-foreground hover:opacity-90 active:scale-[0.99]"
-                          : "bg-muted text-muted-foreground cursor-not-allowed opacity-60")}>
-                      <Sparkles className="w-5 h-5" /> Generate Project Plan
-                    </button>
+                    <div className="space-y-3">
+                      {/* Terms checkbox */}
+                      <label className="flex items-start gap-2.5 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={termsChecked}
+                          onChange={e => setTermsChecked(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 accent-primary shrink-0 cursor-pointer"
+                        />
+                        <span className="text-xs text-muted-foreground leading-snug">
+                          I acknowledge this plan is AI-generated and for pre-sales use only. I agree to the{" "}
+                          <button
+                            type="button"
+                            onClick={() => setActiveClause(0)}
+                            className="text-primary font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity"
+                          >
+                            Disclaimer &amp; Terms of Use
+                          </button>.
+                        </span>
+                      </label>
+
+                      <button onClick={handleGenerate} disabled={!transitionPath || !termsChecked}
+                        className={cn("w-full flex items-center justify-center gap-3 font-bold text-base rounded-2xl py-5 shadow-lg transition-all",
+                          transitionPath && termsChecked
+                            ? "bg-secondary text-secondary-foreground hover:opacity-90 active:scale-[0.99]"
+                            : "bg-muted text-muted-foreground cursor-not-allowed opacity-60")}>
+                        <Sparkles className="w-5 h-5" /> Generate Project Plan
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -751,6 +776,49 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* CLAUSE DETAIL MODAL */}
+      {activeClause !== null && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setActiveClause(null)}
+        >
+          <div
+            className="bg-background rounded-2xl shadow-2xl max-w-lg w-full"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-border">
+              <div>
+                <h2 className="text-base font-bold text-foreground">{TERMS_CLAUSES[activeClause].title}</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Governed by the Laws of India · 3B Michimap</p>
+              </div>
+              <button onClick={() => setActiveClause(null)} className="text-muted-foreground hover:text-foreground transition-colors ml-4 mt-0.5">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-muted-foreground leading-relaxed">{TERMS_CLAUSES[activeClause].text}</p>
+            </div>
+            <div className="px-6 pb-5 flex gap-2 justify-between">
+              <div className="flex gap-2">
+                {activeClause > 0 && (
+                  <button onClick={() => setActiveClause(i => i! - 1)} className="px-4 py-2 rounded-lg border border-border text-xs font-semibold hover:bg-muted transition-colors">
+                    Previous
+                  </button>
+                )}
+                {activeClause < TERMS_CLAUSES.length - 1 && (
+                  <button onClick={() => setActiveClause(i => i! + 1)} className="px-4 py-2 rounded-lg border border-border text-xs font-semibold hover:bg-muted transition-colors">
+                    Next
+                  </button>
+                )}
+              </div>
+              <button onClick={() => setActiveClause(null)} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
