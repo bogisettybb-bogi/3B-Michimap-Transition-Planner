@@ -789,6 +789,7 @@ export default function Home() {
                           </button>
                           <button
                             onClick={() => {
+                              setAgreedToTerms(false);
                               setShowEfforts(true);
                               setTimeout(() => document.getElementById("resource-efforts")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
                             }}
