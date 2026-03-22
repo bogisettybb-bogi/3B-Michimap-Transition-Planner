@@ -685,74 +685,6 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* DOWNLOAD SECTION */}
-                <div className="border-t border-border bg-card/50 px-6 py-5 space-y-3">
-                  <label className="flex items-start gap-2.5 cursor-pointer group">
-                    <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
-                    <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
-                      I agree to the{" "}
-                      <button type="button" onClick={() => setIsDisclaimersOpen(true)} className="text-primary font-semibold hover:underline">
-                        Disclaimers &amp; Terms of Use
-                      </button>
-                      {" "}- this plan is for internal pre-sales use only.
-                    </span>
-                  </label>
-
-                  <button
-                    onClick={handleDownload}
-                    disabled={!generatedResult || isDownloading || !agreedToTerms}
-                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl py-3.5 text-sm shadow-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                    {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    {!generatedResult ? "Generate a plan first" : isDownloading ? "Preparing Excel..." : "Download Excel Plan"}
-                  </button>
-
-                  {/* Share prompt - shown after download */}
-                  <AnimatePresence>
-                    {hasDownloaded && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Share2 className="w-4 h-4 text-primary shrink-0" />
-                          <p className="text-xs font-semibold text-foreground">Your plan is ready - share your experience!</p>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          Found this useful? Share on social media and invite your colleagues to try it. Leave a comment - feedback helps improve the tool!
-                        </p>
-                        <div className="flex gap-2">
-                          {/* X (Twitter) */}
-                          <a
-                            href={xShareUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-1.5 bg-black text-white text-xs font-bold rounded-lg py-2.5 hover:bg-black/80 transition-colors"
-                          >
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L2.25 2.25h6.986l4.263 5.637L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
-                            </svg>
-                            Share on X
-                          </a>
-                          {/* LinkedIn */}
-                          <a
-                            href={linkedInShareUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-1.5 bg-[#0A66C2] text-white text-xs font-bold rounded-lg py-2.5 hover:bg-[#0958a8] transition-colors"
-                          >
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                            </svg>
-                            Share on LinkedIn
-                          </a>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
               </div>
 
               {/* PLAN PREVIEW */}
@@ -790,8 +722,13 @@ export default function Home() {
                           <ResourceEffortsPanel
                             plan={generatedResult.plan}
                             agreedToTerms={agreedToTerms}
+                            setAgreedToTerms={setAgreedToTerms}
+                            onOpenDisclaimers={() => setIsDisclaimersOpen(true)}
                             isDownloading={isDownloading}
                             onDownload={handleDownload}
+                            hasDownloaded={hasDownloaded}
+                            xShareUrl={xShareUrl}
+                            linkedInShareUrl={linkedInShareUrl}
                             onConfirm={() => setConfirmedEfforts(true)}
                             onUnconfirm={() => setConfirmedEfforts(false)}
                           />
