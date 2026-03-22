@@ -1,12 +1,11 @@
 import { useState, useMemo } from "react";
 import { format, addWeeks } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Mail, CheckCircle2, Send } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { PlanPreview } from "@/components/plan-preview";
 import { MODELS, TRANSITION_PATHS, PHASES_META, cn } from "@/lib/utils";
 import {
-  useGetMe,
   useGeneratePlan,
   useDownloadPlan,
   GeneratePlanRequestTransitionPath,
@@ -28,7 +27,7 @@ function DisclaimersModal({ open, onClose }: { open: boolean; onClose: () => voi
           {[
             { title: "1. Accuracy / No Warranty", text: "Effort estimates are indicative and based on inputs provided by the user. 3B Michimap makes no warranty, express or implied, regarding the accuracy, completeness, or fitness of generated outputs for any specific engagement." },
             { title: "2. No Commercial Reliance", text: "Outputs from this tool are intended for internal planning purposes only and should not be submitted to clients or included in formal commercial proposals without independent validation by a qualified SAP professional." },
-            { title: "3. Third-Party Login", text: "Authentication is facilitated via third-party providers (Google, LinkedIn). 3B Michimap is not responsible for data handling practices of these providers. Users are encouraged to review their respective privacy policies." },
+            { title: "3. Data Privacy", text: "Your email address is collected solely to deliver the generated plan. It is not shared with third parties or used for marketing purposes. You may contact us at any time to request deletion of your data." },
             { title: "4. Acceptable Use", text: "This tool is intended exclusively for SAP pre-sales and delivery professionals. Unauthorised use, reverse engineering, or redistribution of generated outputs is prohibited." },
           ].map(d => (
             <div key={d.title} className="border-l-2 border-primary/40 pl-4">
@@ -234,12 +233,11 @@ function LiveSummary({ phases, projectStartDate, transitionPath }: { phases: Rec
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function Home() {
-  const { data: user } = useGetMe();
   const { mutateAsync: generatePlan, isPending: isGenerating } = useGeneratePlan();
   const { mutateAsync: downloadPlan, isPending: isDownloading } = useDownloadPlan();
   const { toast } = useToast();
 
-  const [aiModel, setAiModel] = useState("gpt-4o-mini");
+  const [aiModel, setAiModel] = useState("gemini-2-flash");
   const [apiKey, setApiKey] = useState("");
   const [transitionPath, setTransitionPath] = useState<GeneratePlanRequestTransitionPath>("brownfield");
   const [projectStartDate, setProjectStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -257,6 +255,11 @@ export default function Home() {
   const [generatedResult, setGeneratedResult] = useState<GeneratePlanResponse | null>(null);
   const [isDisclaimersOpen, setIsDisclaimersOpen] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  const [visitorEmail, setVisitorEmail] = useState("");
+  const [visitorName, setVisitorName] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [downloadToken, setDownloadToken] = useState<string | null>(null);
 
   const isPaidModel = MODELS.paid.some(m => m.id === aiModel);
 
@@ -295,20 +298,45 @@ export default function Home() {
         },
       });
       setGeneratedResult(res);
+      setDownloadToken(null);
       setTimeout(() => document.getElementById("plan-preview")?.scrollIntoView({ behavior: "smooth" }), 200);
     } catch (err: any) {
       toast({ title: "Generation Failed", description: err.message || "Failed to generate project plan.", variant: "destructive" });
     }
   };
 
-  const handleDownload = async () => {
+  const handleSendEmail = async () => {
     if (!generatedResult) return;
-    if (!agreedToTerms) {
-      toast({ title: "Agreement Required", description: "Please agree to the Disclaimers and Terms of Use.", variant: "destructive" });
+    if (!visitorEmail.trim()) {
+      toast({ title: "Email Required", description: "Please enter your email address.", variant: "destructive" });
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail.trim())) {
+      toast({ title: "Invalid Email", description: "Please enter a valid email address.", variant: "destructive" });
+      return;
+    }
+    setIsSendingEmail(true);
     try {
-      const blob = await downloadPlan({ data: { planId: generatedResult.planId } });
+      const res = await fetch("/api/generate/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: generatedResult.planId, email: visitorEmail.trim(), name: visitorName.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send email");
+      setDownloadToken(data.downloadToken);
+      toast({ title: "Plan sent!", description: `Your Excel plan was delivered to ${visitorEmail.trim()}.` });
+    } catch (err: any) {
+      toast({ title: "Email Failed", description: err.message || "Could not send email. Please try again.", variant: "destructive" });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!downloadToken || !generatedResult) return;
+    try {
+      const blob = await downloadPlan({ data: { planId: generatedResult.planId, downloadToken } as any });
       const url = URL.createObjectURL(blob as any);
       const a = document.createElement("a");
       a.href = url;
@@ -502,52 +530,67 @@ export default function Home() {
                   </button>
                 </div>
 
-                {/* SIGN IN SECTION */}
+                {/* EMAIL + DOWNLOAD SECTION */}
                 <div className="border-t border-border bg-card/50 px-6 py-6 space-y-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <Download className="w-4 h-4 text-primary" />
-                    <h3 className="font-bold text-foreground text-sm">Sign in to download your plan</h3>
+                    <Mail className="w-4 h-4 text-primary" />
+                    <h3 className="font-bold text-foreground text-sm">Get your plan by email</h3>
                   </div>
-                  <p className="text-xs text-muted-foreground">Free access. No password. Your plan is waiting.</p>
 
-                  <label className="flex items-start gap-2.5 cursor-pointer group">
-                    <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
-                    <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
-                      I have read and agree to the{" "}
-                      <button type="button" onClick={() => setIsDisclaimersOpen(true)} className="text-primary font-semibold hover:underline">
-                        Disclaimers &amp; Terms of Use
-                      </button>.
-                    </span>
-                  </label>
+                  {!downloadToken ? (
+                    <>
+                      <p className="text-xs text-muted-foreground">We'll send the Excel plan to your inbox. Then you can download it instantly.</p>
 
-                  {user ? (
-                    <button onClick={handleDownload} disabled={!generatedResult || isDownloading || !agreedToTerms}
-                      className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl py-3 text-sm shadow-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                      {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                      {!generatedResult ? "Generate a plan first" : "Download as Excel"}
-                    </button>
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Your name (optional)"
+                          value={visitorName}
+                          onChange={e => setVisitorName(e.target.value)}
+                          className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60"
+                        />
+                        <input
+                          type="email"
+                          placeholder="Your email address *"
+                          value={visitorEmail}
+                          onChange={e => setVisitorEmail(e.target.value)}
+                          className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60"
+                        />
+                      </div>
+
+                      <label className="flex items-start gap-2.5 cursor-pointer group">
+                        <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 cursor-pointer" />
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
+                          I have read and agree to the{" "}
+                          <button type="button" onClick={() => setIsDisclaimersOpen(true)} className="text-primary font-semibold hover:underline">
+                            Disclaimers &amp; Terms of Use
+                          </button>.
+                        </span>
+                      </label>
+
+                      <button
+                        onClick={handleSendEmail}
+                        disabled={!generatedResult || isSendingEmail || !agreedToTerms || !visitorEmail.trim()}
+                        className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl py-3 text-sm shadow-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        {isSendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        {!generatedResult ? "Generate a plan first" : isSendingEmail ? "Sending..." : "Send to my email"}
+                      </button>
+                    </>
                   ) : (
-                    <div className="space-y-2">
-                      <a href="/api/login"
-                        onClick={e => { if (!agreedToTerms) { e.preventDefault(); toast({ title: "Agreement Required", description: "Please agree to the terms first.", variant: "destructive" }); } }}
-                        className={cn("w-full flex items-center justify-center gap-2.5 bg-white text-[#333] border border-[#ddd] font-medium rounded-xl py-3 text-sm shadow-sm hover:bg-gray-50 transition-colors", !agreedToTerms && "opacity-40 pointer-events-none")}>
-                        <svg className="w-4 h-4" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 15.02 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                        </svg>
-                        Continue with Google
-                      </a>
-                      <a href="/api/login"
-                        onClick={e => { if (!agreedToTerms) { e.preventDefault(); toast({ title: "Agreement Required", description: "Please agree to the terms first.", variant: "destructive" }); } }}
-                        className={cn("w-full flex items-center justify-center gap-2.5 bg-[#0A66C2] text-white font-medium rounded-xl py-3 text-sm shadow-sm hover:bg-[#004182] transition-colors", !agreedToTerms && "opacity-40 pointer-events-none")}>
-                        <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
-                          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-                        </svg>
-                        Continue with LinkedIn
-                      </a>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-green-600 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                        <p className="text-sm font-medium">Plan sent to <span className="font-bold">{visitorEmail}</span></p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Check your inbox (and spam folder). You can also download it directly below.</p>
+                      <button
+                        onClick={handleDownload}
+                        disabled={isDownloading}
+                        className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl py-3 text-sm shadow-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        {isDownloading ? "Preparing..." : "Download Excel Now"}
+                      </button>
                     </div>
                   )}
                 </div>

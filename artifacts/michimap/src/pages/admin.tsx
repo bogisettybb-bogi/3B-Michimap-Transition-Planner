@@ -207,22 +207,34 @@ export default function AdminDashboard() {
                     <thead className="text-muted-foreground uppercase bg-muted/30">
                       <tr>
                         <th className="px-4 py-2.5 font-medium">Path</th>
-                        <th className="px-4 py-2.5 font-medium">User</th>
+                        <th className="px-4 py-2.5 font-medium">Name</th>
+                        <th className="px-4 py-2.5 font-medium">Email</th>
                         <th className="px-4 py-2.5 font-medium">Model</th>
-                        <th className="px-4 py-2.5 font-medium text-center">DL</th>
+                        <th className="px-4 py-2.5 font-medium">Location</th>
+                        <th className="px-4 py-2.5 font-medium">Device</th>
+                        <th className="px-4 py-2.5 font-medium text-center">Sent</th>
+                        <th className="px-4 py-2.5 font-medium text-center">Downloaded</th>
                         <th className="px-4 py-2.5 font-medium">Date</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {genData?.generations.map(g => (
+                      {genData?.generations.map((g: any) => (
                         <tr key={g.id} className="hover:bg-muted/10">
                           <td className="px-4 py-3">
                             <span className="capitalize font-medium text-foreground">{g.transitionPath}</span>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground max-w-[100px] truncate" title={g.userEmail || ""}>
-                            {g.userEmail || <em>Guest</em>}
+                          <td className="px-4 py-3 text-muted-foreground max-w-[80px] truncate" title={g.visitorName || ""}>
+                            {g.visitorName || <em className="text-muted-foreground/50">-</em>}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground max-w-[120px] truncate" title={g.visitorEmail || ""}>
+                            {g.visitorEmail || <em className="text-muted-foreground/50">-</em>}
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">{g.aiModel}</td>
+                          <td className="px-4 py-3 text-muted-foreground max-w-[100px] truncate" title={g.location || ""}>{g.location || "-"}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{g.device || "-"}</td>
+                          <td className="px-4 py-3 text-center">
+                            {g.emailSent ? <span className="text-primary font-bold">Yes</span> : <span className="text-muted-foreground">No</span>}
+                          </td>
                           <td className="px-4 py-3 text-center">
                             {g.downloaded ? <span className="text-green-500 font-bold">Yes</span> : <span className="text-muted-foreground">No</span>}
                           </td>
@@ -230,7 +242,7 @@ export default function AdminDashboard() {
                         </tr>
                       ))}
                       {!genData?.generations?.length && (
-                        <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground italic">No generations yet</td></tr>
+                        <tr><td colSpan={9} className="px-4 py-6 text-center text-muted-foreground italic">No generations yet</td></tr>
                       )}
                     </tbody>
                   </table>

@@ -2,7 +2,9 @@ import { Router } from "express";
 import { db, generationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { sendPlanEmail } from "../lib/email";
 import OpenAI from "openai";
+import { randomUUID } from "crypto";
 
 const router = Router();
 
@@ -251,6 +253,28 @@ Return ONLY a JSON object with one field: {"summary": "your summary here"}`;
 // In-memory plan store (in production this would be in DB)
 const planStore = new Map<string, any>();
 
+function parseDevice(ua: string): string {
+  if (!ua) return "Unknown";
+  if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+  if (/Android/i.test(ua)) return "Android";
+  if (/Macintosh|Mac OS X/i.test(ua)) return "Mac";
+  if (/Windows/i.test(ua)) return "Windows";
+  if (/Linux/i.test(ua)) return "Linux";
+  return "Desktop";
+}
+
+async function getLocation(ip: string): Promise<string> {
+  try {
+    if (!ip || ip === "127.0.0.1" || ip === "::1") return "Local";
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=city,country,status`, { signal: AbortSignal.timeout(3000) });
+    const data = await res.json() as any;
+    if (data.status === "success") return `${data.city || ""}, ${data.country || ""}`.replace(/^, |, $/, "");
+    return "Unknown";
+  } catch {
+    return "Unknown";
+  }
+}
+
 router.post("/plan", async (req, res) => {
   try {
     const { aiModel, apiKey, transitionPath, projectStartDate, phases } = req.body;
@@ -263,23 +287,29 @@ router.post("/plan", async (req, res) => {
     
     const planId = `plan_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
-    // Track generation in DB (best-effort)
-    const user = req.isAuthenticated() ? req.user : null;
     const realizeUatWeeks = phases.realizeUat?.weeks || 6;
     const totalWeeks = (phases.discover?.included ? phases.discover.weeks : 0) +
       phases.prepare.weeks + phases.explore.weeks + phases.realizeDevelop.weeks +
       realizeUatWeeks + phases.deploy.weeks + phases.run.weeks;
 
+    const ip = (req.headers["x-forwarded-for"] as string || req.socket.remoteAddress || "").split(",")[0].trim();
+    const ua = req.headers["user-agent"] || "";
+    const device = parseDevice(ua);
+    const location = await getLocation(ip);
+
     let generationId: number | null = null;
     try {
       const inserted = await db.insert(generationsTable).values({
-        userId: user?.id || null,
         transitionPath,
         aiModel,
         projectStartDate,
         totalWeeks,
         planData: plan,
         downloaded: false,
+        ipAddress: ip,
+        location,
+        device,
+        userAgent: ua.slice(0, 500),
       }).returning({ id: generationsTable.id });
       generationId = inserted[0]?.id || null;
     } catch (dbErr) {
@@ -295,51 +325,54 @@ router.post("/plan", async (req, res) => {
   }
 });
 
-router.post("/download", async (req, res) => {
-  if (!req.isAuthenticated()) return res.status(401).json({ error: "Authentication required" });
-  const user = req.user;
+// Map downloadToken -> planId (set after email is sent successfully)
+const downloadTokens = new Map<string, string>();
 
-  const { planId } = req.body;
-  if (!planId) return res.status(400).json({ error: "planId required" });
-
-  const plan = planStore.get(planId);
-  if (!plan) return res.status(404).json({ error: "Plan not found" });
-
+router.post("/send-email", async (req, res) => {
   try {
+    const { planId, email, name } = req.body;
+    if (!planId || !email) return res.status(400).json({ error: "planId and email are required" });
+
+    const plan = planStore.get(planId);
+    if (!plan) return res.status(404).json({ error: "Plan not found or expired" });
+
     const ExcelJS = (await import("exceljs")).default;
     const workbook = new ExcelJS.Workbook();
     workbook.creator = "3B Michimap";
     workbook.created = new Date();
 
+    const PHASE_COLORS: Record<string, string> = {
+      "Discover": "FFDBEAFE", "Prepare": "FFD1FAE5", "Explore": "FFFED7AA",
+      "Realize - Develop": "FFFEF3C7", "Realize - UAT": "FFFEE2E2",
+      "Deploy": "FFE9D5FF", "Run": "FFCCFBF1",
+    };
+    const HEADER_COLOR = "FF1A1A1A";
+    const HEADER_FONT_COLOR = "FFFFFFFF";
+
     // Summary sheet
-    const summarySheet = workbook.addWorksheet("Summary", {
-      pageSetup: { orientation: "landscape", fitToPage: true }
-    });
-    summarySheet.columns = [
-      { width: 30 }, { width: 50 }, { width: 20 }, { width: 20 }
-    ];
-    
+    const summarySheet = workbook.addWorksheet("Summary", { pageSetup: { orientation: "landscape", fitToPage: true } });
+    summarySheet.columns = [{ width: 30 }, { width: 50 }, { width: 20 }, { width: 20 }];
     summarySheet.mergeCells("A1:D1");
     const titleCell = summarySheet.getCell("A1");
-    titleCell.value = "3B Michimap - SAP S/4HANA Project Plan";
+    titleCell.value = "3B Michimap — SAP S/4HANA Project Plan";
     titleCell.font = { bold: true, size: 16, color: { argb: "FF1A1A1A" } };
     titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
     titleCell.alignment = { horizontal: "center", vertical: "middle" };
     summarySheet.getRow(1).height = 35;
-
     summarySheet.mergeCells("A2:D2");
     const subtitleCell = summarySheet.getCell("A2");
     subtitleCell.value = `Generated by 3B Michimap | ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`;
     subtitleCell.font = { italic: true, size: 10, color: { argb: "FF888888" } };
     subtitleCell.alignment = { horizontal: "center" };
     summarySheet.getRow(2).height = 20;
-
     const infoRows = [
       ["", ""],
-      ["Transition Path", plan.transitionPath.charAt(0).toUpperCase() + plan.transitionPath.slice(1)],
-      ["Project Start Date", plan.projectStartDate],
+      ["Recipient Name", name || ""],
+      ["Recipient Email", email],
+      ["Transition Path", (plan.transitionPath || "").charAt(0).toUpperCase() + (plan.transitionPath || "").slice(1)],
+      ["Project Start Date", plan.projectStartDate || ""],
       ["Total Duration", `${plan.totalWeeks} weeks (~${Math.round(plan.totalWeeks / 4.3)} months)`],
-      ["AI Model Used", plan.requestBody?.aiModel || "GPT-5.2"],
+      ["AI Model Used", plan.requestBody?.aiModel || "Gemini 2.0 Flash"],
       ["Generated On", new Date().toLocaleDateString("en-GB")],
       ["", ""],
       ["Executive Summary", plan.summary || ""],
@@ -357,51 +390,31 @@ router.post("/download", async (req, res) => {
     disclaimerSheet.columns = [{ width: 20 }, { width: 100 }];
     disclaimerSheet.addRow(["DISCLAIMERS & TERMS OF USE"]).getCell(1).font = { bold: true, size: 12 };
     disclaimerSheet.addRow([]);
-    const disclaimers = [
+    [
       ["1. Accuracy / No Warranty", "Effort estimates are indicative and based on inputs provided by the user. 3B Michimap makes no warranty, express or implied, regarding the accuracy, completeness, or fitness of generated outputs for any specific engagement."],
       ["2. No Commercial Reliance", "Outputs from this tool are intended for internal planning purposes only and should not be submitted to clients or included in formal commercial proposals without independent validation by a qualified SAP professional."],
-      ["3. Third-Party Login", "Authentication is facilitated via third-party providers (Google, LinkedIn). 3B Michimap is not responsible for data handling practices of these providers."],
-      ["4. Acceptable Use", "This tool is intended exclusively for SAP pre-sales and delivery professionals. Unauthorised use, reverse engineering, or redistribution of generated outputs is prohibited."],
-    ];
-    disclaimers.forEach(([title, text]) => {
+      ["3. Acceptable Use", "This tool is intended exclusively for SAP pre-sales and delivery professionals. Unauthorised use, reverse engineering, or redistribution of generated outputs is prohibited."],
+    ].forEach(([title, text]) => {
       const row = disclaimerSheet.addRow([title, text]);
       row.getCell(1).font = { bold: true };
       row.getCell(2).alignment = { wrapText: true };
       disclaimerSheet.addRow([]);
     });
 
-    // Phase colors (background)
-    const PHASE_COLORS: Record<string, string> = {
-      "Discover": "FFDBEAFE",
-      "Prepare": "FFD1FAE5",
-      "Explore": "FFFED7AA",
-      "Realize - Develop": "FFFEF3C7",
-      "Realize - UAT": "FFFEE2E2",
-      "Deploy": "FFE9D5FF",
-      "Run": "FFCCFBF1",
-    };
-    const HEADER_COLOR = "FF1A1A1A";
-    const HEADER_FONT_COLOR = "FFFFFFFF";
-
-    // Main plan sheet per phase
+    // Phase sheets
     for (const phase of plan.phases) {
       const sheet = workbook.addWorksheet(phase.name, { pageSetup: { orientation: "landscape", fitToPage: true } });
       const bgColor = PHASE_COLORS[phase.name] || "FFFFFFFF";
-      
-      // Phase header
-      sheet.mergeCells("A1:N1");
+      sheet.mergeCells("A1:L1");
       const phaseHeader = sheet.getCell("A1");
-      phaseHeader.value = `${phase.name.toUpperCase()} - ${phase.startDate} to ${phase.endDate} (${phase.weeks} weeks)`;
+      phaseHeader.value = `${phase.name.toUpperCase()} — ${phase.startDate} to ${phase.endDate} (${phase.weeks} weeks)`;
       phaseHeader.font = { bold: true, size: 13, color: { argb: HEADER_FONT_COLOR } };
       phaseHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: HEADER_COLOR } };
       phaseHeader.alignment = { horizontal: "center", vertical: "middle" };
       sheet.getRow(1).height = 28;
-
-      // Column headers
       const headers = ["Category", "Activity", "Description", "Workstream", "Responsible", "Accountable", "Consulted", "Informed", "Start Wk", "End Wk", "Duration", "Milestone"];
       const colWidths = [18, 30, 45, 18, 22, 22, 22, 22, 9, 9, 10, 10];
       sheet.columns = colWidths.map(w => ({ width: w }));
-
       const headerRow = sheet.addRow(headers);
       headerRow.eachCell(cell => {
         cell.font = { bold: true, size: 10, color: { argb: "FF1A1A1A" } };
@@ -414,21 +427,11 @@ router.post("/download", async (req, res) => {
         cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
       });
       sheet.getRow(2).height = 22;
-
-      // Data rows
       for (const act of phase.activities) {
         const dataRow = sheet.addRow([
-          act.category,
-          act.activity,
-          act.description,
-          act.workstream,
-          act.responsible,
-          act.accountable,
-          act.consulted,
-          act.informed,
-          act.startWeek,
-          act.endWeek,
-          act.duration,
+          act.category, act.activity, act.description, act.workstream,
+          act.responsible, act.accountable, act.consulted, act.informed,
+          act.startWeek, act.endWeek, act.duration,
           act.milestone ? "Milestone" : "",
         ]);
         dataRow.eachCell((cell, colNum) => {
@@ -438,17 +441,157 @@ router.post("/download", async (req, res) => {
             bottom: { style: "hair", color: { argb: "FFDDDDDD" } },
             right: { style: "hair", color: { argb: "FFDDDDDD" } },
           };
-          if (act.milestone) {
-            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF9C4" } };
-          }
+          if (act.milestone) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF9C4" } };
         });
-        dataRow.getCell(13).font = { bold: act.milestone, size: 9, color: { argb: act.milestone ? "FFC8941A" : "FF666666" } };
+        dataRow.getCell(12).font = { bold: act.milestone, size: 9, color: { argb: act.milestone ? "FFC8941A" : "FF666666" } };
         dataRow.height = 32;
       }
     }
 
-    // Update download record if we have a generation ID stored
-    const storedPlan = planStore.get(planId);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const excelBuffer = Buffer.from(buffer);
+    const fileName = `3B_Michimap_${plan.transitionPath}_${plan.projectStartDate}.xlsx`;
+
+    const emailResult = await sendPlanEmail({
+      to: email,
+      name: name || undefined,
+      transitionPath: plan.transitionPath,
+      totalWeeks: plan.totalWeeks,
+      projectStartDate: plan.projectStartDate,
+      excelBuffer,
+      fileName,
+    });
+
+    if (!emailResult.success) {
+      return res.status(500).json({ error: emailResult.error || "Failed to send email" });
+    }
+
+    const downloadToken = randomUUID();
+    downloadTokens.set(downloadToken, planId);
+    setTimeout(() => downloadTokens.delete(downloadToken), 60 * 60 * 1000);
+
+    if (plan.generationId) {
+      await db.update(generationsTable)
+        .set({
+          visitorEmail: email,
+          visitorName: name || null,
+          emailSent: true,
+          downloadToken,
+        })
+        .where(eq(generationsTable.id, plan.generationId))
+        .catch(() => {});
+    }
+
+    res.json({ success: true, downloadToken });
+  } catch (err) {
+    logger.error({ err }, "Send email error");
+    res.status(500).json({ error: "Failed to send email" });
+  }
+});
+
+router.post("/download", async (req, res) => {
+  const { planId, downloadToken } = req.body;
+  const resolvedPlanId = downloadToken ? downloadTokens.get(downloadToken) : planId;
+  if (!resolvedPlanId) return res.status(403).json({ error: "Invalid or expired download token" });
+
+  const plan = planStore.get(resolvedPlanId);
+  if (!plan) return res.status(404).json({ error: "Plan not found" });
+
+  try {
+    const storedPlan = planStore.get(resolvedPlanId);
+
+    const ExcelJS = (await import("exceljs")).default;
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "3B Michimap";
+    workbook.created = new Date();
+
+    const PHASE_COLORS: Record<string, string> = {
+      "Discover": "FFDBEAFE", "Prepare": "FFD1FAE5", "Explore": "FFFED7AA",
+      "Realize - Develop": "FFFEF3C7", "Realize - UAT": "FFFEE2E2",
+      "Deploy": "FFE9D5FF", "Run": "FFCCFBF1",
+    };
+    const HEADER_COLOR = "FF1A1A1A";
+    const HEADER_FONT_COLOR = "FFFFFFFF";
+
+    const summarySheet = workbook.addWorksheet("Summary", { pageSetup: { orientation: "landscape", fitToPage: true } });
+    summarySheet.columns = [{ width: 30 }, { width: 50 }, { width: 20 }, { width: 20 }];
+    summarySheet.mergeCells("A1:D1");
+    const titleCell = summarySheet.getCell("A1");
+    titleCell.value = "3B Michimap — SAP S/4HANA Project Plan";
+    titleCell.font = { bold: true, size: 16, color: { argb: "FF1A1A1A" } };
+    titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
+    titleCell.alignment = { horizontal: "center", vertical: "middle" };
+    summarySheet.getRow(1).height = 35;
+    summarySheet.mergeCells("A2:D2");
+    const subtitleCell = summarySheet.getCell("A2");
+    subtitleCell.value = `Generated by 3B Michimap | ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`;
+    subtitleCell.font = { italic: true, size: 10, color: { argb: "FF888888" } };
+    subtitleCell.alignment = { horizontal: "center" };
+    summarySheet.getRow(2).height = 20;
+    [
+      ["", ""],
+      ["Transition Path", (plan.transitionPath || "").charAt(0).toUpperCase() + (plan.transitionPath || "").slice(1)],
+      ["Project Start Date", plan.projectStartDate || ""],
+      ["Total Duration", `${plan.totalWeeks} weeks (~${Math.round(plan.totalWeeks / 4.3)} months)`],
+      ["AI Model Used", plan.requestBody?.aiModel || "Gemini 2.0 Flash"],
+      ["Generated On", new Date().toLocaleDateString("en-GB")],
+      ["", ""],
+      ["Executive Summary", plan.summary || ""],
+    ].forEach(([label, value]) => {
+      const row = summarySheet.addRow([label, value]);
+      if (label) {
+        row.getCell(1).font = { bold: true };
+        row.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF8E7" } };
+      }
+    });
+
+    const disclaimerSheet = workbook.addWorksheet("Disclaimers");
+    disclaimerSheet.columns = [{ width: 20 }, { width: 100 }];
+    disclaimerSheet.addRow(["DISCLAIMERS & TERMS OF USE"]).getCell(1).font = { bold: true, size: 12 };
+    disclaimerSheet.addRow([]);
+    [
+      ["1. Accuracy / No Warranty", "Effort estimates are indicative and based on inputs provided by the user. 3B Michimap makes no warranty, express or implied, regarding the accuracy, completeness, or fitness of generated outputs for any specific engagement."],
+      ["2. No Commercial Reliance", "Outputs are for internal planning only. Do not use in formal commercial proposals without independent validation by a qualified SAP professional."],
+      ["3. Acceptable Use", "This tool is intended exclusively for SAP pre-sales and delivery professionals. Unauthorised use or redistribution of generated outputs is prohibited."],
+    ].forEach(([title, text]) => {
+      const row = disclaimerSheet.addRow([title, text]);
+      row.getCell(1).font = { bold: true };
+      row.getCell(2).alignment = { wrapText: true };
+      disclaimerSheet.addRow([]);
+    });
+
+    for (const phase of plan.phases) {
+      const sheet = workbook.addWorksheet(phase.name, { pageSetup: { orientation: "landscape", fitToPage: true } });
+      const bgColor = PHASE_COLORS[phase.name] || "FFFFFFFF";
+      sheet.mergeCells("A1:L1");
+      const phaseHeader = sheet.getCell("A1");
+      phaseHeader.value = `${phase.name.toUpperCase()} — ${phase.startDate} to ${phase.endDate} (${phase.weeks} weeks)`;
+      phaseHeader.font = { bold: true, size: 13, color: { argb: HEADER_FONT_COLOR } };
+      phaseHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: HEADER_COLOR } };
+      phaseHeader.alignment = { horizontal: "center", vertical: "middle" };
+      sheet.getRow(1).height = 28;
+      sheet.columns = [18, 30, 45, 18, 22, 22, 22, 22, 9, 9, 10, 10].map(w => ({ width: w }));
+      const headerRow = sheet.addRow(["Category", "Activity", "Description", "Workstream", "Responsible", "Accountable", "Consulted", "Informed", "Start Wk", "End Wk", "Duration", "Milestone"]);
+      headerRow.eachCell(cell => {
+        cell.font = { bold: true, size: 10, color: { argb: "FF1A1A1A" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bgColor } };
+        cell.border = { top: { style: "thin", color: { argb: "FFCCCCCC" } }, bottom: { style: "medium", color: { argb: "FFAAAAAA" } }, right: { style: "thin", color: { argb: "FFCCCCCC" } } };
+        cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      });
+      sheet.getRow(2).height = 22;
+      for (const act of phase.activities) {
+        const dataRow = sheet.addRow([act.category, act.activity, act.description, act.workstream, act.responsible, act.accountable, act.consulted, act.informed, act.startWeek, act.endWeek, act.duration, act.milestone ? "Milestone" : ""]);
+        dataRow.eachCell((cell, colNum) => {
+          cell.font = { size: 9 };
+          cell.alignment = { vertical: "top", wrapText: colNum <= 4 };
+          cell.border = { bottom: { style: "hair", color: { argb: "FFDDDDDD" } }, right: { style: "hair", color: { argb: "FFDDDDDD" } } };
+          if (act.milestone) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF9C4" } };
+        });
+        dataRow.getCell(12).font = { bold: act.milestone, size: 9, color: { argb: act.milestone ? "FFC8941A" : "FF666666" } };
+        dataRow.height = 32;
+      }
+    }
+
     if (storedPlan?.generationId) {
       await db.update(generationsTable)
         .set({ downloaded: true, downloadedAt: new Date() })

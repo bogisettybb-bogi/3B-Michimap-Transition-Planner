@@ -20,6 +20,7 @@ runButton = "Project"
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
+integrations = ["resend:1.0.0"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
@@ -31,3 +32,6 @@ timeoutMs = 20000
 ADMIN_EMAIL = "bogisettybb@gmail.com"
 GOOGLE_CALLBACK_URL = "/api/auth/google/callback"
 LINKEDIN_CALLBACK_URL = "/api/auth/linkedin/callback"
+
+[nix]
+channel = "stable-25_05"

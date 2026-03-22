@@ -100,19 +100,17 @@ router.get("/generations", async (req, res) => {
     const [{ count: total }] = await db.select({ count: count() }).from(generationsTable);
 
     const gensWithUser = await Promise.all(gens.map(async (g) => {
-      let userEmail: string | null = null;
-      if (g.userId) {
-        const [u] = await db.select({ email: usersTable.email }).from(usersTable).where(eq(usersTable.id, g.userId));
-        userEmail = u?.email || null;
-      }
       return {
         id: g.id,
-        userId: g.userId,
-        userEmail,
+        visitorEmail: g.visitorEmail,
+        visitorName: g.visitorName,
         transitionPath: g.transitionPath,
         aiModel: g.aiModel,
         totalWeeks: g.totalWeeks,
+        emailSent: g.emailSent,
         downloaded: g.downloaded,
+        location: g.location,
+        device: g.device,
         createdAt: g.createdAt,
       };
     }));

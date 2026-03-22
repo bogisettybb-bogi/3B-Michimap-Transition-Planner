@@ -1,11 +1,10 @@
 import { ReactNode } from "react";
 import { Link } from "wouter";
-import { useGetMe, useLogout } from "@workspace/api-client-react";
-import { LogOut, LayoutDashboard, Loader2 } from "lucide-react";
+import { useGetMe } from "@workspace/api-client-react";
+import { LayoutDashboard } from "lucide-react";
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { data: user, isLoading } = useGetMe();
-  const { mutate: logout } = useLogout();
+  const { data: user } = useGetMe();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -25,34 +24,11 @@ export function Layout({ children }: { children: ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-3">
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-            ) : user ? (
-              <div className="flex items-center gap-3">
-                {user.isAdmin && (
-                  <Link href="/admin" className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-                    <LayoutDashboard className="w-4 h-4" />
-                    Admin
-                  </Link>
-                )}
-                <div className="flex items-center gap-2 pl-3 border-l border-border">
-                  {user.avatarUrl && (
-                    <img src={user.avatarUrl} alt={user.name} className="w-7 h-7 rounded-full border border-border" />
-                  )}
-                  <span className="text-sm font-medium text-foreground hidden sm:block max-w-[120px] truncate">
-                    {user.name}
-                  </span>
-                  <button onClick={() => logout({})} title="Sign out"
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <a href="/api/login"
-                className="text-sm font-medium px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-foreground">
-                Sign in
-              </a>
+            {user?.isAdmin && (
+              <Link href="/admin" className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+                <LayoutDashboard className="w-4 h-4" />
+                Admin
+              </Link>
             )}
           </div>
         </div>

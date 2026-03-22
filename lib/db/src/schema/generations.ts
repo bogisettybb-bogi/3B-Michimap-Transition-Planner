@@ -13,6 +13,14 @@ export const generationsTable = pgTable("generations", {
   downloaded: boolean("downloaded").notNull().default(false),
   downloadedAt: timestamp("downloaded_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  visitorEmail: text("visitor_email"),
+  visitorName: text("visitor_name"),
+  ipAddress: text("ip_address"),
+  location: text("location"),
+  device: text("device"),
+  userAgent: text("user_agent"),
+  emailSent: boolean("email_sent").notNull().default(false),
+  downloadToken: text("download_token"),
 });
 
 export const insertGenerationSchema = createInsertSchema(generationsTable).omit({ id: true, createdAt: true });
