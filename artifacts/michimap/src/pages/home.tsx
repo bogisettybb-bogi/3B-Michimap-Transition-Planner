@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { format, addWeeks } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, Sparkles, Loader2, Minus, Plus, X, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { PlanPreview } from "@/components/plan-preview";
 import { MODELS, TRANSITION_PATHS, PHASES_META, cn } from "@/lib/utils";
@@ -254,6 +254,7 @@ export default function Home() {
   const [generatedResult, setGeneratedResult] = useState<GeneratePlanResponse | null>(null);
   const [isDisclaimersOpen, setIsDisclaimersOpen] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [hasDownloaded, setHasDownloaded] = useState(false);
 
 
   const isPaidModel = MODELS.paid.some(m => m.id === aiModel);
@@ -311,11 +312,17 @@ export default function Home() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      setHasDownloaded(true);
       toast({ title: "Download Started", description: "Your SAP Activate plan is downloading." });
     } catch {
       toast({ title: "Download Failed", description: "Please try again or regenerate the plan.", variant: "destructive" });
     }
   };
+
+  const appUrl = typeof window !== "undefined" ? window.location.origin : "https://3bmichimap.replit.app";
+  const shareText = `Just generated my SAP S/4HANA ${transitionPath} project plan in seconds using 3B Michimap — a free AI-powered pre-sales planning tool built on SAP Activate. Try it → ${appUrl} 💡 Drop a comment if you'd like to learn more! #SAP #S4HANA #SAPActivate #PreSales`;
+  const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+  const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}&summary=${encodeURIComponent(shareText)}`;
 
   const colors = PATH_COLORS[transitionPath];
 
@@ -517,6 +524,52 @@ export default function Home() {
                     {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     {!generatedResult ? "Generate a plan first" : isDownloading ? "Preparing Excel..." : "Download Excel Plan"}
                   </button>
+
+                  {/* Share prompt — shown after download */}
+                  <AnimatePresence>
+                    {hasDownloaded && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Share2 className="w-4 h-4 text-primary shrink-0" />
+                          <p className="text-xs font-semibold text-foreground">Your plan is ready — share your experience!</p>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          Found this useful? Share on social media and invite your colleagues to try it. Leave a comment — feedback helps improve the tool!
+                        </p>
+                        <div className="flex gap-2">
+                          {/* X (Twitter) */}
+                          <a
+                            href={xShareUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-1.5 bg-black text-white text-xs font-bold rounded-lg py-2.5 hover:bg-black/80 transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L2.25 2.25h6.986l4.263 5.637L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
+                            </svg>
+                            Share on X
+                          </a>
+                          {/* LinkedIn */}
+                          <a
+                            href={linkedInShareUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-1.5 bg-[#0A66C2] text-white text-xs font-bold rounded-lg py-2.5 hover:bg-[#0958a8] transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                            </svg>
+                            Share on LinkedIn
+                          </a>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 

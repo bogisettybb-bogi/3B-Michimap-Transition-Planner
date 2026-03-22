@@ -233,48 +233,51 @@ async function generateWithAI(params: any): Promise<any> {
       .join("\n");
     const phaseNames = plan.phases.map((p: any) => p.name);
 
-    const prompt = `You are a senior SAP S/4HANA Activate consultant with deep expertise in SAP Cloud ALM task templates, accelerators, and deliverables.
+    const prompt = `You are a senior SAP S/4HANA Activate consultant. Generate a project plan for a ${params.transitionPath} implementation.
 
-The client is doing a **${params.transitionPath}** SAP S/4HANA implementation using SAP Activate methodology with these phases:
-${phaseLines}
+Phases: ${phaseLines}
 
-Your job: generate a comprehensive, SAP Cloud ALM-aligned activity list for each phase.
+Return ONLY valid JSON. No markdown, no extra text — raw JSON only:
+{"summary":"2-3 sentence executive summary","phases":{"${phaseNames.join('":[],"')}":[]}}
 
-Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
-{
-  "summary": "2-3 sentence professional executive summary for pre-sales, specific to ${params.transitionPath}",
-  "phases": {
-    ${phaseNames.map((n: string) => `"${n}": [
-      {"category": "...", "activity": "...", "description": "detailed description aligned with SAP Cloud ALM deliverable", "workstream": "...", "responsible": "SAP role", "accountable": "...", "consulted": "...", "informed": "...", "milestone": false}
-    ]`).join(",\n    ")}
-  }
-}
-
-Requirements per phase:
-- ${phaseNames[0] === "Discover" ? "Discover: 4–6 activities (scoping, readiness, business case, demos)" : "First phase: 6–10 activities"}
-- Prepare: 8–12 activities (project initiation, governance, infrastructure, standards, SAP Cloud ALM setup, risk register)
-- Explore: 10–14 activities (Fit-to-Standard workshops per module, gap analysis, solution design, data migration strategy, integration design, security design)
-- Realize - Develop: 12–16 activities (configuration per module FI/CO/MM/SD/PP/WM, custom development ABAP/Fiori, integration build, data migration mock loads, unit testing, SIT, training development)
-- Realize - UAT: 6–10 activities (UAT preparation, UAT execution per stream, defect management, cutover planning, rehearsals, training delivery, go-live readiness sign-off)
-- Deploy: 4–6 activities (final data load, production cutover, go-live execution, hypercare plan activation, stakeholder communication)
-- Run: 4–7 activities (hypercare support, incident management, performance tuning, knowledge transfer, stabilization, project closure)
-
-Each activity must reference real SAP Activate deliverables, SAP Cloud ALM tasks, or standard S/4HANA implementation best practices.
-Workstream values: Finance, Procurement, Sales, Operations, Technical, Data Management, Project Management, Quality Assurance, Change Management, Cross-Stream, Support, AI & Analytics.
-Milestone must be true for: kickoff, gap sign-off, UAT sign-off, go-live, project closure.`;
+Rules per phase (6–8 activities each):
+Each activity: {"category":"","activity":"","description":"","workstream":"","responsible":"","accountable":"","consulted":"","informed":"","milestone":false}
+- Prepare: SAP Cloud ALM setup, project charter, landscape provisioning, governance, risk register, team onboarding, standards
+- Explore: FTS workshops FI/CO/MM/SD/PP, gap analysis, solution design, integration design, data migration strategy, security design
+- Realize - Develop: config FI/CO/MM/SD, ABAP/Fiori dev, integration build, data migration mock, unit test, SIT, training materials
+- Realize - UAT: UAT prep, UAT execution, defect management, cutover planning, rehearsal, training delivery, go-live readiness sign-off
+- Deploy: final data load, production cutover, go-live execution, hypercare activation, stakeholder comms
+- Run: hypercare support, incident management, performance tuning, knowledge transfer, project closure
+Set milestone:true for kickoff, gap sign-off, UAT sign-off, go-live, closure.`;
 
     const response = await client.chat.completions.create({
       model,
       messages: [{ role: "user", content: prompt }],
-      max_completion_tokens: 5000,
+      max_completion_tokens: 3500,
     });
 
-    const content = response.choices[0]?.message?.content || "";
-    const parsed = JSON.parse(content.replace(/```json\n?|\n?```/g, "").trim());
+    const raw = (response.choices[0]?.message?.content || "").replace(/```json\n?|\n?```/g, "").trim();
 
-    if (parsed.summary) plan.summary = parsed.summary;
+    // Attempt robust parse — fix truncated JSON by closing open structures
+    let parsed: any = null;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      // Try to extract summary at minimum using regex
+      const sumMatch = raw.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (sumMatch) plan.summary = sumMatch[1];
 
-    if (parsed.phases && typeof parsed.phases === "object") {
+      // Attempt to recover partial phases by closing the JSON
+      const fixable = raw
+        .replace(/,\s*$/, "")       // trailing comma
+        .replace(/\}\s*$/, "}}") // close phases + root if cut
+        + ']}';                      // close last array + phases + root
+      try { parsed = JSON.parse(fixable); } catch { /* give up */ }
+    }
+
+    if (parsed?.summary) plan.summary = parsed.summary;
+
+    if (parsed?.phases && typeof parsed.phases === "object") {
       for (const phase of plan.phases) {
         const aiActs: any[] = parsed.phases[phase.name];
         if (Array.isArray(aiActs) && aiActs.length >= 3) {

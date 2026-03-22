@@ -103,8 +103,10 @@ export function PlanPreview({ plan }: { plan: Plan }) {
                 const acts = phase.activities.length;
                 const isDeployPhase = phase.name === "Deploy";
 
+                const goLivePct = offsetPct + widthPct;
+
                 rows.push(
-                  <div key={phase.name} className="flex items-center gap-3">
+                  <div key={phase.name} className="flex items-center gap-3" style={{ paddingTop: isDeployPhase ? "22px" : 0 }}>
                     {/* Phase label */}
                     <div className={cn("text-[10px] font-bold w-28 shrink-0 truncate", colors.text)}>
                       {phase.name}
@@ -123,14 +125,34 @@ export function PlanPreview({ plan }: { plan: Plan }) {
                         <span className="text-[9px] text-white font-bold px-1 truncate">{phase.weeks}w</span>
                       </div>
 
-                      {/* GO-LIVE marker — pin at end of Deploy */}
+                      {/* GO-LIVE badge + vertical pin — sits above the Deploy bar */}
                       {isDeployPhase && (
-                        <div
-                          className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center z-10"
-                          style={{ left: `${offsetPct + widthPct}%`, transform: "translateX(-50%) translateY(-50%)" }}
-                        >
-                          <div className="w-0.5 h-6 bg-red-500" />
-                        </div>
+                        <>
+                          {/* vertical pin line */}
+                          <div
+                            className="absolute z-10"
+                            style={{
+                              left: `${goLivePct}%`,
+                              transform: "translateX(-50%)",
+                              bottom: 0,
+                              width: "2px",
+                              height: "calc(100% + 20px)",
+                              background: "#EF4444",
+                            }}
+                          />
+                          {/* pill badge above the track */}
+                          <div
+                            className="absolute z-20 flex items-center gap-1 bg-red-500 text-white text-[9px] font-black px-2.5 py-[3px] rounded-full shadow-md whitespace-nowrap"
+                            style={{
+                              left: `${goLivePct}%`,
+                              transform: "translateX(-50%)",
+                              bottom: "calc(100% + 6px)",
+                            }}
+                          >
+                            <span>★</span>
+                            <span>GO-LIVE</span>
+                          </div>
+                        </>
                       )}
                     </div>
 
@@ -140,28 +162,6 @@ export function PlanPreview({ plan }: { plan: Plan }) {
                     </div>
                   </div>
                 );
-
-                // GO-LIVE banner inserted after Deploy row
-                if (isDeployPhase) {
-                  const goLivePct = offsetPct + widthPct;
-                  rows.push(
-                    <div key="go-live" className="flex items-center gap-3 py-1">
-                      <div className="w-28 shrink-0" />
-                      <div className="flex-1 relative">
-                        <div
-                          className="absolute flex items-center gap-1.5"
-                          style={{ left: `${goLivePct}%`, transform: "translateX(-50%)" }}
-                        >
-                          <div className="flex items-center gap-1 bg-red-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full shadow-md whitespace-nowrap">
-                            <span>★</span>
-                            <span>GO-LIVE</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="w-16 shrink-0" />
-                    </div>
-                  );
-                }
 
                 weekOffset += phase.weeks;
               });
