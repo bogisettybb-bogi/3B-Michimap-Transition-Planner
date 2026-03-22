@@ -72,9 +72,9 @@ const GOLD = "#E9A944";
 const ACT_W  = 52;   // + / trash actions
 const ROLE_W = 130;
 const LOC_W  = 78;
-const LEV_W  = 100;
+const LEV_W  = 175;
 const REM_W  = 130;  // Remarks free text
-const FROZEN = ACT_W + ROLE_W + LOC_W + LEV_W + REM_W; // 490
+const FROZEN = ACT_W + ROLE_W + LOC_W + LEV_W + REM_W; // 565
 
 // Scrollable column widths
 const WK_W   = 52;   // week columns (wider for full date)
