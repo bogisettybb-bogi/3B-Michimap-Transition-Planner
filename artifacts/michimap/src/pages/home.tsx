@@ -505,11 +505,11 @@ export default function Home() {
 
       {/* Two-column layout */}
       <div className="min-h-screen">
-        <div className="max-w-screen-xl mx-auto px-4 py-8">
+        <div className="max-w-screen-xl mx-auto px-4 py-8 overflow-x-hidden">
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start">
 
             {/* ── CENTRE COLUMN ── */}
-            <div className="space-y-6">
+            <div className="space-y-6 min-w-0 overflow-x-hidden">
 
               {/* HERO */}
               <div className="space-y-3">
