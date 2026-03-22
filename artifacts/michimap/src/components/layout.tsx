@@ -3,10 +3,12 @@ import { Link } from "wouter";
 import { useGetMe } from "@workspace/api-client-react";
 import { LayoutDashboard } from "lucide-react";
 
-const APP_URL = typeof window !== "undefined" ? window.location.origin : "https://3bmichimap.replit.app";
-const SHARE_TEXT = `Presales for S/4HANA usually means building plans under time pressure with limited clarity.\nTried this 3B Michimap. It helps structure the plan, activities, and effort in a more grounded way.\nFeels useful for early-stage discussions.\n${APP_URL}\n#SAP #S4HANA #SAPPresales #Transformation #3BMichimap`;
-const X_URL = `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}`;
-const LI_URL = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(APP_URL)}`;
+const APP_URL     = "https://3bmichimap.replit.app";
+const X_TWEET     = `AI-generated SAP S/4HANA project plans in minutes — no guesswork, no blank slides.\n\n3B Michimap maps your Activate roadmap with phases, activities & resource effort by level. Built for pre-sales clarity.\n\n#SAP #S4HANA #SAPActivate #SAPPresales #3BMichimap`;
+const X_URL       = `https://twitter.com/intent/tweet?text=${encodeURIComponent(X_TWEET)}&url=${encodeURIComponent(APP_URL)}`;
+const LI_TITLE    = "3B Michimap — AI-Powered SAP S/4HANA Project Planner";
+const LI_SUMMARY  = `SAP S/4HANA pre-sales planning just got a lot faster.\n\n3B Michimap generates a fully structured SAP Activate project plan in minutes. Choose your transition path (Greenfield, Brownfield, or Bluefield), set your phases and timeline, and get a detailed plan with resource effort estimates broken down by level and phase.\n\nPerfect for consulting teams who need to move fast in pre-sales without sacrificing structure.\n\n#SAP #S4HANA #SAPActivate #SAPConsulting #SAPPresales #DigitalTransformation #3BMichimap`;
+const LI_URL      = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(APP_URL)}&title=${encodeURIComponent(LI_TITLE)}&summary=${encodeURIComponent(LI_SUMMARY)}&source=3BMichimap`;
 
 export function Layout({ children }: { children: ReactNode }) {
   const { data: user } = useGetMe();

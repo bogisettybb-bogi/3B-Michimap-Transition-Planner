@@ -461,10 +461,14 @@ export default function Home() {
     }
   };
 
-  const appUrl = typeof window !== "undefined" ? window.location.origin : "https://3bmichimap.replit.app";
-  const shareText = `Presales for S/4HANA usually means building plans under time pressure with limited clarity.\nTried this 3B Michimap. It helps structure the plan, activities, and effort in a more grounded way.\nFeels useful for early-stage discussions.\n${appUrl}\n#SAP #S4HANA #SAPPresales #Transformation #3BMichimap`;
-  const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
-  const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(appUrl)}&summary=${encodeURIComponent(shareText)}`;
+  const appUrl = "https://3bmichimap.replit.app";
+
+  const xTweetText = `AI-generated SAP S/4HANA project plans in minutes — no guesswork, no blank slides.\n\n3B Michimap maps your Activate roadmap with phases, activities & resource effort by level. Built for pre-sales clarity.\n\n#SAP #S4HANA #SAPActivate #SAPPresales #3BMichimap`;
+  const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(xTweetText)}&url=${encodeURIComponent(appUrl)}`;
+
+  const liTitle   = "3B Michimap — AI-Powered SAP S/4HANA Project Planner";
+  const liSummary = `SAP S/4HANA pre-sales planning just got a lot faster.\n\n3B Michimap generates a fully structured SAP Activate project plan in minutes. Choose your transition path (Greenfield, Brownfield, or Bluefield), set your phases and timeline, and get a detailed plan with resource effort estimates broken down by level and phase.\n\nPerfect for consulting teams who need to move fast in pre-sales without sacrificing structure.\n\n#SAP #S4HANA #SAPActivate #SAPConsulting #SAPPresales #DigitalTransformation #3BMichimap`;
+  const linkedInShareUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(appUrl)}&title=${encodeURIComponent(liTitle)}&summary=${encodeURIComponent(liSummary)}&source=3BMichimap`;
 
   const colors = transitionPath ? PATH_COLORS[transitionPath] : null;
 
