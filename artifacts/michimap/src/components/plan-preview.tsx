@@ -1,17 +1,12 @@
+import { format, addWeeks } from "date-fns";
 import { PHASES_META, cn } from "@/lib/utils";
 
 interface Activity {
   category: string;
   activity: string;
-  description: string;
-  workstream: string;
   responsible: string;
-  accountable: string;
-  consulted: string;
-  informed: string;
   startWeek: number;
   endWeek: number;
-  duration: string;
   milestone: boolean;
 }
 
@@ -32,110 +27,118 @@ interface Plan {
   summary?: string;
 }
 
-interface Props {
-  plan: Plan;
-}
+const PHASE_COLORS: Record<string, { bg: string; text: string; bar: string }> = {
+  "Discover":       { bg: "bg-blue-100",   text: "text-blue-700",   bar: "bg-blue-400" },
+  "Prepare":        { bg: "bg-green-100",  text: "text-green-700",  bar: "bg-green-500" },
+  "Explore":        { bg: "bg-orange-100", text: "text-orange-700", bar: "bg-orange-400" },
+  "Realize - Develop": { bg: "bg-yellow-100", text: "text-yellow-700", bar: "bg-yellow-500" },
+  "Realize - UAT":  { bg: "bg-red-100",    text: "text-red-700",    bar: "bg-red-400" },
+  "Deploy":         { bg: "bg-teal-100",   text: "text-teal-700",   bar: "bg-teal-500" },
+  "Run":            { bg: "bg-purple-100", text: "text-purple-700", bar: "bg-purple-400" },
+};
 
-export function PlanPreview({ plan }: Props) {
-  const rows = plan.phases.flatMap(phase =>
-    phase.activities.map((activity, index) => ({
-      phase,
-      activity,
-      isFirstInPhase: index === 0,
-      rowspan: phase.activities.length,
-    }))
+export function PlanPreview({ plan }: { plan: Plan }) {
+  const startDate = plan.projectStartDate ? new Date(plan.projectStartDate + "T12:00:00") : new Date();
+  const endDate = addWeeks(startDate, plan.totalWeeks);
+  const months = (plan.totalWeeks / 4.33).toFixed(1);
+
+  const milestones = plan.phases.flatMap(p =>
+    p.activities.filter(a => a.milestone).map(a => ({ phase: p.name, activity: a.activity, week: a.endWeek }))
   );
 
   return (
-    <div className="w-full">
-      <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden">
+    <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden">
 
-        {/* Header */}
-        <div className="p-6 border-b border-border bg-muted/20">
-          <h2 className="text-xl font-bold text-foreground">{plan.title}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Transition Path: <span className="font-medium text-foreground capitalize">{plan.transitionPath}</span>
-            {" "}&middot;{" "}
-            Start: <span className="font-medium text-foreground">{plan.projectStartDate}</span>
-            {" "}&middot;{" "}
-            Duration: <span className="font-medium text-primary">{plan.totalWeeks} weeks</span>
-          </p>
+      {/* Header banner */}
+      <div className="bg-[#1A1A2E] px-6 py-4 flex items-center justify-between">
+        <div>
+          <div className="text-xs text-white/50 uppercase tracking-widest font-medium mb-0.5">Project Plan Preview</div>
+          <h2 className="text-lg font-bold text-white capitalize">
+            {plan.transitionPath} — SAP S/4HANA Activate Plan
+          </h2>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-extrabold text-[#E9A944]">{plan.totalWeeks}w</div>
+          <div className="text-xs text-white/60">{months} months</div>
+        </div>
+      </div>
+
+      <div className="p-5 space-y-5">
+
+        {/* Key stats */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Start", value: format(startDate, "d MMM yyyy") },
+            { label: "Go-live", value: format(endDate, "MMM yyyy") },
+            { label: "Phases", value: `${plan.phases.length} phases` },
+          ].map(s => (
+            <div key={s.label} className="bg-muted/40 rounded-xl px-4 py-3 text-center">
+              <div className="text-xs text-muted-foreground mb-0.5">{s.label}</div>
+              <div className="text-sm font-bold text-foreground">{s.value}</div>
+            </div>
+          ))}
         </div>
 
-        {/* Executive Summary */}
+        {/* Executive summary */}
         {plan.summary && (
-          <div className="px-6 py-4 border-b border-border bg-amber-50/40">
-            <h3 className="text-xs font-bold text-primary uppercase tracking-wider mb-1.5">Executive Summary</h3>
+          <div className="bg-amber-50/60 border border-amber-200/60 rounded-xl px-4 py-3">
+            <div className="text-[10px] uppercase tracking-widest font-bold text-primary mb-1">AI Executive Summary</div>
             <p className="text-sm text-foreground/80 leading-relaxed">{plan.summary}</p>
           </div>
         )}
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="text-xs text-muted-foreground uppercase bg-muted/40">
-              <tr>
-                <th className="px-4 py-3 font-semibold border-b border-border">Phase</th>
-                <th className="px-4 py-3 font-semibold border-b border-border">Category</th>
-                <th className="px-4 py-3 font-semibold border-b border-border min-w-[200px]">Activity</th>
-                <th className="px-4 py-3 font-semibold border-b border-border min-w-[280px]">Description</th>
-                <th className="px-4 py-3 font-semibold border-b border-border">Workstream</th>
-                <th className="px-4 py-3 font-semibold border-b border-border">R</th>
-                <th className="px-4 py-3 font-semibold border-b border-border">A</th>
-                <th className="px-4 py-3 font-semibold border-b border-border">C</th>
-                <th className="px-4 py-3 font-semibold border-b border-border">I</th>
-                <th className="px-4 py-3 font-semibold border-b border-border text-center">Wk Start</th>
-                <th className="px-4 py-3 font-semibold border-b border-border text-center">Wk End</th>
-                <th className="px-4 py-3 font-semibold border-b border-border text-center">Dur.</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/50">
-              {rows.map(({ phase, activity, isFirstInPhase, rowspan }, idx) => {
-                const phaseKey = Object.keys(PHASES_META).find(k =>
-                  phase.name.toLowerCase().replace(/[\s-]/g, "").includes(k.toLowerCase().replace(/[\s-]/g, ""))
-                ) as keyof typeof PHASES_META | undefined;
+        {/* Phase timeline */}
+        <div>
+          <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">Phase Timeline</div>
+          <div className="space-y-2">
+            {plan.phases.map(phase => {
+              const colors = PHASE_COLORS[phase.name] || { bg: "bg-gray-100", text: "text-gray-700", bar: "bg-gray-400" };
+              const pct = Math.round((phase.weeks / plan.totalWeeks) * 100);
+              const acts = phase.activities.length;
+              return (
+                <div key={phase.name} className="flex items-center gap-3">
+                  <div className={cn("text-[10px] font-semibold w-28 shrink-0 truncate", colors.text)}>
+                    {phase.name}
+                  </div>
+                  <div className="flex-1 h-5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full flex items-center justify-end pr-2 transition-all", colors.bar)}
+                      style={{ width: `${Math.max(pct, 6)}%` }}
+                    >
+                      <span className="text-[9px] text-white font-bold">{phase.weeks}w</span>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground w-16 shrink-0 text-right">
+                    {acts} {acts === 1 ? "activity" : "activities"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-                const meta = phaseKey ? PHASES_META[phaseKey] : { color: "bg-gray-400" };
-
+        {/* Milestones */}
+        {milestones.length > 0 && (
+          <div>
+            <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">Key Milestones</div>
+            <div className="flex flex-wrap gap-2">
+              {milestones.map((m, i) => {
+                const colors = PHASE_COLORS[m.phase] || { bg: "bg-gray-100", text: "text-gray-700" };
                 return (
-                  <tr key={`${phase.name}-${idx}`} className="hover:bg-muted/10 transition-colors">
-                    {isFirstInPhase && (
-                      <td rowSpan={rowspan} className="px-4 py-3 border-r border-border/50 font-bold text-foreground align-top bg-muted/5 relative">
-                        <div className={cn("absolute left-0 top-0 bottom-0 w-1 opacity-60", meta.color)} />
-                        <span className="pl-1">{phase.name}</span>
-                        <div className="text-xs text-muted-foreground font-normal mt-0.5">{phase.weeks} weeks</div>
-                      </td>
-                    )}
-                    <td className="px-4 py-3 text-muted-foreground text-xs">{activity.category}</td>
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      <div className="flex items-center gap-2">
-                        {activity.activity}
-                        {activity.milestone && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary/10 text-primary uppercase tracking-wide">
-                            Milestone
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-normal leading-snug">{activity.description}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary/10 text-secondary border border-secondary/20">
-                        {activity.workstream}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{activity.responsible}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{activity.accountable}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{activity.consulted}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{activity.informed}</td>
-                    <td className="px-4 py-3 text-center font-mono text-xs">{activity.startWeek}</td>
-                    <td className="px-4 py-3 text-center font-mono text-xs">{activity.endWeek}</td>
-                    <td className="px-4 py-3 text-center font-mono text-xs text-muted-foreground">{activity.duration}</td>
-                  </tr>
+                  <div key={i} className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium", colors.bg, colors.text)}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" />
+                    <span className="truncate max-w-[140px]" title={m.activity}>{m.activity}</span>
+                    <span className="opacity-60">Wk {m.week}</span>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
+        )}
+
+        <p className="text-[10px] text-muted-foreground/60 text-center pt-1 border-t border-border">
+          Full Gantt chart + Resource Pivot available in the Excel download
+        </p>
       </div>
     </div>
   );

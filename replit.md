@@ -18,12 +18,19 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 ## Project: 3B Michimap
 
-AI-powered SAP S/4HANA pre-sales tool. Users select AI model, transition path (Greenfield/Brownfield/Bluefield), set SAP Activate phase durations, generate a project plan with AI, sign in via Google/LinkedIn, and download as Excel.
+AI-powered SAP S/4HANA pre-sales tool. Users select AI model (default: Gemini 2.0 Flash, free), choose transition path (Greenfield/Brownfield/Bluefield), set SAP Activate phase durations, generate a project plan preview, enter email (mandatory) + name (optional) to receive the Excel plan, then download via a one-time token.
 
-- **Admin email**: bogisettybb@gmail.com (set as ADMIN_EMAIL env var)
-- **Auth**: Google OAuth + LinkedIn OAuth via raw fetch (no Passport.js), session cookies
-- **AI**: OpenAI via Replit AI integration (AI_INTEGRATIONS_OPENAI_BASE_URL), also supports paid user-provided keys
-- **Download**: ExcelJS generates multi-sheet XLSX with RACI matrix, per-phase tabs, disclaimers
+- **Admin email**: bogisettybb@gmail.com (hardcoded isAdmin check in auth middleware)
+- **Auth**: Replit Auth OIDC hidden from regular users; admin accesses via `/api/login` directly
+- **AI**: OpenAI via Replit AI integration (AI_INTEGRATIONS_OPENAI_BASE_URL), free models via FREE_MODEL_MAP, paid via user's API key
+- **Email**: Resend via Replit connector; sends Excel as attachment; returns one-time downloadToken
+- **Download**: Gated on valid downloadToken (in-memory Map, 1hr expiry); uses same buildExcelWorkbook()
+- **Excel format** (2 sheets only):
+  - Sheet 1 "Project Plan": Gantt chart with dark header, phase legend, week columns, calendar dates, activity rows with phase-colored cells, footer disclaimer with AI model name
+  - Sheet 2 "Resource Pivot": 15 pre-filled SAP roles + 5 empty rows, year columns (auto-calculated), TOTAL row, Summary by Level, Summary by Description (all with SUMIF formulas)
+- **Plan preview**: Compact summary card (stats, AI summary, phase timeline bars, milestones) — not full activities table
+- **Tracking**: IP geolocation (ip-api.com), device detection (UA string), stored in generations table
+- **Admin dashboard**: Shows visitorEmail, visitorName, location, device, emailSent, downloaded per generation
 
 ## Structure
 
