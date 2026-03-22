@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays } from "date-fns";
-import { Plus, Trash2, Download, CheckCircle2, Loader2, Share2 } from "lucide-react";
+import { Plus, Trash2, Download, CheckCircle2, Loader2, Share2, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -89,7 +89,7 @@ const round1 = (v: number) => Math.round(v * 10) / 10;
 export function ResourceEffortsPanel({
   plan, agreedToTerms, setAgreedToTerms, onOpenDisclaimers,
   isDownloading, onDownload, hasDownloaded, xShareUrl, linkedInShareUrl,
-  onConfirm, onUnconfirm,
+  onConfirm, onUnconfirm, onDataChange,
 }: ResourceEffortsProps) {
   const [resources, setResources] = useState<ResourceRow[]>(DEFAULT_RESOURCES);
   const [efforts,   setEfforts  ] = useState<EffortMap>({});
@@ -149,6 +149,19 @@ export function ResourceEffortsPanel({
   const removeRow = (id: number) => {
     setResources(prev => prev.filter(r => r.id !== id));
     setEfforts(prev => { const n = { ...prev }; delete n[id]; return n; });
+  };
+
+  const duplicateRow = (srcId: number) => {
+    const newId = nextId.current++;
+    setResources(prev => {
+      const idx = prev.findIndex(r => r.id === srcId);
+      const src = prev[idx];
+      const copy: ResourceRow = { ...src, id: newId };
+      const next = [...prev];
+      next.splice(idx + 1, 0, copy);
+      return next;
+    });
+    setEfforts(prev => ({ ...prev, [newId]: { ...(prev[srcId] || {}) } }));
   };
 
   const updateRes = (id: number, patch: Partial<ResourceRow>) =>
@@ -230,10 +243,10 @@ export function ResourceEffortsPanel({
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 min-w-0 overflow-x-hidden">
 
       {/* ── Gantt ─────────────────────────────────────────────────────────── */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm" style={{ maxWidth: "100%" }}>
         <div className="px-5 py-3 border-b border-border bg-card">
           <p className="font-bold text-sm text-foreground">Resource Effort Gantt</p>
           <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -329,9 +342,13 @@ export function ResourceEffortsPanel({
                                  position: "sticky", left: 0, zIndex: 10, backgroundColor: rowBg }}
                       className="border-r border-[#E5E7EB] px-1 py-1">
                       <div className="flex flex-col items-center gap-0.5">
-                        <button title="Insert row below" onClick={() => insertRowAfter(res.id)}
+                        <button title="Insert empty row below" onClick={() => insertRowAfter(res.id)}
                           className="w-5 h-5 flex items-center justify-center rounded bg-primary/10 text-primary hover:bg-primary/25 transition-colors">
                           <Plus className="w-3 h-3" />
+                        </button>
+                        <button title="Copy row (duplicate with efforts)" onClick={() => duplicateRow(res.id)}
+                          className="w-5 h-5 flex items-center justify-center rounded bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                          <Copy className="w-3 h-3" />
                         </button>
                         <button title="Delete row" onClick={() => removeRow(res.id)}
                           className="w-5 h-5 flex items-center justify-center rounded bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">

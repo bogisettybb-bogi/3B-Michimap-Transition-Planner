@@ -210,9 +210,11 @@ function LiveSummary({ phases, projectStartDate, transitionPath }: { phases: Rec
   const months = (total / 4.33).toFixed(1);
 
   const startDate = projectStartDate ? new Date(projectStartDate + "T12:00:00") : new Date();
-  const endDate = addWeeks(startDate, total);
-  const endStr = format(endDate, "MMM yyyy");
-  const startStr = format(startDate, "MMM yyyy");
+  const runWeeks  = (phases.run?.weeks ?? 0);
+  const goLiveDate   = addWeeks(startDate, total - runWeeks);
+  const endOfRunDate = addWeeks(startDate, total);
+
+  const fmt = (d: Date) => format(d, "d MMM yyyy");
 
   const PATH_LABEL: Record<string, string> = { greenfield: "Greenfield", brownfield: "Brownfield", bluefield: "Bluefield (SDT)" };
 
@@ -229,11 +231,15 @@ function LiveSummary({ phases, projectStartDate, transitionPath }: { phases: Rec
       <div className="space-y-2">
         <div className="flex justify-between items-center text-xs">
           <span className="text-muted-foreground">Start</span>
-          <span className="font-semibold text-foreground">{startStr}</span>
+          <span className="font-semibold text-foreground">{fmt(startDate)}</span>
         </div>
         <div className="flex justify-between items-center text-xs">
           <span className="text-muted-foreground">Est. Go-live</span>
-          <span className="font-semibold text-primary">{endStr}</span>
+          <span className="font-semibold text-primary">{fmt(goLiveDate)}</span>
+        </div>
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-muted-foreground">End of Run</span>
+          <span className="font-semibold text-foreground">{fmt(endOfRunDate)}</span>
         </div>
         <div className="flex justify-between items-center text-xs">
           <span className="text-muted-foreground">Approach</span>
@@ -260,6 +266,10 @@ function LiveSummary({ phases, projectStartDate, transitionPath }: { phases: Rec
               </div>
             );
           })}
+        </div>
+        <div className="flex justify-between items-center text-xs border-t border-border mt-2 pt-2">
+          <span className="text-muted-foreground font-semibold">Total</span>
+          <span className="font-mono font-bold text-foreground">{total}w</span>
         </div>
       </div>
     </div>
@@ -713,12 +723,8 @@ export default function Home() {
                       {showEfforts && (
                         <motion.div id="resource-efforts"
                           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}>
-                          <div className="flex items-center justify-between mb-3">
+                          <div className="mb-3">
                             <h2 className="font-bold text-base text-foreground">Resource Efforts</h2>
-                            <button onClick={() => setShowEfforts(false)}
-                              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
-                              <X className="w-3.5 h-3.5" /> Hide
-                            </button>
                           </div>
                           <ResourceEffortsPanel
                             plan={generatedResult.plan}
