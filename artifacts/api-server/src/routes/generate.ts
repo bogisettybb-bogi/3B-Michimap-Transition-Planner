@@ -639,13 +639,22 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   pCell(4, 3, "Description", { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
   pCell(4, 4, "Location",    { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
   pCell(4, 5, "Level",       { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
+
+  const SHORT_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   for (let w = 1; w <= totalWeeks; w++) {
     const phName = weekPhase[w];
     const bg = PHASE_SOLID[phName] || "FF444444";
-    pCell(4, FIXED_P + w, `W${w}`, { bg, fontColor: WHITE, bold: true, size: 7 });
+    const wkDate   = new Date(startDate.getTime() + (w - 1) * 7 * 24 * 60 * 60 * 1000);
+    const dateLabel = `${wkDate.getDate()} ${SHORT_MONTHS[wkDate.getMonth()]}`;
+    const cell = pivot.getCell(4, FIXED_P + w);
+    cell.value     = `W${w} ${dateLabel}`;
+    cell.font      = { bold: true, size: 7, color: { argb: WHITE } };
+    cell.fill      = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+    cell.alignment = { horizontal: "center", vertical: "bottom", textRotation: 90 };
+    cell.border    = { right: { style: "hair", color: { argb: "FFBBBBBB" } } };
   }
-  pCell(4, TOTAL_COL, "Total Days", { bg: "FF2D7A4F", fontColor: WHITE, bold: true, size: 9 });
-  pivot.getRow(4).height = 24;
+  pCell(4, TOTAL_COL, "Total\nDays", { bg: "FF2D7A4F", fontColor: WHITE, bold: true, size: 8, wrapText: true });
+  pivot.getRow(4).height = 60;
 
   // ── Resource rows ──
   // Derive category from level (used for "Summary by Category" pivot)

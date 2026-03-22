@@ -752,30 +752,53 @@ export default function Home() {
                   <motion.div id="plan-preview" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
                     <PlanPreview plan={generatedResult.plan} />
 
-                    {/* STEP 5 ACTIONS: Download Plan + Enter Efforts */}
+                    {/* STEP 5 ACTIONS: Disclaimer + Download Plan + Enter Efforts */}
                     {!showEfforts && (
-                      <div className="flex flex-wrap items-center justify-center gap-3">
-                        <button
-                          onClick={handleDownloadPlanOnly}
-                          disabled={isDownloading}
-                          className={cn(
-                            "flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm shadow transition-all",
-                            hasPlanDownloaded
-                              ? "bg-green-500 text-white hover:bg-green-600"
-                              : "bg-foreground text-background hover:opacity-80"
-                          )}>
-                          {hasPlanDownloaded
-                            ? <><Check className="w-4 h-4" /> Plan Downloaded</>
-                            : <><Download className="w-4 h-4" /> Download Plan (Excel)</>}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowEfforts(true);
-                            setTimeout(() => document.getElementById("resource-efforts")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
-                          }}
-                          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow hover:opacity-90 transition-all">
-                          <Plus className="w-4 h-4" /> Enter Resource Efforts
-                        </button>
+                      <div className="space-y-3">
+                        {/* Disclaimer checkbox */}
+                        <label className="flex items-start gap-2.5 cursor-pointer group mx-auto w-fit">
+                          <input
+                            type="checkbox"
+                            checked={agreedToTerms}
+                            onChange={e => setAgreedToTerms(e.target.checked)}
+                            className="mt-0.5 w-4 h-4 accent-primary shrink-0"
+                          />
+                          <span className="text-[12px] text-muted-foreground leading-snug">
+                            I acknowledge this plan is AI-generated and for pre-sales use only.{" "}
+                            <button
+                              type="button"
+                              onClick={() => setIsDisclaimersOpen(true)}
+                              className="text-primary underline underline-offset-2 hover:opacity-80 transition-opacity font-medium">
+                              Read Disclaimers
+                            </button>
+                          </span>
+                        </label>
+
+                        <div className="flex flex-wrap items-center justify-center gap-3">
+                          <button
+                            onClick={handleDownloadPlanOnly}
+                            disabled={isDownloading || !agreedToTerms}
+                            className={cn(
+                              "flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm shadow transition-all",
+                              !agreedToTerms
+                                ? "opacity-40 cursor-not-allowed bg-foreground text-background"
+                                : hasPlanDownloaded
+                                  ? "bg-green-500 text-white hover:bg-green-600"
+                                  : "bg-foreground text-background hover:opacity-80"
+                            )}>
+                            {hasPlanDownloaded
+                              ? <><Check className="w-4 h-4" /> Plan Downloaded</>
+                              : <><Download className="w-4 h-4" /> Download Plan (Excel)</>}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowEfforts(true);
+                              setTimeout(() => document.getElementById("resource-efforts")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                            }}
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow hover:opacity-90 transition-all">
+                            <Plus className="w-4 h-4" /> Enter Resource Efforts
+                          </button>
+                        </div>
                       </div>
                     )}
 
