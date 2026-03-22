@@ -767,51 +767,8 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   grandCell.alignment = { horizontal: "center", vertical: "middle" };
   grandCell.numFmt = "0";
 
-  // ── Location x Level x Year Effort Pivot ──
-  const LOC_GAP = totRow + 2;
-
-  const LOC_COMBOS: { loc: string; level: string }[] = [
-    { loc: "Onsite",   level: "Solution Architect"       },
-    { loc: "Onsite",   level: "Senior Consultant"        },
-    { loc: "Onsite",   level: "Project Manager"          },
-    { loc: "Onsite",   level: "Service Delivery Manager" },
-    { loc: "Offshore", level: "Senior Consultant"        },
-    { loc: "Offshore", level: "Junior Consultant"        },
-  ];
-
-  // Number of year columns
-  const yearCount = YEAR_RANGES.length;
-  // Columns: Location(1) | Level(2) | Year...(3..3+yearCount-1) | Total(3+yearCount)
-  const LC_TOTAL_COL = 3 + yearCount;
-  const LC_COLS = 3 + yearCount;  // total cols in this pivot
-
-  // Title row
-  pivot.mergeCells(LOC_GAP, 1, LOC_GAP, LC_COLS);
-  const lch = pivot.getCell(LOC_GAP, 1);
-  lch.value = "Effort Summary by Location & Level";
-  lch.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  lch.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  lch.alignment = { horizontal: "center", vertical: "middle" };
-  pivot.getRow(LOC_GAP).height = 18;
-
-  // Header row
-  const LC_HDR = LOC_GAP + 1;
-  pivot.getRow(LC_HDR).height = 16;
-  const lcHdrs = ["Location", "Level", ...YEAR_RANGES.map(y => String(y.year)), "Total Days"];
-  lcHdrs.forEach((h, i) => {
-    const sc = pivot.getCell(LC_HDR, 1 + i);
-    sc.value = h;
-    sc.font  = { bold: true, size: 8, color: { argb: WHITE } };
-    sc.fill  = { type: "pattern", pattern: "solid",
-                 fgColor: { argb: i >= 2 && i < 2 + yearCount ? "FF374151" : DARK_BG } };
-    sc.alignment = { horizontal: "center", vertical: "middle" };
-    sc.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
-  });
-
-  // Helper: build a single-column row-sum expression for a range of weeks.
-  // e.g. weekRowSum(1, 3) => "F5:F24+G5:G24+H5:H24"
-  // This collapses multi-column week data into a 20-row column array so that
-  // SUMPRODUCT can filter it with single-column criteria arrays without #VALUE!
+  // ── Helpers shared by both pivot tables ──
+  // Collapses a week-column range into a sum expression for use in SUMPRODUCT.
   const weekRowSum = (firstW: number, lastW: number): string => {
     const terms: string[] = [];
     for (let w = firstW; w <= lastW; w++) {
@@ -821,124 +778,224 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     return terms.join("+");
   };
 
-  const locArr = `$D$${DATA_START}:$D$${DATA_START + NUM_ROWS - 1}`;
-  const levArr = `$E$${DATA_START}:$E$${DATA_START + NUM_ROWS - 1}`;
+  const levArr      = `$E$${DATA_START}:$E$${DATA_START + NUM_ROWS - 1}`;
   const allWeeksExpr = weekRowSum(1, totalWeeks);
 
-  let prevLoc = "";
-  LOC_COMBOS.forEach(({ loc, level }, i) => {
-    const rn  = LC_HDR + 1 + i;
-    const bg  = i % 2 === 0 ? WHITE : GREY_LIGHT;
+  const PIVOT_LEVELS = [
+    "Solution Architect",
+    "Senior Consultant",
+    "Junior Consultant",
+    "Subject Matter Expert",
+    "Project Manager",
+    "Service Delivery Manager",
+    "AI Consultant",
+  ];
+
+  // Build phase-range lookup (firstWeek / lastWeek per phase)
+  interface PhaseRange { name: string; firstWeek: number; lastWeek: number; }
+  const PHASE_RANGES: PhaseRange[] = (plan.phases as any[]).map(ph => ({
+    name:      ph.name,
+    firstWeek: ph.weekStart + 1,
+    lastWeek:  ph.weekStart + ph.weeks,
+  }));
+
+  // ── Shared cell-writer for pivot tables ──
+  function pivotCell(row: number, col: number, value: any, opts: {
+    bg: string; fontColor?: string; bold?: boolean; size?: number;
+    hAlign?: "center" | "left" | "right"; borderRight?: string; borderBottom?: string; numFmt?: string;
+  }) {
+    const cell = pivot.getCell(row, col);
+    cell.value = value;
+    cell.font  = { bold: opts.bold ?? false, size: opts.size ?? 8,
+                   color: { argb: opts.fontColor ?? "FF1A1A1A" } };
+    cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: opts.bg } };
+    cell.alignment = { horizontal: opts.hAlign ?? "center", vertical: "middle" };
+    if (opts.numFmt) cell.numFmt = opts.numFmt;
+    cell.border = {
+      right:  { style: "hair", color: { argb: opts.borderRight  ?? "FFCCCCCC" } },
+      bottom: { style: "hair", color: { argb: opts.borderBottom ?? "FFCCCCCC" } },
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // TABLE 1 — Level x Phase Effort Summary
+  // ─────────────────────────────────────────────────────────────
+  const T1_START  = totRow + 2;
+  const T1_COLS   = 1 + PHASE_RANGES.length + 1; // Level | Phase… | Total
+
+  // Title
+  pivot.mergeCells(T1_START, 1, T1_START, T1_COLS);
+  const t1Title = pivot.getCell(T1_START, 1);
+  t1Title.value = "Effort Summary by Level & Phase (Days)";
+  t1Title.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  t1Title.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+  t1Title.alignment = { horizontal: "center", vertical: "middle" };
+  pivot.getRow(T1_START).height = 18;
+
+  // Header row
+  const T1_HDR = T1_START + 1;
+  pivot.getRow(T1_HDR).height = 28;
+  const t1Hdrs = ["Level", ...PHASE_RANGES.map(p => p.name), "Total Days"];
+  t1Hdrs.forEach((h, i) => {
+    const cell = pivot.getCell(T1_HDR, 1 + i);
+    cell.value = h;
+    cell.font  = { bold: true, size: 8, color: { argb: WHITE } };
+    cell.fill  = { type: "pattern", pattern: "solid",
+                   fgColor: { argb: i === 0 ? DARK_BG : i < t1Hdrs.length - 1 ? "FF374151" : "FF1C3A2D" } };
+    cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    cell.border = {
+      right:  { style: "thin", color: { argb: "FF444444" } },
+      bottom: { style: "thin", color: { argb: "FF444444" } },
+    };
+  });
+
+  // Level data rows
+  PIVOT_LEVELS.forEach((level, i) => {
+    const rn = T1_HDR + 1 + i;
+    const bg = i % 2 === 0 ? WHITE : GREY_LIGHT;
     pivot.getRow(rn).height = 15;
 
-    // Location cell — only on first row for that location
-    const locCell = pivot.getCell(rn, 1);
-    if (loc !== prevLoc) {
-      locCell.value = loc;
-      locCell.font  = { bold: true, size: 8 };
-    }
-    locCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-    locCell.alignment = { horizontal: "center", vertical: "middle" };
-    locCell.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
-    prevLoc = loc;
+    // Level label
+    pivotCell(rn, 1, level, { bg, hAlign: "left", bold: true, borderRight: "FF888888" });
 
-    // Level cell
-    const levCell = pivot.getCell(rn, 2);
-    levCell.value = level;
-    levCell.font  = { size: 8 };
-    levCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-    levCell.alignment = { horizontal: "left", vertical: "middle" };
-    levCell.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
-
-    // Per-year columns — SUMPRODUCT with collapsed row-sum (no multi-col SUMIFS)
-    YEAR_RANGES.forEach((yr, yi) => {
-      const yrExpr = weekRowSum(yr.firstWeek, yr.lastWeek);
-      const yc = pivot.getCell(rn, 3 + yi);
-      yc.value = { formula: `SUMPRODUCT((${locArr}="${loc}")*(${levArr}="${level}")*(${yrExpr}))` };
-      yc.font  = { size: 8 };
-      yc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-      yc.alignment = { horizontal: "center", vertical: "middle" };
-      yc.numFmt = "0";
-      yc.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
+    // Phase columns
+    PHASE_RANGES.forEach((ph, pi) => {
+      const phExpr = weekRowSum(ph.firstWeek, ph.lastWeek);
+      pivotCell(rn, 2 + pi,
+        { formula: `SUMPRODUCT((${levArr}="${level}")*(${phExpr}))` },
+        { bg, numFmt: "0.#" }
+      );
     });
 
-    // Total Days (all weeks)
-    const tc = pivot.getCell(rn, LC_TOTAL_COL);
-    tc.value = { formula: `SUMPRODUCT((${locArr}="${loc}")*(${levArr}="${level}")*(${allWeeksExpr}))` };
-    tc.font  = { bold: true, size: 8, color: { argb: "FF15803D" } };
-    tc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-    tc.alignment = { horizontal: "center", vertical: "middle" };
-    tc.numFmt = "0";
-    tc.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
+    // Total Days
+    const totC = pivot.getCell(rn, 1 + PHASE_RANGES.length + 1);
+    totC.value  = { formula: `SUMPRODUCT((${levArr}="${level}")*(${allWeeksExpr}))` };
+    totC.font   = { bold: true, size: 8, color: { argb: "FF15803D" } };
+    totC.fill   = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+    totC.alignment = { horizontal: "center", vertical: "middle" };
+    totC.numFmt = "0.#";
+    totC.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
   });
 
-  // Subtotal rows: Onsite total, Offshore total
-  ["Onsite", "Offshore"].forEach((loc, si) => {
-    const rn = LC_HDR + 1 + LOC_COMBOS.length + si;
-    const bg = "FFEFF6FF";
-    pivot.getRow(rn).height = 16;
+  // Grand total row for Table 1
+  const T1_TOT = T1_HDR + 1 + PIVOT_LEVELS.length;
+  pivot.getRow(T1_TOT).height = 18;
+  pivot.mergeCells(T1_TOT, 1, T1_TOT, 1);
+  const t1GtLabel = pivot.getCell(T1_TOT, 1);
+  t1GtLabel.value = "GRAND TOTAL";
+  t1GtLabel.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  t1GtLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+  t1GtLabel.alignment = { horizontal: "center", vertical: "middle" };
 
-    const stLabel = pivot.getCell(rn, 1);
-    stLabel.value = `Subtotal ${loc}`;
-    stLabel.font  = { bold: true, size: 8 };
-    stLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-    stLabel.alignment = { horizontal: "left", vertical: "middle" };
-    stLabel.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
-    pivot.getCell(rn, 2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+  PHASE_RANGES.forEach((ph, pi) => {
+    const phExpr = weekRowSum(ph.firstWeek, ph.lastWeek);
+    const gc = pivot.getCell(T1_TOT, 2 + pi);
+    gc.value = { formula: `SUMPRODUCT(${phExpr})` };
+    gc.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    gc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    gc.alignment = { horizontal: "center", vertical: "middle" };
+    gc.numFmt = "0";
+  });
 
+  const t1Grand = pivot.getCell(T1_TOT, 1 + PHASE_RANGES.length + 1);
+  t1Grand.value = { formula: `SUMPRODUCT(${allWeeksExpr})` };
+  t1Grand.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  t1Grand.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+  t1Grand.alignment = { horizontal: "center", vertical: "middle" };
+  t1Grand.numFmt = "0";
+
+  // ─────────────────────────────────────────────────────────────
+  // TABLE 2 — Level x Year Effort Summary
+  // ─────────────────────────────────────────────────────────────
+  const T2_START = T1_TOT + 2;
+  const T2_COLS  = 1 + YEAR_RANGES.length + 1; // Level | Year… | Total
+
+  // Title
+  pivot.mergeCells(T2_START, 1, T2_START, T2_COLS);
+  const t2Title = pivot.getCell(T2_START, 1);
+  t2Title.value = "Effort Summary by Level & Year (Days)";
+  t2Title.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  t2Title.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+  t2Title.alignment = { horizontal: "center", vertical: "middle" };
+  pivot.getRow(T2_START).height = 18;
+
+  // Header row
+  const T2_HDR = T2_START + 1;
+  pivot.getRow(T2_HDR).height = 16;
+  const t2Hdrs = ["Level", ...YEAR_RANGES.map(y => String(y.year)), "Total Days"];
+  t2Hdrs.forEach((h, i) => {
+    const cell = pivot.getCell(T2_HDR, 1 + i);
+    cell.value = h;
+    cell.font  = { bold: true, size: 8, color: { argb: WHITE } };
+    cell.fill  = { type: "pattern", pattern: "solid",
+                   fgColor: { argb: i === 0 ? DARK_BG : i < t2Hdrs.length - 1 ? "FF374151" : "FF1C3A2D" } };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.border = {
+      right:  { style: "thin", color: { argb: "FF444444" } },
+      bottom: { style: "thin", color: { argb: "FF444444" } },
+    };
+  });
+
+  // Level data rows
+  PIVOT_LEVELS.forEach((level, i) => {
+    const rn = T2_HDR + 1 + i;
+    const bg = i % 2 === 0 ? WHITE : GREY_LIGHT;
+    pivot.getRow(rn).height = 15;
+
+    // Level label
+    pivotCell(rn, 1, level, { bg, hAlign: "left", bold: true, borderRight: "FF888888" });
+
+    // Year columns
     YEAR_RANGES.forEach((yr, yi) => {
       const yrExpr = weekRowSum(yr.firstWeek, yr.lastWeek);
-      const yc = pivot.getCell(rn, 3 + yi);
-      yc.value = { formula: `SUMPRODUCT((${locArr}="${loc}")*(${yrExpr}))` };
-      yc.font  = { bold: true, size: 8 };
-      yc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-      yc.alignment = { horizontal: "center", vertical: "middle" };
-      yc.numFmt = "0";
-      yc.border = { right: { style: "hair", color: { argb: "FFCCCCCC" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
+      pivotCell(rn, 2 + yi,
+        { formula: `SUMPRODUCT((${levArr}="${level}")*(${yrExpr}))` },
+        { bg, numFmt: "0.#" }
+      );
     });
 
-    const tc = pivot.getCell(rn, LC_TOTAL_COL);
-    tc.value = { formula: `SUMPRODUCT((${locArr}="${loc}")*(${allWeeksExpr}))` };
-    tc.font  = { bold: true, size: 8, color: { argb: "FF15803D" } };
-    tc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-    tc.alignment = { horizontal: "center", vertical: "middle" };
-    tc.numFmt = "0";
-    tc.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
+    // Total Days
+    const totC = pivot.getCell(rn, 1 + YEAR_RANGES.length + 1);
+    totC.value  = { formula: `SUMPRODUCT((${levArr}="${level}")*(${allWeeksExpr}))` };
+    totC.font   = { bold: true, size: 8, color: { argb: "FF15803D" } };
+    totC.fill   = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+    totC.alignment = { horizontal: "center", vertical: "middle" };
+    totC.numFmt = "0.#";
+    totC.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
   });
 
-  // Grand total row
-  const lcTotRow = LC_HDR + 1 + LOC_COMBOS.length + 2;
-  pivot.getRow(lcTotRow).height = 18;
-  pivot.mergeCells(lcTotRow, 1, lcTotRow, 2);
-  const gtLabel = pivot.getCell(lcTotRow, 1);
-  gtLabel.value = "GRAND TOTAL";
-  gtLabel.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  gtLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  gtLabel.alignment = { horizontal: "center", vertical: "middle" };
+  // Grand total row for Table 2
+  const T2_TOT = T2_HDR + 1 + PIVOT_LEVELS.length;
+  pivot.getRow(T2_TOT).height = 18;
+  pivot.mergeCells(T2_TOT, 1, T2_TOT, 1);
+  const t2GtLabel = pivot.getCell(T2_TOT, 1);
+  t2GtLabel.value = "GRAND TOTAL";
+  t2GtLabel.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  t2GtLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+  t2GtLabel.alignment = { horizontal: "center", vertical: "middle" };
 
-  // Grand total per year — SUM is fine here (no row filtering needed)
   YEAR_RANGES.forEach((yr, yi) => {
     const yrExpr = weekRowSum(yr.firstWeek, yr.lastWeek);
-    const yc = pivot.getCell(lcTotRow, 3 + yi);
-    yc.value = { formula: `SUMPRODUCT(${yrExpr})` };
-    yc.font  = { bold: true, size: 9, color: { argb: WHITE } };
-    yc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-    yc.alignment = { horizontal: "center", vertical: "middle" };
-    yc.numFmt = "0";
+    const gc = pivot.getCell(T2_TOT, 2 + yi);
+    gc.value = { formula: `SUMPRODUCT(${yrExpr})` };
+    gc.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    gc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    gc.alignment = { horizontal: "center", vertical: "middle" };
+    gc.numFmt = "0";
   });
 
-  const lcGrand = pivot.getCell(lcTotRow, LC_TOTAL_COL);
-  lcGrand.value = { formula: `SUMPRODUCT(${allWeeksExpr})` };
-  lcGrand.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  lcGrand.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
-  lcGrand.alignment = { horizontal: "center", vertical: "middle" };
-  lcGrand.numFmt = "0";
+  const t2Grand = pivot.getCell(T2_TOT, 1 + YEAR_RANGES.length + 1);
+  t2Grand.value = { formula: `SUMPRODUCT(${allWeeksExpr})` };
+  t2Grand.font  = { bold: true, size: 9, color: { argb: WHITE } };
+  t2Grand.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+  t2Grand.alignment = { horizontal: "center", vertical: "middle" };
+  t2Grand.numFmt = "0";
 
-  // Column widths for the pivot table area
-  pivot.getColumn(1).width = 16;
-  pivot.getColumn(2).width = 18;
-  YEAR_RANGES.forEach((_, yi) => { pivot.getColumn(3 + yi).width = 12; });
-  pivot.getColumn(LC_TOTAL_COL).width = 12;
+  // Column widths — driven by the widest table (Level + max(phases, years) + Total)
+  pivot.getColumn(1).width = 22;
+  const maxDataCols = Math.max(PHASE_RANGES.length, YEAR_RANGES.length);
+  for (let c = 2; c <= 1 + maxDataCols; c++) pivot.getColumn(c).width = 14;
+  pivot.getColumn(1 + maxDataCols + 1).width = 12;
 
   return wb;
 }
