@@ -370,6 +370,11 @@ export default function Home() {
     setPhases(prev => ({ ...prev, [key]: { ...prev[key], weeks: Math.max(0, prev[key].weeks + delta) } }));
   };
 
+  const setPhaseWeeks = (key: keyof typeof phases, raw: string) => {
+    const val = parseInt(raw, 10);
+    setPhases(prev => ({ ...prev, [key]: { ...prev[key], weeks: isNaN(val) || val < 0 ? 0 : val } }));
+  };
+
   const handleStop = () => {
     stopRef.current = true;
     setIsGenerating(false);
@@ -644,16 +649,22 @@ export default function Home() {
                               </label>
                             )}
                             <div className={cn("flex items-center gap-2 justify-between", !isIncluded && "pointer-events-none")}>
-                              <button onClick={() => updatePhaseWeeks(key, -1)} disabled={!isIncluded || data.weeks <= 1}
+                              <button onClick={() => updatePhaseWeeks(key, -1)} disabled={!isIncluded || data.weeks <= 0}
                                 className="w-7 h-7 flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-40">
                                 <Minus className="w-3 h-3" />
                               </button>
-                              <span className="font-bold text-lg text-foreground tabular-nums w-8 text-center">{data.weeks}</span>
+                              <input
+                                type="number" min={0}
+                                value={data.weeks}
+                                disabled={!isIncluded}
+                                onChange={e => setPhaseWeeks(key, e.target.value)}
+                                className="font-bold text-lg text-foreground tabular-nums w-14 text-center bg-transparent border-b-2 border-primary/30 focus:border-primary focus:outline-none disabled:opacity-40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              />
                               <button onClick={() => updatePhaseWeeks(key, 1)} disabled={!isIncluded}
                                 className="w-7 h-7 flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted transition-colors disabled:opacity-40">
                                 <Plus className="w-3 h-3" />
                               </button>
-                              <span className="text-xs text-muted-foreground ml-1">weeks</span>
+                              <span className="text-xs text-muted-foreground ml-1">wks</span>
                             </div>
                           </div>
                         );
