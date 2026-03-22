@@ -87,18 +87,18 @@
   --sidebar: 40 28% 93%;
   --sidebar-foreground: 0 0% 10%;
   --sidebar-border: 38 20% 82%;
-  --sidebar-primary: 39 68% 44%;
+  --sidebar-primary: 38 77% 59%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 40 28% 88%;
   --sidebar-accent-foreground: 0 0% 10%;
-  --sidebar-ring: 39 68% 44%;
+  --sidebar-ring: 38 77% 59%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 10%;
   --popover-border: 38 20% 85%;
 
-  /* Amber/gold primary - matches wireframe orange-gold */
-  --primary: 39 68% 44%;             /* #C8941A amber gold */
+  /* Orange primary - exact brand color #E9A944 */
+  --primary: 38 77% 59%;             /* #E9A944 */
   --primary-foreground: 0 0% 100%;
 
   /* Dark navy for generate button */
@@ -115,9 +115,9 @@
   --destructive-foreground: 0 0% 100%;
 
   --input: 38 20% 82%;
-  --ring: 39 68% 44%;
+  --ring: 38 77% 59%;
 
-  --chart-1: 39 68% 44%;
+  --chart-1: 38 77% 59%;
   --chart-2: 142 71% 45%;
   --chart-3: 217 91% 60%;
   --chart-4: 262 83% 58%;
@@ -171,15 +171,15 @@
   --sidebar: 222 47% 11%;
   --sidebar-foreground: 38 15% 90%;
   --sidebar-border: 222 20% 22%;
-  --sidebar-primary: 39 68% 50%;
+  --sidebar-primary: 38 77% 59%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 222 30% 15%;
   --sidebar-accent-foreground: 38 15% 90%;
-  --sidebar-ring: 39 68% 50%;
+  --sidebar-ring: 38 77% 59%;
   --popover: 222 47% 11%;
   --popover-foreground: 38 15% 90%;
   --popover-border: 222 20% 22%;
-  --primary: 39 68% 50%;
+  --primary: 38 77% 59%;
   --primary-foreground: 0 0% 100%;
   --secondary: 222 40% 20%;
   --secondary-foreground: 38 15% 90%;
@@ -190,7 +190,7 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   --input: 222 20% 22%;
-  --ring: 39 68% 50%;
+  --ring: 38 77% 59%;
   --chart-1: 39 68% 50%;
   --chart-2: 142 71% 45%;
   --chart-3: 217 91% 60%;

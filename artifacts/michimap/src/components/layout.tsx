@@ -13,7 +13,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 w-full bg-background border-b border-border">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-85 transition-opacity">
-            <div className="bg-[#5C3D11] text-white font-extrabold text-sm px-2.5 py-1.5 rounded-lg leading-none">
+            <div className="bg-[#E9A944] text-white font-extrabold text-sm px-2.5 py-1.5 rounded-lg leading-none">
               3B
             </div>
             <div>
