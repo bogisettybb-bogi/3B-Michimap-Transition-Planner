@@ -515,6 +515,9 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   // ────────────────────────────────────────────────
   // SHEET 2 - Resource Planning Matrix (week columns)
   // ────────────────────────────────────────────────
+  // Plan-only download: skip Resource Planning Matrix when no resource rows
+  if (!resourceRows || resourceRows.length === 0) return wb;
+
   const pivot = wb.addWorksheet("Resource Planning Matrix", {
     pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 },
     views: [{ state: "frozen", xSplit: 5, ySplit: 4 }],

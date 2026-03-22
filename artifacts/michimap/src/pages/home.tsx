@@ -304,6 +304,7 @@ export default function Home() {
   const [isDisclaimersOpen, setIsDisclaimersOpen] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [hasDownloaded, setHasDownloaded] = useState(false);
+  const [hasPlanDownloaded, setHasPlanDownloaded] = useState(false);
   const [ganttRows, setGanttRows] = useState<ResourceRowExport[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const stopRef = useRef(false);
@@ -353,6 +354,7 @@ export default function Home() {
     setConfirmedEfforts(false);
     setAgreedToTerms(false);
     setHasDownloaded(false);
+    setHasPlanDownloaded(false);
   };
 
 
@@ -390,6 +392,8 @@ export default function Home() {
       return;
     }
     stopRef.current = false;
+    setHasPlanDownloaded(false);
+    setHasDownloaded(false);
     setIsGenerating(true);
     try {
       const res = await generatePlan({
@@ -422,20 +426,36 @@ export default function Home() {
     }
   };
 
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadPlanOnly = async () => {
+    if (!generatedResult) return;
+    try {
+      const blob = await downloadPlan({ data: { planId: generatedResult.planId } as any });
+      triggerDownload(blob as Blob, `3B_Michimap_Plan_${transitionPath}_${projectStartDate}.xlsx`);
+      setHasPlanDownloaded(true);
+      toast({ title: "Download Started", description: "Your SAP Activate project plan is downloading." });
+    } catch {
+      toast({ title: "Download Failed", description: "Please try again or regenerate the plan.", variant: "destructive" });
+    }
+  };
+
   const handleDownload = async () => {
     if (!generatedResult) return;
     try {
       const blob = await downloadPlan({ data: { planId: generatedResult.planId, resourceRows: ganttRows } as any });
-      const url = URL.createObjectURL(blob as any);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `3B_Michimap_${transitionPath}_${projectStartDate}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      triggerDownload(blob as Blob, `3B_Michimap_Full_${transitionPath}_${projectStartDate}.xlsx`);
       setHasDownloaded(true);
-      toast({ title: "Download Started", description: "Your SAP Activate plan is downloading." });
+      toast({ title: "Download Started", description: "Your full resource plan is downloading." });
     } catch {
       toast({ title: "Download Failed", description: "Please try again or regenerate the plan.", variant: "destructive" });
     }
@@ -454,14 +474,14 @@ export default function Home() {
 
       {/* STICKY STEP INDICATOR */}
       {(() => {
-        const currentStep = confirmedEfforts ? 6 : generatedResult ? 5 : (transitionPath && projectStartDate) ? 4 : transitionPath ? 3 : 2;
+        const currentStep = (showEfforts || confirmedEfforts) ? 6 : generatedResult ? 5 : (transitionPath && projectStartDate) ? 4 : transitionPath ? 3 : 2;
         const STEPS = [
-          { id: 1, label: "Choose LLM"        },
-          { id: 2, label: "Transition Path"    },
-          { id: 3, label: "Start Date"         },
-          { id: 4, label: "Set Duration"       },
-          { id: 5, label: "Enter Efforts"      },
-          { id: 6, label: "Confirm & Download" },
+          { id: 1, label: "Choose LLM"              },
+          { id: 2, label: "Transition Path"          },
+          { id: 3, label: "Start Date"               },
+          { id: 4, label: "Enter Duration"           },
+          { id: 5, label: "Generate Plan & Download" },
+          { id: 6, label: "Enter Efforts & Download" },
         ];
         return (
           <div className="sticky top-14 z-40 bg-background border-b border-border shadow-sm">
@@ -728,9 +748,22 @@ export default function Home() {
                   <motion.div id="plan-preview" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
                     <PlanPreview plan={generatedResult.plan} />
 
-                    {/* ENTER EFFORTS BUTTON */}
+                    {/* STEP 5 ACTIONS: Download Plan + Enter Efforts */}
                     {!showEfforts && (
-                      <div className="flex justify-center">
+                      <div className="flex flex-wrap items-center justify-center gap-3">
+                        <button
+                          onClick={handleDownloadPlanOnly}
+                          disabled={isDownloading}
+                          className={cn(
+                            "flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm shadow transition-all",
+                            hasPlanDownloaded
+                              ? "bg-green-500 text-white hover:bg-green-600"
+                              : "bg-foreground text-background hover:opacity-80"
+                          )}>
+                          {hasPlanDownloaded
+                            ? <><Check className="w-4 h-4" /> Plan Downloaded</>
+                            : <><Download className="w-4 h-4" /> Download Plan (Excel)</>}
+                        </button>
                         <button
                           onClick={() => {
                             setShowEfforts(true);
