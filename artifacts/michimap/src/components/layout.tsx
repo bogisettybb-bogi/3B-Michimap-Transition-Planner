@@ -3,18 +3,19 @@ import { Link } from "wouter";
 import { useGetMe } from "@workspace/api-client-react";
 import { LayoutDashboard, Copy, Check, X } from "lucide-react";
 
-const APP_URL = "https://3bmichimap.replit.app";
-const LI_URL  = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(APP_URL)}`;
+const APP_URL = "https://threeb-michimap-transition-planner.onrender.com";
 
-const DRAFT_TEXT = `S/4HANA Transition Planning. Simplified.
+const DRAFT_TEXT = `Most SAP transformation proposals take days to build.
+3B Michimap does it in minutes.
+AI-powered. Beautiful interface. Professional Excel output you will be surprised.
 
-AI powered 3B MichiMap gives your team a credible starting point in minutes.
-Effort estimation. Transition scoping. Presales-ready output, all from one intelligent tool built on S/4HANA logic.
-No spreadsheets. No guesswork.
+Built specifically for SAP Pre-Sales.
 
-This is what accelerated presales looks like. : ${APP_URL}
+👉 ${APP_URL}
 
-#S4HANA #SAP #Presales #Transformation #SAPCommunity`;
+#SAP #S4HANA #PreSales #SAPConsulting #3BMichimap`;
+
+const LI_URL = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(APP_URL)}&title=${encodeURIComponent("3B Michimap - AI-Powered SAP S/4HANA Project Planner")}&summary=${encodeURIComponent(DRAFT_TEXT)}`;
 
 export const TERMS_CLAUSES = [
   {
