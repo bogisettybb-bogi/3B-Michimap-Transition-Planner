@@ -437,13 +437,18 @@ export default function Home() {
                   return (
                     <div key={step.id} className="flex items-center flex-1 min-w-0">
                       <div className="flex flex-col items-center gap-1.5 shrink-0">
-                        <div className={cn(
-                          "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300",
-                          done   ? "bg-green-500 border-green-500 text-white shadow-[0_0_0_3px_rgba(34,197,94,0.18)]"
-                                 : active ? "border-primary text-primary bg-primary/10 shadow-[0_0_0_3px_rgba(233,169,68,0.18)]"
-                                         : "border-border text-muted-foreground bg-muted/40"
-                        )}>
-                          {done ? <Check className="w-4 h-4 stroke-[3]" /> : step.id}
+                        <div className="relative">
+                          {active && (
+                            <span className="absolute inset-0 rounded-full animate-ping bg-primary/30 pointer-events-none" />
+                          )}
+                          <div className={cn(
+                            "relative w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300",
+                            done   ? "bg-green-500 border-green-500 text-white shadow-[0_0_0_3px_rgba(34,197,94,0.18)]"
+                                   : active ? "border-primary text-primary bg-primary/10 shadow-[0_0_0_4px_rgba(233,169,68,0.30)]"
+                                           : "border-border text-muted-foreground bg-muted/40"
+                          )}>
+                            {done ? <Check className="w-4 h-4 stroke-[3]" /> : step.id}
+                          </div>
                         </div>
                         <span className={cn(
                           "text-[10px] font-semibold text-center leading-tight max-w-[60px] transition-colors duration-200",
@@ -539,7 +544,14 @@ export default function Home() {
 
                   {/* TRANSITION PATH */}
                   <div className="space-y-3">
-                    <label className="text-xs font-bold text-primary uppercase tracking-wider">Transition Path</label>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <label className="text-xs font-bold text-primary uppercase tracking-wider">Transition Path</label>
+                      {!transitionPath && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-primary px-2 py-0.5 rounded-full animate-bounce shadow-sm">
+                          ← Fill this next
+                        </span>
+                      )}
+                    </div>
                     <div className="grid grid-cols-3 gap-3">
                       {(Object.keys(TRANSITION_PATHS) as GeneratePlanRequestTransitionPath[]).map(pathId => {
                         const path = TRANSITION_PATHS[pathId];
@@ -580,14 +592,42 @@ export default function Home() {
 
                   {/* PROJECT START DATE */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-primary uppercase tracking-wider">Project Start Date</label>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <label className="text-xs font-bold text-primary uppercase tracking-wider">Project Start Date</label>
+                      {transitionPath && !projectStartDate && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-primary px-2 py-0.5 rounded-full animate-bounce shadow-sm">
+                          ← Fill this next
+                        </span>
+                      )}
+                    </div>
                     <CalendarPicker value={projectStartDate} onChange={setProjectStartDate} />
                   </div>
 
                   {/* PHASE DURATIONS */}
                   <div className="space-y-3">
-                    <label className="text-xs font-bold text-primary uppercase tracking-wider">Phase Durations (Weeks)</label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <label className="text-xs font-bold text-primary uppercase tracking-wider">Phase Durations (Weeks)</label>
+                      {projectStartDate && !generatedResult && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-primary px-2 py-0.5 rounded-full animate-bounce shadow-sm">
+                          ← Fill this next
+                        </span>
+                      )}
+                    </div>
+
+                    {/* LOCK OVERLAY — shown when start date not yet picked */}
+                    {!projectStartDate && (
+                      <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 dark:bg-amber-950/20">
+                        <span className="text-xl leading-none mt-0.5 shrink-0">🔒</span>
+                        <div>
+                          <p className="text-sm font-bold text-amber-700 dark:text-amber-400">Select a start date first</p>
+                          <p className="text-xs text-amber-600/80 dark:text-amber-400/70 mt-0.5 leading-snug">
+                            Please pick your Project Start Date above (Step 3) before setting phase durations.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className={cn("grid grid-cols-2 gap-3", !projectStartDate && "opacity-40 pointer-events-none select-none blur-[1px]")}>
                       {(Object.entries(phases) as [keyof typeof phases, any][]).map(([key, data]) => {
                         const meta = PHASES_META[key];
                         const isOptional = key === "discover";
