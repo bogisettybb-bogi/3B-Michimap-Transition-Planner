@@ -20,6 +20,7 @@ export const MODELS = {
   ],
   // Latest models - connect with your own API key
   paid: [
+    { id: "gemini-2-5-flash",  name: "Gemini 2.5 Flash · 2025  (Google)" },
     { id: "gpt-4o",            name: "GPT-4o · 2024  (OpenAI)" },
     { id: "o1",                name: "o1 · 2024  (OpenAI, Reasoning)" },
     { id: "o4-mini",           name: "o4-mini · 2025  (OpenAI, Reasoning)" },

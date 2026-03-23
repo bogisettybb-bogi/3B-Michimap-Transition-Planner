@@ -230,7 +230,7 @@ export default function Home() {
   const { mutateAsync: downloadPlan, isPending: isDownloading } = useDownloadPlan();
   const { toast } = useToast();
 
-  const [aiModel, setAiModel] = useState("llama-3-3-70b");
+  const [aiModel, setAiModel] = useState("gemini-2-5-flash");
   const [apiKey, setApiKey] = useState("");
   const [apiKeyConfirmed, setApiKeyConfirmed] = useState(false);
   const [transitionPath, setTransitionPath] = useState<GeneratePlanRequestTransitionPath | null>(null);
