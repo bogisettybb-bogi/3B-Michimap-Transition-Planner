@@ -37,13 +37,14 @@ app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
-// Root serves the UI
-app.get("/", (_req: Request, res: Response) => {
-  res.sendFile(path.join(publicDir, "index.html"));
-});
-
 app.use(authMiddleware);
 
 app.use("/api", router);
+
+// Catch-all: return the React app's index.html for any non-API route
+// This enables React Router client-side navigation to work correctly
+app.get("/{*path}", (_req: Request, res: Response) => {
+  res.sendFile(path.join(publicDir, "index.html"));
+});
 
 export default app;
