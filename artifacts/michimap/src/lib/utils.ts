@@ -12,26 +12,17 @@ export function formatDate(dateString: string) {
 }
 
 export const MODELS = {
-  // Truly free — open-source models, no Replit dependency
+  // Truly free — open-source models, no API key or Replit needed
   freeOpen: [
     { id: "llama-3-3-70b",    name: "Llama 3.3 · 70B  (Meta — open-source)" },
     { id: "mixtral-8x7b",     name: "Mixtral 8×7B  (Mistral AI — open-source)" },
     { id: "deepseek-v3",      name: "DeepSeek-V3  (DeepSeek — open-source)" },
   ],
-  // Free only when hosted on Replit — no API key needed here
-  freeReplit: [
-    { id: "gemini-2-5-flash", name: "Gemini 2.5 Flash · 2025  (Google)" },
-    { id: "gemini-2-flash",   name: "Gemini 2.0 Flash · 2025  (Google)" },
-    { id: "gpt-4o-free",      name: "GPT-4o · 2024  (OpenAI)" },
-    { id: "gpt-4o-mini",      name: "GPT-4o mini · 2024  (OpenAI)" },
-    { id: "o4-mini",          name: "o4-mini · 2025  (OpenAI — Reasoning)" },
-    { id: "gpt-5-mini",       name: "GPT-5 mini · 2025  (OpenAI)" },
-    { id: "claude-3-5-haiku", name: "Claude 3.5 Haiku · 2024  (Anthropic)" },
-  ],
   // Latest models — connect with your own API key
   paid: [
     { id: "gpt-4o",            name: "GPT-4o · 2024  (OpenAI)" },
     { id: "o1",                name: "o1 · 2024  (OpenAI — Reasoning)" },
+    { id: "o4-mini",           name: "o4-mini · 2025  (OpenAI — Reasoning)" },
     { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet · 2024  (Anthropic)" },
     { id: "claude-3-7-sonnet", name: "Claude 3.7 Sonnet · 2025  (Anthropic)" },
     { id: "gemini-1-5-pro",    name: "Gemini 1.5 Pro · 2024  (Google)" },

@@ -230,7 +230,7 @@ export default function Home() {
   const { mutateAsync: downloadPlan, isPending: isDownloading } = useDownloadPlan();
   const { toast } = useToast();
 
-  const [aiModel, setAiModel] = useState("gemini-2-5-flash");
+  const [aiModel, setAiModel] = useState("llama-3-3-70b");
   const [apiKey, setApiKey] = useState("");
   const [apiKeyConfirmed, setApiKeyConfirmed] = useState(false);
   const [transitionPath, setTransitionPath] = useState<GeneratePlanRequestTransitionPath | null>(null);
@@ -308,8 +308,6 @@ export default function Home() {
 
 
   const isPaidModel = MODELS.paid.some(m => m.id === aiModel);
-  const isFreeOpenModel   = MODELS.freeOpen.some(m => m.id === aiModel);
-  const isFreeReplitModel = MODELS.freeReplit.some(m => m.id === aiModel);
 
   const totalWeeks = useMemo(() => {
     return Object.entries(phases).reduce((s, [k, v]) => {
@@ -527,13 +525,10 @@ export default function Home() {
                         className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all appearance-none pr-10 cursor-pointer"
                         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundPosition: "right 0.75rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.2em" }}
                       >
-                        <optgroup label="① Absolutely Free — Open-source, No Replit needed">
+                        <optgroup label="Absolutely Free — Open-source, No API Key Needed">
                           {MODELS.freeOpen.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </optgroup>
-                        <optgroup label="② Free via Replit — No API Key needed here">
-                          {MODELS.freeReplit.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                        </optgroup>
-                        <optgroup label="③ Latest Models — Connect with your own API Key">
+                        <optgroup label="Latest Models — Connect with Your Own API Key">
                           {MODELS.paid.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </optgroup>
                       </select>
