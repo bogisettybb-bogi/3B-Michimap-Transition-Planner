@@ -240,7 +240,7 @@ function getProvider(modelId: string): string {
   if (modelId.startsWith("gpt-") || modelId.startsWith("o1") || modelId.startsWith("o4-")) return "openai";
   if (modelId.startsWith("claude-"))   return "anthropic";
   if (modelId.startsWith("deepseek-")) return "deepseek";
-  return modelId; // custom_* or unknown — treat each as its own key slot
+  return modelId; // custom_* or unknown - treat each as its own key slot
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -727,7 +727,7 @@ export default function Home() {
                             <div className="mt-2 flex items-center gap-3 px-4 py-3 rounded-xl border border-green-400 bg-green-50 dark:bg-green-950/30">
                               <Check className="w-4 h-4 text-green-600 shrink-0 stroke-[2.5]" />
                               <span className="text-sm text-green-700 dark:text-green-400 font-medium flex-1">
-                                {PROVIDER_LABELS[currentProvider] ?? "Custom"} API key saved — reused across all {PROVIDER_LABELS[currentProvider] ?? "custom"} models
+                                {PROVIDER_LABELS[currentProvider] ?? "Custom"} API key saved, reused across all {PROVIDER_LABELS[currentProvider] ?? "custom"} models
                               </span>
                               <button
                                 onClick={() => clearKey(currentProvider)}
@@ -739,7 +739,7 @@ export default function Home() {
                           ) : (
                             <div className="mt-2 space-y-2">
                               <p className="text-[11px] text-muted-foreground px-1">
-                                One key per provider — switching between {PROVIDER_LABELS[currentProvider] ?? "custom"} models will reuse this key automatically.
+                                One key per provider. Switching between {PROVIDER_LABELS[currentProvider] ?? "custom"} models will reuse this key automatically.
                               </p>
                               <input
                                 type="password"
