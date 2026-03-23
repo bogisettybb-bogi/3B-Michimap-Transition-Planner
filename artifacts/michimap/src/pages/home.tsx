@@ -233,6 +233,22 @@ interface CustomModel {
 }
 
 const CUSTOM_MODELS_KEY = "michimap_custom_models";
+const SAVED_KEYS_KEY   = "michimap_api_keys";
+
+function getProvider(modelId: string): string {
+  if (modelId.startsWith("gemini-"))    return "google";
+  if (modelId.startsWith("gpt-") || modelId.startsWith("o1") || modelId.startsWith("o4-")) return "openai";
+  if (modelId.startsWith("claude-"))   return "anthropic";
+  if (modelId.startsWith("deepseek-")) return "deepseek";
+  return modelId; // custom_* or unknown — treat each as its own key slot
+}
+
+const PROVIDER_LABELS: Record<string, string> = {
+  google:    "Google AI",
+  openai:    "OpenAI",
+  anthropic: "Anthropic",
+  deepseek:  "DeepSeek",
+};
 
 export default function Home() {
   const { mutateAsync: generatePlan } = useGeneratePlan();
@@ -240,8 +256,10 @@ export default function Home() {
   const { toast } = useToast();
 
   const [aiModel, setAiModel] = useState("gemini-2-5-flash");
-  const [apiKey, setApiKey] = useState("");
-  const [apiKeyConfirmed, setApiKeyConfirmed] = useState(false);
+  const [savedKeys, setSavedKeys] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem(SAVED_KEYS_KEY) || "{}"); } catch { return {}; }
+  });
+  const [draftKey, setDraftKey] = useState("");
 
   const [customModels, setCustomModels] = useState<CustomModel[]>(() => {
     try { return JSON.parse(localStorage.getItem(CUSTOM_MODELS_KEY) || "[]"); } catch { return []; }
@@ -327,6 +345,28 @@ export default function Home() {
   const isCustomModel = customModels.some(m => m.id === aiModel);
   const isPaidModel = MODELS.paid.some(m => m.id === aiModel) || isCustomModel;
 
+  const currentProvider = getProvider(aiModel);
+  const currentKey      = savedKeys[currentProvider] ?? "";
+  const keyConfirmed    = !!savedKeys[currentProvider];
+
+  const persistKeys = (updated: Record<string, string>) => {
+    setSavedKeys(updated);
+    localStorage.setItem(SAVED_KEYS_KEY, JSON.stringify(updated));
+  };
+
+  const confirmKey = () => {
+    if (!draftKey.trim()) return;
+    persistKeys({ ...savedKeys, [currentProvider]: draftKey.trim() });
+    setDraftKey("");
+  };
+
+  const clearKey = (provider: string) => {
+    const updated = { ...savedKeys };
+    delete updated[provider];
+    persistKeys(updated);
+    setDraftKey("");
+  };
+
   const saveCustomModels = (updated: CustomModel[]) => {
     setCustomModels(updated);
     localStorage.setItem(CUSTOM_MODELS_KEY, JSON.stringify(updated));
@@ -343,8 +383,7 @@ export default function Home() {
     const updated = [...customModels, entry];
     saveCustomModels(updated);
     setAiModel(entry.id);
-    setApiKeyConfirmed(false);
-    setApiKey("");
+    setDraftKey("");
     setNewModelName("");
     setNewModelId("");
     setNewModelBaseURL("");
@@ -354,7 +393,8 @@ export default function Home() {
   const deleteCustomModel = (id: string) => {
     const updated = customModels.filter(m => m.id !== id);
     saveCustomModels(updated);
-    if (aiModel === id) { setAiModel("gemini-2-5-flash"); setApiKeyConfirmed(false); setApiKey(""); }
+    clearKey(id);
+    if (aiModel === id) setAiModel("gemini-2-5-flash");
   };
 
   const totalWeeks = useMemo(() => {
@@ -383,8 +423,9 @@ export default function Home() {
       toast({ title: "Transition Path Required", description: "Please select a transition path before generating.", variant: "destructive" });
       return;
     }
-    if (isPaidModel && (!apiKey.trim() || !apiKeyConfirmed)) {
-      toast({ title: "API Key Required", description: "Please enter and confirm your API key by clicking 'Done'.", variant: "destructive" });
+    if (isPaidModel && !keyConfirmed) {
+      const providerLabel = PROVIDER_LABELS[currentProvider] ?? "this provider";
+      toast({ title: "API Key Required", description: `Please enter and confirm your ${providerLabel} API key by clicking 'Done'.`, variant: "destructive" });
       return;
     }
     stopRef.current = false;
@@ -396,7 +437,7 @@ export default function Home() {
       const res = await generatePlan({
         data: {
           aiModel,
-          apiKey: isPaidModel ? apiKey : null,
+          apiKey: isPaidModel ? currentKey : null,
           transitionPath,
           projectStartDate,
           phases: {
@@ -641,7 +682,7 @@ export default function Home() {
                     <div className="relative">
                       <select
                         value={aiModel}
-                        onChange={e => { setAiModel(e.target.value); setApiKeyConfirmed(false); setApiKey(""); }}
+                        onChange={e => { setAiModel(e.target.value); setDraftKey(""); }}
                         className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all appearance-none pr-10 cursor-pointer"
                         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundPosition: "right 0.75rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.2em" }}
                       >
@@ -673,7 +714,7 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* API key entry for paid models */}
+                    {/* API key entry for paid models - one key per provider */}
                     <AnimatePresence>
                       {isPaidModel && (
                         <motion.div
@@ -682,30 +723,35 @@ export default function Home() {
                           exit={{ opacity: 0, height: 0 }}
                           className="overflow-hidden"
                         >
-                          {apiKeyConfirmed ? (
+                          {keyConfirmed ? (
                             <div className="mt-2 flex items-center gap-3 px-4 py-3 rounded-xl border border-green-400 bg-green-50 dark:bg-green-950/30">
                               <Check className="w-4 h-4 text-green-600 shrink-0 stroke-[2.5]" />
-                              <span className="text-sm text-green-700 dark:text-green-400 font-medium flex-1">API key saved</span>
+                              <span className="text-sm text-green-700 dark:text-green-400 font-medium flex-1">
+                                {PROVIDER_LABELS[currentProvider] ?? "Custom"} API key saved — reused across all {PROVIDER_LABELS[currentProvider] ?? "custom"} models
+                              </span>
                               <button
-                                onClick={() => { setApiKeyConfirmed(false); setApiKey(""); }}
-                                className="text-xs text-green-600 underline underline-offset-2 hover:text-green-800 transition-colors"
+                                onClick={() => clearKey(currentProvider)}
+                                className="text-xs text-green-600 underline underline-offset-2 hover:text-green-800 transition-colors shrink-0"
                               >
                                 Change
                               </button>
                             </div>
                           ) : (
                             <div className="mt-2 space-y-2">
+                              <p className="text-[11px] text-muted-foreground px-1">
+                                One key per provider — switching between {PROVIDER_LABELS[currentProvider] ?? "custom"} models will reuse this key automatically.
+                              </p>
                               <input
                                 type="password"
-                                placeholder={`Enter your API key for ${customModels.find(m => m.id === aiModel)?.name ?? MODELS.paid.find(m => m.id === aiModel)?.name?.split(" ·")[0] ?? "this model"}…`}
-                                value={apiKey}
-                                onChange={e => setApiKey(e.target.value)}
-                                onKeyDown={e => { if (e.key === "Enter" && apiKey.trim()) setApiKeyConfirmed(true); }}
+                                placeholder={`Enter your ${PROVIDER_LABELS[currentProvider] ?? "API"} key…`}
+                                value={draftKey}
+                                onChange={e => setDraftKey(e.target.value)}
+                                onKeyDown={e => { if (e.key === "Enter" && draftKey.trim()) confirmKey(); }}
                                 className="w-full bg-background border border-primary/40 rounded-xl px-4 py-3 text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                               />
                               <button
-                                onClick={() => { if (apiKey.trim()) setApiKeyConfirmed(true); }}
-                                disabled={!apiKey.trim()}
+                                onClick={confirmKey}
+                                disabled={!draftKey.trim()}
                                 className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-sm rounded-xl py-2.5 disabled:opacity-40 hover:opacity-90 active:scale-[0.99] transition-all"
                               >
                                 <Check className="w-4 h-4 stroke-[2.5]" />
