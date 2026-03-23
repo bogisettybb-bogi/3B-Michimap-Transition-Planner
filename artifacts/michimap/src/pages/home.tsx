@@ -543,14 +543,14 @@ export default function Home() {
                   </div>
 
                   {/* TRANSITION PATH */}
-                  <div className="space-y-3">
+                  <div className={cn(
+                    "space-y-3 rounded-xl transition-all duration-500 p-3 -mx-3",
+                    !transitionPath
+                      ? "ring-2 ring-primary/60 ring-offset-0 shadow-[0_0_24px_rgba(233,169,68,0.18)]"
+                      : ""
+                  )}>
                     <div className="flex items-center gap-2 flex-wrap">
                       <label className="text-xs font-bold text-primary uppercase tracking-wider">Transition Path</label>
-                      {!transitionPath && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-primary px-2 py-0.5 rounded-full animate-bounce shadow-sm">
-                          ← Fill this next
-                        </span>
-                      )}
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       {(Object.keys(TRANSITION_PATHS) as GeneratePlanRequestTransitionPath[]).map(pathId => {
@@ -591,14 +591,14 @@ export default function Home() {
                   </div>
 
                   {/* PROJECT START DATE */}
-                  <div className="space-y-2">
+                  <div className={cn(
+                    "space-y-2 rounded-xl transition-all duration-500 p-3 -mx-3",
+                    transitionPath && !projectStartDate
+                      ? "ring-2 ring-primary/60 ring-offset-0 shadow-[0_0_24px_rgba(233,169,68,0.18)]"
+                      : ""
+                  )}>
                     <div className="flex items-center gap-2 flex-wrap">
                       <label className="text-xs font-bold text-primary uppercase tracking-wider">Project Start Date</label>
-                      {transitionPath && !projectStartDate && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-primary px-2 py-0.5 rounded-full animate-bounce shadow-sm">
-                          ← Fill this next
-                        </span>
-                      )}
                     </div>
                     {!transitionPath && (
                       <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 dark:bg-amber-950/20">
@@ -617,14 +617,14 @@ export default function Home() {
                   </div>
 
                   {/* PHASE DURATIONS */}
-                  <div className="space-y-3">
+                  <div className={cn(
+                    "space-y-3 rounded-xl transition-all duration-500 p-3 -mx-3",
+                    projectStartDate && !generatedResult
+                      ? "ring-2 ring-primary/60 ring-offset-0 shadow-[0_0_24px_rgba(233,169,68,0.18)]"
+                      : ""
+                  )}>
                     <div className="flex items-center gap-2 flex-wrap">
                       <label className="text-xs font-bold text-primary uppercase tracking-wider">Phase Durations (Weeks)</label>
-                      {projectStartDate && !generatedResult && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-primary px-2 py-0.5 rounded-full animate-bounce shadow-sm">
-                          ← Fill this next
-                        </span>
-                      )}
                     </div>
 
                     {/* LOCK OVERLAY — shown when start date not yet picked */}
