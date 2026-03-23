@@ -2,9 +2,13 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { authMiddleware } from "./middlewares/authMiddleware";
+
+const __dirname_esm = path.dirname(fileURLToPath(import.meta.url));
 
 const app: Express = express();
 
@@ -23,12 +27,19 @@ app.use(cors({
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-// Health / root routes -- no DB dependency, respond instantly
-app.get("/", (_req: Request, res: Response) => {
-  res.json({ status: "ok", service: "3B Michimap API" });
-});
+
+// Serve static UI files from the public/ folder
+const publicDir = path.resolve(__dirname_esm, "../public");
+app.use(express.static(publicDir));
+
+// Health check -- no DB dependency, responds instantly
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
+});
+
+// Root serves the UI
+app.get("/", (_req: Request, res: Response) => {
+  res.sendFile(path.join(publicDir, "index.html"));
 });
 
 app.use(authMiddleware);
