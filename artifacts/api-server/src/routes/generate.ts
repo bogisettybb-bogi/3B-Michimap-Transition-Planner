@@ -325,22 +325,22 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   const GREY_MID   = "FFD9D9D9";
 
   const PHASE_SOLID: Record<string, string> = {
-    "Discover":          "FF2563EB",
-    "Prepare":           "FF16A34A",
-    "Explore":           "FFD97706",
-    "Realize - Develop": "FFB45309",
-    "Realize - UAT":     "FFB91C1C",
-    "Deploy":            "FF0F766E",
-    "Run":               "FF7C3AED",
+    "Discover":          "FF3B82F6",  // blue-500
+    "Prepare":           "FF22C55E",  // green-500
+    "Explore":           "FFF97316",  // orange-500
+    "Realize - Develop": "FFEAB308",  // yellow-500
+    "Realize - UAT":     "FFEF4444",  // red-500
+    "Deploy":            "FF14B8A6",  // teal-500
+    "Run":               "FFA855F4",  // purple-500
   };
   const PHASE_LIGHT: Record<string, string> = {
-    "Discover":          "FFBFDBFE",
-    "Prepare":           "FFBBF7D0",
-    "Explore":           "FFFDE68A",
-    "Realize - Develop": "FFFEF3C7",
-    "Realize - UAT":     "FFFECACA",
-    "Deploy":            "FF99F6E4",
-    "Run":               "FFDDD6FE",
+    "Discover":          "FFDBEAFE",  // blue-100
+    "Prepare":           "FFDCFCE7",  // green-100
+    "Explore":           "FFFFEDD5",  // orange-100
+    "Realize - Develop": "FFFEF9C3",  // yellow-100
+    "Realize - UAT":     "FFFEE2E2",  // red-100
+    "Deploy":            "FFCCFBF1",  // teal-100
+    "Run":               "FFFAF5FF",  // purple-50
   };
 
   const startDate  = new Date((plan.projectStartDate || new Date().toISOString().split("T")[0]) + "T12:00:00");
