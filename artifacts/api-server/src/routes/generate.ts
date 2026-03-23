@@ -503,310 +503,260 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     }
   }
 
-  // ── Footer disclaimer row ──
-  gantt.mergeCells(dataRow, 1, dataRow, FIXED + totalWeeks);
-  const footCell = gantt.getCell(dataRow, 1);
-  footCell.value = `© 3B Michimap  |  Transition: ${pathLabel}  |  Model: ${aiModel}  |  Total: ${totalWeeks} weeks  |  Estimates are indicative and for pre-sales guidance only.`;
-  footCell.font  = { italic: true, size: 7, color: { argb: "FF888888" } };
-  footCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
-  footCell.alignment = { horizontal: "center", vertical: "middle" };
-  gantt.getRow(dataRow).height = 14;
+  // ── Plan-only: add footer and return early ──
+  if (!resourceRows || resourceRows.length === 0) {
+    gantt.mergeCells(dataRow, 1, dataRow, FIXED + totalWeeks);
+    const footCellPlan = gantt.getCell(dataRow, 1);
+    footCellPlan.value = `© 3B Michimap  |  Transition: ${pathLabel}  |  Model: ${aiModel}  |  Total: ${totalWeeks} weeks  |  Estimates are indicative and for pre-sales guidance only.`;
+    footCellPlan.font  = { italic: true, size: 7, color: { argb: "FF888888" } };
+    footCellPlan.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
+    footCellPlan.alignment = { horizontal: "center", vertical: "middle" };
+    gantt.getRow(dataRow).height = 14;
+    return wb;
+  }
 
-  // ────────────────────────────────────────────────
-  // SHEET 2 - Resource Planning Matrix (week columns)
-  // ────────────────────────────────────────────────
-  // Plan-only download: skip Resource Planning Matrix when no resource rows
-  if (!resourceRows || resourceRows.length === 0) return wb;
+  // ────────────────────────────────────────────────────────────────────────
+  // EFFORT SECTION — appended on "Project Plan" sheet, below activity table
+  // ────────────────────────────────────────────────────────────────────────
 
-  const pivot = wb.addWorksheet("Resource Planning Matrix", {
-    pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 },
-    views: [{ state: "frozen", xSplit: 5, ySplit: 4 }],
-  });
-
-  // Helper: column index → Excel letter (A, B, ... Z, AA, ...)
+  // Helper: column index → Excel letter (A, B, … Z, AA, …)
   const colToLetter = (col: number): string => {
-    let letter = "";
-    let c = col;
-    while (c > 0) {
-      c--;
-      letter = String.fromCharCode(65 + (c % 26)) + letter;
-      c = Math.floor(c / 26);
-    }
+    let letter = ""; let c = col;
+    while (c > 0) { c--; letter = String.fromCharCode(65 + (c % 26)) + letter; c = Math.floor(c / 26); }
     return letter;
   };
 
-  // Fixed cols: No(1) Role(2) Description(3) Location(4) Level(5)
-  const FIXED_P = 5;
-  const TOTAL_COL = FIXED_P + totalWeeks + 1;
+  // Total column on gantt sheet (one column after all week cols)
+  const TOTAL_COL_G = FIXED + totalWeeks + 1;
+  gantt.getColumn(TOTAL_COL_G).width = 10;
 
-  // Build year-range columns (one column per calendar year the project spans)
-  interface YearRange { year: number; firstWeek: number; lastWeek: number; col: number; }
-  const YEAR_RANGES: YearRange[] = [];
-  {
-    const sy = startDate.getFullYear();
-    const ey = new Date(startDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000).getFullYear();
-    let yOff = 1;
-    for (let y = sy; y <= ey; y++) {
-      const wks: number[] = [];
-      for (let w = 1; w <= totalWeeks; w++) {
-        if (new Date(startDate.getTime() + (w - 1) * 7 * 24 * 60 * 60 * 1000).getFullYear() === y) wks.push(w);
-      }
-      if (wks.length) YEAR_RANGES.push({ year: y, firstWeek: wks[0], lastWeek: wks[wks.length - 1], col: TOTAL_COL + yOff++ });
-    }
-  }
-  const pivotTotalCols = TOTAL_COL;
-
-  pivot.getColumn(1).width = 4;
-  pivot.getColumn(2).width = 28;
-  pivot.getColumn(3).width = 15;
-  pivot.getColumn(4).width = 12;
-  pivot.getColumn(5).width = 15;
-  for (let w = 1; w <= totalWeeks; w++) pivot.getColumn(FIXED_P + w).width = 4;
-  pivot.getColumn(TOTAL_COL).width = 10;
-
-  // Build week → phase lookup
+  // Week → phase lookup
   const weekPhase: string[] = new Array(totalWeeks + 1).fill("");
   for (const ph of plan.phases as any[]) {
-    for (let w = ph.weekStart + 1; w <= ph.weekStart + ph.weeks; w++) {
-      weekPhase[w] = ph.name;
+    for (let w = ph.weekStart + 1; w <= ph.weekStart + ph.weeks; w++) weekPhase[w] = ph.name;
+  }
+
+  // Map user-supplied resource rows
+  const RESOURCES: { role: string; loc: string; level: string; weekEfforts: Record<number,number> }[] =
+    resourceRows.map(r => ({ role: r.role, loc: r.location, level: r.level, weekEfforts: r.weekEfforts }));
+  const NUM_ROWS = RESOURCES.length;
+
+  const SHORT_MONTHS_E = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  // ── Blank separator ──
+  gantt.getRow(dataRow).height = 6;
+  dataRow++;
+
+  // ── Effort section title ──
+  gantt.mergeCells(dataRow, 1, dataRow, TOTAL_COL_G);
+  {
+    const c = gantt.getCell(dataRow, 1);
+    c.value = "Resource Effort Estimation  (Days per Week)";
+    c.font  = { bold: true, size: 12, color: { argb: WHITE }, name: "Calibri" };
+    c.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+    c.alignment = { horizontal: "center", vertical: "middle" };
+  }
+  gantt.getRow(dataRow).height = 24;
+  dataRow++;
+
+  // ── Phase colour band ──
+  for (let c = 1; c <= FIXED; c++) {
+    gantt.getCell(dataRow, c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D2D2D" } };
+  }
+  {
+    let bc = FIXED + 1;
+    for (const ph of plan.phases as any[]) {
+      const bandEnd = bc + ph.weeks - 1;
+      if (ph.weeks > 1) gantt.mergeCells(dataRow, bc, dataRow, bandEnd);
+      const cell = gantt.getCell(dataRow, bc);
+      cell.value = ph.name;
+      cell.font  = { bold: true, size: 8, color: { argb: WHITE } };
+      cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: PHASE_SOLID[ph.name] || "FF888888" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      bc = bandEnd + 1;
     }
   }
+  gantt.getCell(dataRow, TOTAL_COL_G).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+  gantt.getRow(dataRow).height = 18;
+  dataRow++;
 
-  function pCell(row: number, col: number, value: any, opts?: {
-    bg?: string; fontColor?: string; bold?: boolean; size?: number;
-    hAlign?: string; italic?: boolean; numFmt?: string; wrapText?: boolean;
-    borderRight?: string; borderBottom?: string;
-  }) {
-    const cell = pivot.getCell(row, col);
-    cell.value = value;
-    cell.font  = { bold: opts?.bold ?? false, italic: opts?.italic ?? false, size: opts?.size ?? 9,
-                   color: { argb: opts?.fontColor ?? "FF1A1A1A" } };
-    if (opts?.bg) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: opts.bg } };
-    cell.alignment = { horizontal: (opts?.hAlign as any) ?? "center", vertical: "middle",
-                       wrapText: opts?.wrapText ?? false };
-    const br = opts?.borderRight ?? "hair";
-    const bb = opts?.borderBottom ?? "hair";
-    cell.border = {
-      right:  { style: br as any, color: { argb: "FFCCCCCC" } },
-      bottom: { style: bb as any, color: { argb: "FFCCCCCC" } },
-    };
-    if (opts?.numFmt) cell.numFmt = opts.numFmt;
-    return cell;
+  // ── Column headers ──
+  const effLabels = ["No", "Role / Consultant", "Location", "Level"];
+  const effAligns = ["center", "left", "center", "center"] as const;
+  for (let c = 1; c <= FIXED; c++) {
+    const cell = gantt.getCell(dataRow, c);
+    cell.value = effLabels[c - 1];
+    cell.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    cell.alignment = { horizontal: effAligns[c - 1], vertical: "middle" };
+    cell.border = { right: { style: "thin", color: { argb: "FF444444" } } };
   }
-
-  // ── Row 1: Title ──
-  pivot.mergeCells(1, 1, 1, pivotTotalCols);
-  const rmt = pivot.getCell(1, 1);
-  rmt.value = `Resource Planning Matrix  -  3B Michimap`;
-  rmt.font  = { bold: true, size: 13, color: { argb: WHITE } };
-  rmt.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  rmt.alignment = { horizontal: "center", vertical: "middle" };
-  pivot.getRow(1).height = 28;
-
-  // ── Row 2: Subtitle ──
-  pivot.mergeCells(2, 1, 2, pivotTotalCols);
-  const rms = pivot.getCell(2, 1);
-  rms.value = `Transition: ${pathLabel}  |  Total: ${totalWeeks} weeks  |  Model: ${aiModel}  |  Generated: ${genDate}  |  For internal pre-sales use only`;
-  rms.font  = { italic: true, size: 8, color: { argb: "FF555555" } };
-  rms.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
-  rms.alignment = { horizontal: "center", vertical: "middle" };
-  pivot.getRow(2).height = 16;
-
-  // ── Row 3: Phase colour band (spans week columns) ──
-  for (let c = 1; c <= FIXED_P; c++) {
-    const fc = pivot.getCell(3, c);
-    fc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D2D2D" } };
-  }
-  let bandCol = FIXED_P + 1;
-  for (const ph of plan.phases as any[]) {
-    const bandEnd = bandCol + ph.weeks - 1;
-    if (ph.weeks > 1) pivot.mergeCells(3, bandCol, 3, bandEnd);
-    const bc = pivot.getCell(3, bandCol);
-    bc.value = ph.name;
-    bc.font  = { bold: true, size: 8, color: { argb: WHITE } };
-    bc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: PHASE_SOLID[ph.name] || "FF888888" } };
-    bc.alignment = { horizontal: "center", vertical: "middle" };
-    bandCol = bandEnd + 1;
-  }
-  // Total header col (row 3)
-  const rtc = pivot.getCell(3, TOTAL_COL);
-  rtc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
-  pivot.getRow(3).height = 18;
-
-  // ── Row 4: Column headers (No, Role, Description, Location, Level, W1…Wn, Total) ──
-  pCell(4, 1, "No",          { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
-  pCell(4, 2, "Role",        { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9, hAlign: "left" });
-  pCell(4, 3, "Description", { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
-  pCell(4, 4, "Location",    { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
-  pCell(4, 5, "Level",       { bg: DARK_BG, fontColor: WHITE, bold: true, size: 9 });
-
-  const SHORT_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   for (let w = 1; w <= totalWeeks; w++) {
-    const phName = weekPhase[w];
-    const bg = PHASE_SOLID[phName] || "FF444444";
-    const wkDate   = new Date(startDate.getTime() + (w - 1) * 7 * 24 * 60 * 60 * 1000);
-    const dateLabel = `${wkDate.getDate()} ${SHORT_MONTHS[wkDate.getMonth()]}`;
-    const cell = pivot.getCell(4, FIXED_P + w);
-    cell.value     = `W${w} ${dateLabel}`;
-    cell.font      = { bold: true, size: 7, color: { argb: WHITE } };
-    cell.fill      = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+    const bg  = PHASE_SOLID[weekPhase[w]] || "FF444444";
+    const wd  = new Date(startDate.getTime() + (w - 1) * 7 * 24 * 60 * 60 * 1000);
+    const lbl = `W${w}\n${wd.getDate()} ${SHORT_MONTHS_E[wd.getMonth()]}`;
+    const cell = gantt.getCell(dataRow, FIXED + w);
+    cell.value = lbl;
+    cell.font  = { bold: true, size: 6, color: { argb: WHITE } };
+    cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
     cell.alignment = { horizontal: "center", vertical: "bottom", textRotation: 90 };
-    cell.border    = { right: { style: "hair", color: { argb: "FFBBBBBB" } } };
+    cell.border = { right: { style: "hair", color: { argb: "FFBBBBBB" } } };
   }
-  pCell(4, TOTAL_COL, "Total\nDays", { bg: "FF2D7A4F", fontColor: WHITE, bold: true, size: 8, wrapText: true });
-  pivot.getRow(4).height = 60;
+  {
+    const th = gantt.getCell(dataRow, TOTAL_COL_G);
+    th.value = "Total\nDays";
+    th.font  = { bold: true, size: 8, color: { argb: WHITE } };
+    th.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+    th.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+  }
+  gantt.getRow(dataRow).height = 60;
+  dataRow++;
 
-  // ── Resource rows ──
-  // Derive category from level (used for "Summary by Category" pivot)
-  const levelToCategory: Record<string, string> = {
-    "Solution Architect":      "Functional",
-    "Senior Consultant":       "Functional",
-    "Junior Consultant":       "Technical",
-    "Project Manager":         "Governance",
-    "Service Delivery Manager":"Governance",
-    "Subject Matter Expert":   "Functional",
-    "AI Consultant":           "AI",
-  };
-
-  // Use real user data when available, otherwise fall back to template
-  const DEFAULT_RES = [
-    { role: "Solution Architect",           desc: "Functional",  loc: "Onsite",   level: "Solution Architect",       weekEfforts: {} as Record<number,number> },
-    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Onsite",   level: "Senior Consultant",        weekEfforts: {} },
-    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Offshore", level: "Senior Consultant",        weekEfforts: {} },
-    { role: "SAP Functional Consultant",    desc: "Functional",  loc: "Offshore", level: "Junior Consultant",        weekEfforts: {} },
-    { role: "SAP Technical Consultant",     desc: "Technical",   loc: "Offshore", level: "Senior Consultant",        weekEfforts: {} },
-    { role: "ABAP / BTP Developer",         desc: "Technical",   loc: "Offshore", level: "Junior Consultant",        weekEfforts: {} },
-    { role: "Integration Developer (CPI)",  desc: "Technical",   loc: "Offshore", level: "Senior Consultant",        weekEfforts: {} },
-    { role: "SAP Basis Administrator",      desc: "Platform",    loc: "Offshore", level: "Senior Consultant",        weekEfforts: {} },
-    { role: "Security Consultant",          desc: "Technical",   loc: "Onsite",   level: "Senior Consultant",        weekEfforts: {} },
-    { role: "Project Manager",              desc: "Governance",  loc: "Onsite",   level: "Project Manager",          weekEfforts: {} },
-    { role: "Service Delivery Manager",     desc: "Governance",  loc: "Onsite",   level: "Service Delivery Manager", weekEfforts: {} },
-    { role: "Change Management Lead",       desc: "Governance",  loc: "Onsite",   level: "Senior Consultant",        weekEfforts: {} },
-    { role: "QA / Test Lead",               desc: "Quality",     loc: "Onsite",   level: "Senior Consultant",        weekEfforts: {} },
-    { role: "Infra / Cloud Engineer",       desc: "Platform",    loc: "Offshore", level: "Senior Consultant",        weekEfforts: {} },
-    { role: "AI / Analytics Consultant",    desc: "AI",          loc: "Offshore", level: "AI Consultant",            weekEfforts: {} },
-  ];
-
-  const RESOURCES: { role: string; desc: string; loc: string; level: string; weekEfforts: Record<number,number> }[] =
-    resourceRows && resourceRows.length > 0
-      ? resourceRows.map(r => ({ role: r.role, desc: levelToCategory[r.level] || "Functional", loc: r.location, level: r.level, weekEfforts: r.weekEfforts }))
-      : DEFAULT_RES;
-
-  const DATA_START = 5;
-  const NUM_ROWS   = RESOURCES.length;
-
+  // ── Resource data rows ──
+  const effDataStart = dataRow;
   for (let i = 0; i < NUM_ROWS; i++) {
-    const rowNum = DATA_START + i;
-    const res    = RESOURCES[i];
-    const rowBg  = i % 2 === 0 ? WHITE : GREY_LIGHT;
-    pivot.getRow(rowNum).height = 17;
+    const rowNum = dataRow;
+    const res = RESOURCES[i];
+    const rowBg = i % 2 === 0 ? WHITE : GREY_LIGHT;
+    gantt.getRow(rowNum).height = 17;
 
-    // Fixed label cells
-    pCell(rowNum, 1, i + 1, { bg: rowBg });
-    pCell(rowNum, 2, res.role,  { bg: rowBg, hAlign: "left" });
-    pCell(rowNum, 3, res.desc,  { bg: rowBg });
-    pCell(rowNum, 4, res.loc,   { bg: rowBg });
-    pCell(rowNum, 5, res.level, { bg: rowBg });
-
-    // Week effort cells — use actual values if user provided them, otherwise 0
-    for (let w = 1; w <= totalWeeks; w++) {
-      const phName  = weekPhase[w];
-      const cellBg  = PHASE_LIGHT[phName] || GREY_LIGHT;
-      const effortVal = res.weekEfforts[w] ?? 0;
-      const wCell   = pivot.getCell(rowNum, FIXED_P + w);
-      wCell.value   = effortVal;
-      wCell.font    = { size: 8, color: { argb: effortVal > 0 ? "FF0D6E3B" : "FF333333" } };
-      wCell.fill    = { type: "pattern", pattern: "solid", fgColor: { argb: cellBg } };
-      wCell.alignment = { horizontal: "center", vertical: "middle" };
-      wCell.numFmt  = "0.#";
-      wCell.border  = {
-        right:  { style: "hair", color: { argb: "FFBBBBBB" } },
-        bottom: { style: "hair", color: { argb: "FFBBBBBB" } },
+    const mkCell = (col: number, val: any, hAlign: "center"|"left" = "center", extraBorder = false) => {
+      const cell = gantt.getCell(rowNum, col);
+      cell.value = val;
+      cell.font  = { size: 9 };
+      cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: rowBg } };
+      cell.alignment = { horizontal: hAlign, vertical: "middle" };
+      cell.border = {
+        right:  { style: extraBorder ? "thin" : "hair", color: { argb: extraBorder ? "FF444444" : "FFCCCCCC" } },
+        bottom: { style: "hair", color: { argb: "FFCCCCCC" } },
       };
+    };
+
+    mkCell(1, i + 1);
+    mkCell(2, res.role, "left");
+    mkCell(3, res.loc);
+    mkCell(4, res.level, "center", true); // right border after Level (frozen col boundary)
+
+    // Week effort cells
+    for (let w = 1; w <= totalWeeks; w++) {
+      const effortVal = res.weekEfforts[w] ?? 0;
+      const wCell = gantt.getCell(rowNum, FIXED + w);
+      wCell.value    = effortVal;
+      wCell.font     = { size: 8, color: { argb: effortVal > 0 ? "FF0D6E3B" : "FF333333" } };
+      wCell.fill     = { type: "pattern", pattern: "solid", fgColor: { argb: PHASE_LIGHT[weekPhase[w]] || GREY_LIGHT } };
+      wCell.alignment = { horizontal: "center", vertical: "middle" };
+      wCell.numFmt   = "0.#";
+      wCell.border   = { right: { style: "hair", color: { argb: "FFBBBBBB" } }, bottom: { style: "hair", color: { argb: "FFBBBBBB" } } };
     }
 
-    // Total = SUM of week columns
-    const wFirst = colToLetter(FIXED_P + 1);
-    const wLast  = colToLetter(FIXED_P + totalWeeks);
-    const totCell = pivot.getCell(rowNum, TOTAL_COL);
+    // Total cell (SUM formula)
+    const wFirst = colToLetter(FIXED + 1);
+    const wLast  = colToLetter(FIXED + totalWeeks);
+    const totCell = gantt.getCell(rowNum, TOTAL_COL_G);
     totCell.value = { formula: `SUM(${wFirst}${rowNum}:${wLast}${rowNum})` };
     totCell.font  = { bold: true, size: 9, color: { argb: "FF15803D" } };
     totCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: rowBg } };
     totCell.alignment = { horizontal: "center", vertical: "middle" };
     totCell.numFmt = "0.#";
     totCell.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
+
+    dataRow++;
   }
 
-  // Dropdown validation for Location (col D) and Level (col E)
-  const dropStart = `${DATA_START}`;
-  const dropEnd   = `${DATA_START + NUM_ROWS - 1}`;
-  pivot.dataValidations.add(`D${dropStart}:D${dropEnd}`, {
+  // Dropdowns for Location (col C=3) and Level (col D=4)
+  gantt.dataValidations.add(`C${effDataStart}:C${effDataStart + NUM_ROWS - 1}`, {
     type: "list" as any, allowBlank: true, showDropDown: false,
     formulae: ['"Onsite,Offshore"'],
   } as any);
-  pivot.dataValidations.add(`E${dropStart}:E${dropEnd}`, {
+  gantt.dataValidations.add(`D${effDataStart}:D${effDataStart + NUM_ROWS - 1}`, {
     type: "list" as any, allowBlank: true, showDropDown: false,
     formulae: ['"Solution Architect,Senior Consultant,Junior Consultant,Project Manager,Service Delivery Manager,Subject Matter Expert,AI Consultant"'],
   } as any);
 
   // ── TOTAL row ──
-  const totRow = DATA_START + NUM_ROWS;
-  pivot.getRow(totRow).height = 20;
-  pivot.mergeCells(totRow, 1, totRow, FIXED_P);
-  const trLabel = pivot.getCell(totRow, 1);
-  trLabel.value = "TOTAL";
-  trLabel.font  = { bold: true, size: 10, color: { argb: WHITE } };
-  trLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  trLabel.alignment = { horizontal: "center", vertical: "middle" };
-
+  const totRowG = dataRow;
+  gantt.getRow(totRowG).height = 20;
+  gantt.mergeCells(totRowG, 1, totRowG, FIXED);
+  {
+    const tl = gantt.getCell(totRowG, 1);
+    tl.value = "TOTAL";
+    tl.font  = { bold: true, size: 10, color: { argb: WHITE } };
+    tl.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    tl.alignment = { horizontal: "center", vertical: "middle" };
+  }
   for (let w = 1; w <= totalWeeks; w++) {
-    const colLet = colToLetter(FIXED_P + w);
-    const tc = pivot.getCell(totRow, FIXED_P + w);
-    tc.value = { formula: `SUM(${colLet}${DATA_START}:${colLet}${DATA_START + NUM_ROWS - 1})` };
+    const colLet = colToLetter(FIXED + w);
+    const tc = gantt.getCell(totRowG, FIXED + w);
+    tc.value = { formula: `SUM(${colLet}${effDataStart}:${colLet}${effDataStart + NUM_ROWS - 1})` };
     tc.font  = { bold: true, size: 9, color: { argb: WHITE } };
     tc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
     tc.alignment = { horizontal: "center", vertical: "middle" };
     tc.numFmt = "0";
   }
-  const grandLet  = colToLetter(TOTAL_COL);
-  const grandCell = pivot.getCell(totRow, TOTAL_COL);
-  grandCell.value = { formula: `SUM(${grandLet}${DATA_START}:${grandLet}${DATA_START + NUM_ROWS - 1})` };
-  grandCell.font  = { bold: true, size: 10, color: { argb: WHITE } };
-  grandCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
-  grandCell.alignment = { horizontal: "center", vertical: "middle" };
-  grandCell.numFmt = "0";
+  {
+    const grandLet  = colToLetter(TOTAL_COL_G);
+    const grandCell = gantt.getCell(totRowG, TOTAL_COL_G);
+    grandCell.value = { formula: `SUM(${grandLet}${effDataStart}:${grandLet}${effDataStart + NUM_ROWS - 1})` };
+    grandCell.font  = { bold: true, size: 10, color: { argb: WHITE } };
+    grandCell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+    grandCell.alignment = { horizontal: "center", vertical: "middle" };
+    grandCell.numFmt = "0";
+  }
+  dataRow = totRowG + 1;
 
-  // ── Helpers shared by both pivot tables ──
-  // Collapses a week-column range into a sum expression for use in SUMPRODUCT.
-  const weekRowSum = (firstW: number, lastW: number): string => {
+  // ── Footer (end of all content on Project Plan sheet) ──
+  gantt.mergeCells(dataRow, 1, dataRow, TOTAL_COL_G);
+  {
+    const fc = gantt.getCell(dataRow, 1);
+    fc.value = `© 3B Michimap  |  Transition: ${pathLabel}  |  Model: ${aiModel}  |  Total: ${totalWeeks} weeks  |  Estimates are indicative and for pre-sales guidance only.`;
+    fc.font  = { italic: true, size: 7, color: { argb: "FF888888" } };
+    fc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
+    fc.alignment = { horizontal: "center", vertical: "middle" };
+    gantt.getRow(dataRow).height = 14;
+  }
+
+  // ────────────────────────────────────────────────────────────────────────
+  // SHEET 2 — Effort Summary (pivot tables referencing 'Project Plan' data)
+  // ────────────────────────────────────────────────────────────────────────
+  const pivot = wb.addWorksheet("Effort Summary", {
+    pageSetup: { orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 },
+  });
+
+  // Cross-sheet reference helpers
+  const SHT = "'Project Plan'";
+  // Level column = col D (FIXED=4) on Project Plan sheet
+  const levArrX = `${SHT}!$D$${effDataStart}:$D$${effDataStart + NUM_ROWS - 1}`;
+  // Sum week columns firstW..lastW on Project Plan sheet (column-by-column for SUMPRODUCT)
+  const weekRowSumX = (firstW: number, lastW: number): string => {
     const terms: string[] = [];
     for (let w = firstW; w <= lastW; w++) {
-      const col = colToLetter(FIXED_P + w);
-      terms.push(`${col}${DATA_START}:${col}${DATA_START + NUM_ROWS - 1}`);
+      const col = colToLetter(FIXED + w);
+      terms.push(`${SHT}!${col}${effDataStart}:${col}${effDataStart + NUM_ROWS - 1}`);
     }
     return terms.join("+");
   };
+  const allWeeksExprX = weekRowSumX(1, totalWeeks);
 
-  const levArr      = `$E$${DATA_START}:$E$${DATA_START + NUM_ROWS - 1}`;
-  const allWeeksExpr = weekRowSum(1, totalWeeks);
-
-  const PIVOT_LEVELS = [
-    "Solution Architect",
-    "Senior Consultant",
-    "Junior Consultant",
-    "Subject Matter Expert",
-    "Project Manager",
-    "Service Delivery Manager",
-    "AI Consultant",
-  ];
-
-  // Build phase-range lookup (firstWeek / lastWeek per phase)
+  // Build phase ranges
   interface PhaseRange { name: string; firstWeek: number; lastWeek: number; }
   const PHASE_RANGES: PhaseRange[] = (plan.phases as any[]).map(ph => ({
-    name:      ph.name,
-    firstWeek: ph.weekStart + 1,
-    lastWeek:  ph.weekStart + ph.weeks,
+    name: ph.name, firstWeek: ph.weekStart + 1, lastWeek: ph.weekStart + ph.weeks,
   }));
+
+  // Build year ranges
+  interface YearRange { year: number; firstWeek: number; lastWeek: number; }
+  const YEAR_RANGES: YearRange[] = [];
+  {
+    const sy = startDate.getFullYear();
+    const ey = new Date(startDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000).getFullYear();
+    for (let y = sy; y <= ey; y++) {
+      const wks: number[] = [];
+      for (let w = 1; w <= totalWeeks; w++) {
+        if (new Date(startDate.getTime() + (w - 1) * 7 * 24 * 60 * 60 * 1000).getFullYear() === y) wks.push(w);
+      }
+      if (wks.length) YEAR_RANGES.push({ year: y, firstWeek: wks[0], lastWeek: wks[wks.length - 1] });
+    }
+  }
 
   // ── Shared cell-writer for pivot tables ──
   function pivotCell(row: number, col: number, value: any, opts: {
@@ -815,8 +765,7 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
   }) {
     const cell = pivot.getCell(row, col);
     cell.value = value;
-    cell.font  = { bold: opts.bold ?? false, size: opts.size ?? 8,
-                   color: { argb: opts.fontColor ?? "FF1A1A1A" } };
+    cell.font  = { bold: opts.bold ?? false, size: opts.size ?? 8, color: { argb: opts.fontColor ?? "FF1A1A1A" } };
     cell.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: opts.bg } };
     cell.alignment = { horizontal: opts.hAlign ?? "center", vertical: "middle" };
     if (opts.numFmt) cell.numFmt = opts.numFmt;
@@ -826,59 +775,74 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     };
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // TABLE 1 — Level x Phase Effort Summary
-  // ─────────────────────────────────────────────────────────────
-  const T1_START  = totRow + 2;
-  const T1_COLS   = 1 + PHASE_RANGES.length + 1; // Level | Phase… | Total
+  const PIVOT_LEVELS = [
+    "Solution Architect", "Senior Consultant", "Junior Consultant",
+    "Subject Matter Expert", "Project Manager", "Service Delivery Manager", "AI Consultant",
+  ];
+  const maxPivotCols = Math.max(PHASE_RANGES.length, YEAR_RANGES.length) + 2;
 
-  // Title
+  // ── Pivot sheet: Title ──
+  let pivotRow = 1;
+  pivot.mergeCells(pivotRow, 1, pivotRow, maxPivotCols);
+  {
+    const c = pivot.getCell(pivotRow, 1);
+    c.value = "Effort Summary  —  3B Michimap";
+    c.font  = { bold: true, size: 13, color: { argb: WHITE } };
+    c.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    c.alignment = { horizontal: "center", vertical: "middle" };
+    pivot.getRow(pivotRow).height = 28;
+  }
+  pivotRow++;
+  pivot.mergeCells(pivotRow, 1, pivotRow, maxPivotCols);
+  {
+    const c = pivot.getCell(pivotRow, 1);
+    c.value = `Transition: ${pathLabel}  |  Total: ${totalWeeks} weeks  |  Model: ${aiModel}  |  Generated: ${genDate}  |  For internal pre-sales use only`;
+    c.font  = { italic: true, size: 8, color: { argb: "FF555555" } };
+    c.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F0E8" } };
+    c.alignment = { horizontal: "center", vertical: "middle" };
+    pivot.getRow(pivotRow).height = 16;
+  }
+  pivotRow += 2; // blank spacer
+
+  // ─────────────────────────────────────────────────────────────
+  // TABLE 1 — Level × Phase Effort Summary
+  // ─────────────────────────────────────────────────────────────
+  const T1_START = pivotRow;
+  const T1_COLS  = 1 + PHASE_RANGES.length + 1;
+
   pivot.mergeCells(T1_START, 1, T1_START, T1_COLS);
-  const t1Title = pivot.getCell(T1_START, 1);
-  t1Title.value = "Effort Summary by Level & Phase (Days)";
-  t1Title.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  t1Title.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  t1Title.alignment = { horizontal: "center", vertical: "middle" };
-  pivot.getRow(T1_START).height = 18;
+  {
+    const c = pivot.getCell(T1_START, 1);
+    c.value = "Effort Summary by Level & Phase (Days)";
+    c.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    c.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    c.alignment = { horizontal: "center", vertical: "middle" };
+    pivot.getRow(T1_START).height = 18;
+  }
 
-  // Header row
   const T1_HDR = T1_START + 1;
   pivot.getRow(T1_HDR).height = 28;
-  const t1Hdrs = ["Level", ...PHASE_RANGES.map(p => p.name), "Total Days"];
-  t1Hdrs.forEach((h, i) => {
+  ["Level", ...PHASE_RANGES.map(p => p.name), "Total Days"].forEach((h, i, arr) => {
     const cell = pivot.getCell(T1_HDR, 1 + i);
     cell.value = h;
     cell.font  = { bold: true, size: 8, color: { argb: WHITE } };
     cell.fill  = { type: "pattern", pattern: "solid",
-                   fgColor: { argb: i === 0 ? DARK_BG : i < t1Hdrs.length - 1 ? "FF374151" : "FF1C3A2D" } };
+                   fgColor: { argb: i === 0 ? DARK_BG : i < arr.length - 1 ? "FF374151" : "FF1C3A2D" } };
     cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-    cell.border = {
-      right:  { style: "thin", color: { argb: "FF444444" } },
-      bottom: { style: "thin", color: { argb: "FF444444" } },
-    };
+    cell.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
   });
 
-  // Level data rows
   PIVOT_LEVELS.forEach((level, i) => {
     const rn = T1_HDR + 1 + i;
     const bg = i % 2 === 0 ? WHITE : GREY_LIGHT;
     pivot.getRow(rn).height = 15;
-
-    // Level label
-    pivotCell(rn, 1, level, { bg, hAlign: "left", bold: true, borderRight: "FF888888" });
-
-    // Phase columns
+    pivotCell(rn, 1, level, { bg, hAlign: "left", bold: true });
     PHASE_RANGES.forEach((ph, pi) => {
-      const phExpr = weekRowSum(ph.firstWeek, ph.lastWeek);
-      pivotCell(rn, 2 + pi,
-        { formula: `SUMPRODUCT((${levArr}="${level}")*(${phExpr}))` },
-        { bg, numFmt: "0.#" }
-      );
+      const phExpr = weekRowSumX(ph.firstWeek, ph.lastWeek);
+      pivotCell(rn, 2 + pi, { formula: `SUMPRODUCT((${levArrX}="${level}")*(${phExpr}))` }, { bg, numFmt: "0.#" });
     });
-
-    // Total Days
     const totC = pivot.getCell(rn, 1 + PHASE_RANGES.length + 1);
-    totC.value  = { formula: `SUMPRODUCT((${levArr}="${level}")*(${allWeeksExpr}))` };
+    totC.value  = { formula: `SUMPRODUCT((${levArrX}="${level}")*(${allWeeksExprX}))` };
     totC.font   = { bold: true, size: 8, color: { argb: "FF15803D" } };
     totC.fill   = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
     totC.alignment = { horizontal: "center", vertical: "middle" };
@@ -886,86 +850,71 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     totC.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
   });
 
-  // Grand total row for Table 1
   const T1_TOT = T1_HDR + 1 + PIVOT_LEVELS.length;
   pivot.getRow(T1_TOT).height = 18;
-  pivot.mergeCells(T1_TOT, 1, T1_TOT, 1);
-  const t1GtLabel = pivot.getCell(T1_TOT, 1);
-  t1GtLabel.value = "GRAND TOTAL";
-  t1GtLabel.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  t1GtLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  t1GtLabel.alignment = { horizontal: "center", vertical: "middle" };
-
+  {
+    const c = pivot.getCell(T1_TOT, 1);
+    c.value = "GRAND TOTAL";
+    c.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    c.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    c.alignment = { horizontal: "center", vertical: "middle" };
+  }
   PHASE_RANGES.forEach((ph, pi) => {
-    const phExpr = weekRowSum(ph.firstWeek, ph.lastWeek);
     const gc = pivot.getCell(T1_TOT, 2 + pi);
-    gc.value = { formula: `SUMPRODUCT(${phExpr})` };
+    gc.value = { formula: `SUMPRODUCT(${weekRowSumX(ph.firstWeek, ph.lastWeek)})` };
     gc.font  = { bold: true, size: 9, color: { argb: WHITE } };
     gc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
     gc.alignment = { horizontal: "center", vertical: "middle" };
     gc.numFmt = "0";
   });
-
-  const t1Grand = pivot.getCell(T1_TOT, 1 + PHASE_RANGES.length + 1);
-  t1Grand.value = { formula: `SUMPRODUCT(${allWeeksExpr})` };
-  t1Grand.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  t1Grand.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
-  t1Grand.alignment = { horizontal: "center", vertical: "middle" };
-  t1Grand.numFmt = "0";
+  {
+    const gc = pivot.getCell(T1_TOT, 1 + PHASE_RANGES.length + 1);
+    gc.value = { formula: `SUMPRODUCT(${allWeeksExprX})` };
+    gc.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    gc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+    gc.alignment = { horizontal: "center", vertical: "middle" };
+    gc.numFmt = "0";
+  }
 
   // ─────────────────────────────────────────────────────────────
-  // TABLE 2 — Level x Year Effort Summary
+  // TABLE 2 — Level × Year Effort Summary
   // ─────────────────────────────────────────────────────────────
   const T2_START = T1_TOT + 2;
-  const T2_COLS  = 1 + YEAR_RANGES.length + 1; // Level | Year… | Total
+  const T2_COLS  = 1 + YEAR_RANGES.length + 1;
 
-  // Title
   pivot.mergeCells(T2_START, 1, T2_START, T2_COLS);
-  const t2Title = pivot.getCell(T2_START, 1);
-  t2Title.value = "Effort Summary by Level & Year (Days)";
-  t2Title.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  t2Title.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  t2Title.alignment = { horizontal: "center", vertical: "middle" };
-  pivot.getRow(T2_START).height = 18;
+  {
+    const c = pivot.getCell(T2_START, 1);
+    c.value = "Effort Summary by Level & Year (Days)";
+    c.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    c.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    c.alignment = { horizontal: "center", vertical: "middle" };
+    pivot.getRow(T2_START).height = 18;
+  }
 
-  // Header row
   const T2_HDR = T2_START + 1;
   pivot.getRow(T2_HDR).height = 16;
-  const t2Hdrs = ["Level", ...YEAR_RANGES.map(y => String(y.year)), "Total Days"];
-  t2Hdrs.forEach((h, i) => {
+  ["Level", ...YEAR_RANGES.map(y => String(y.year)), "Total Days"].forEach((h, i, arr) => {
     const cell = pivot.getCell(T2_HDR, 1 + i);
     cell.value = h;
     cell.font  = { bold: true, size: 8, color: { argb: WHITE } };
     cell.fill  = { type: "pattern", pattern: "solid",
-                   fgColor: { argb: i === 0 ? DARK_BG : i < t2Hdrs.length - 1 ? "FF374151" : "FF1C3A2D" } };
+                   fgColor: { argb: i === 0 ? DARK_BG : i < arr.length - 1 ? "FF374151" : "FF1C3A2D" } };
     cell.alignment = { horizontal: "center", vertical: "middle" };
-    cell.border = {
-      right:  { style: "thin", color: { argb: "FF444444" } },
-      bottom: { style: "thin", color: { argb: "FF444444" } },
-    };
+    cell.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "thin", color: { argb: "FF444444" } } };
   });
 
-  // Level data rows
   PIVOT_LEVELS.forEach((level, i) => {
     const rn = T2_HDR + 1 + i;
     const bg = i % 2 === 0 ? WHITE : GREY_LIGHT;
     pivot.getRow(rn).height = 15;
-
-    // Level label
-    pivotCell(rn, 1, level, { bg, hAlign: "left", bold: true, borderRight: "FF888888" });
-
-    // Year columns
+    pivotCell(rn, 1, level, { bg, hAlign: "left", bold: true });
     YEAR_RANGES.forEach((yr, yi) => {
-      const yrExpr = weekRowSum(yr.firstWeek, yr.lastWeek);
-      pivotCell(rn, 2 + yi,
-        { formula: `SUMPRODUCT((${levArr}="${level}")*(${yrExpr}))` },
-        { bg, numFmt: "0.#" }
-      );
+      const yrExpr = weekRowSumX(yr.firstWeek, yr.lastWeek);
+      pivotCell(rn, 2 + yi, { formula: `SUMPRODUCT((${levArrX}="${level}")*(${yrExpr}))` }, { bg, numFmt: "0.#" });
     });
-
-    // Total Days
     const totC = pivot.getCell(rn, 1 + YEAR_RANGES.length + 1);
-    totC.value  = { formula: `SUMPRODUCT((${levArr}="${level}")*(${allWeeksExpr}))` };
+    totC.value  = { formula: `SUMPRODUCT((${levArrX}="${level}")*(${allWeeksExprX}))` };
     totC.font   = { bold: true, size: 8, color: { argb: "FF15803D" } };
     totC.fill   = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
     totC.alignment = { horizontal: "center", vertical: "middle" };
@@ -973,36 +922,35 @@ async function buildExcelWorkbook(plan: any, aiModel: string, recipientEmail?: s
     totC.border = { right: { style: "thin", color: { argb: "FF444444" } }, bottom: { style: "hair", color: { argb: "FFCCCCCC" } } };
   });
 
-  // Grand total row for Table 2
   const T2_TOT = T2_HDR + 1 + PIVOT_LEVELS.length;
   pivot.getRow(T2_TOT).height = 18;
-  pivot.mergeCells(T2_TOT, 1, T2_TOT, 1);
-  const t2GtLabel = pivot.getCell(T2_TOT, 1);
-  t2GtLabel.value = "GRAND TOTAL";
-  t2GtLabel.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  t2GtLabel.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
-  t2GtLabel.alignment = { horizontal: "center", vertical: "middle" };
-
+  {
+    const c = pivot.getCell(T2_TOT, 1);
+    c.value = "GRAND TOTAL";
+    c.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    c.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
+    c.alignment = { horizontal: "center", vertical: "middle" };
+  }
   YEAR_RANGES.forEach((yr, yi) => {
-    const yrExpr = weekRowSum(yr.firstWeek, yr.lastWeek);
     const gc = pivot.getCell(T2_TOT, 2 + yi);
-    gc.value = { formula: `SUMPRODUCT(${yrExpr})` };
+    gc.value = { formula: `SUMPRODUCT(${weekRowSumX(yr.firstWeek, yr.lastWeek)})` };
     gc.font  = { bold: true, size: 9, color: { argb: WHITE } };
     gc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: DARK_BG } };
     gc.alignment = { horizontal: "center", vertical: "middle" };
     gc.numFmt = "0";
   });
+  {
+    const gc = pivot.getCell(T2_TOT, 1 + YEAR_RANGES.length + 1);
+    gc.value = { formula: `SUMPRODUCT(${allWeeksExprX})` };
+    gc.font  = { bold: true, size: 9, color: { argb: WHITE } };
+    gc.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
+    gc.alignment = { horizontal: "center", vertical: "middle" };
+    gc.numFmt = "0";
+  }
 
-  const t2Grand = pivot.getCell(T2_TOT, 1 + YEAR_RANGES.length + 1);
-  t2Grand.value = { formula: `SUMPRODUCT(${allWeeksExpr})` };
-  t2Grand.font  = { bold: true, size: 9, color: { argb: WHITE } };
-  t2Grand.fill  = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D7A4F" } };
-  t2Grand.alignment = { horizontal: "center", vertical: "middle" };
-  t2Grand.numFmt = "0";
-
-  // Column widths — driven by the widest table (Level + max(phases, years) + Total)
-  pivot.getColumn(1).width = 22;
+  // Column widths for pivot summary sheet
   const maxDataCols = Math.max(PHASE_RANGES.length, YEAR_RANGES.length);
+  pivot.getColumn(1).width = 24;
   for (let c = 2; c <= 1 + maxDataCols; c++) pivot.getColumn(c).width = 14;
   pivot.getColumn(1 + maxDataCols + 1).width = 12;
 
