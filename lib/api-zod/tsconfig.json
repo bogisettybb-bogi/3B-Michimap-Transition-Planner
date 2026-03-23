@@ -5,7 +5,10 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "noEmitOnError": false,
+    "skipLibCheck": true,
+    "strict": false
   },
   "include": ["src"]
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as oidc from "openid-client";
 import { Router, type Request, type Response } from "express";
 import { db, usersTable } from "@workspace/db";

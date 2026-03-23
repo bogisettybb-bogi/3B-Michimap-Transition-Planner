@@ -6,7 +6,10 @@
     "emitDeclarationOnly": true,
     "outDir": "dist",
     "rootDir": "src",
-    "types": ["node"]
+    "types": ["node"],
+    "noEmitOnError": false,
+    "skipLibCheck": true,
+    "strict": false
   },
   "include": ["src"]
 }

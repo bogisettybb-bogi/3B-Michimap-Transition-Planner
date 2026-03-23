@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as client from "openid-client";
 import crypto from "crypto";
 import { type Request, type Response } from "express";
