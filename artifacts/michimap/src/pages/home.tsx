@@ -600,7 +600,20 @@ export default function Home() {
                         </span>
                       )}
                     </div>
-                    <CalendarPicker value={projectStartDate} onChange={setProjectStartDate} />
+                    {!transitionPath && (
+                      <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 dark:bg-amber-950/20">
+                        <span className="text-xl leading-none mt-0.5 shrink-0">🔒</span>
+                        <div>
+                          <p className="text-sm font-bold text-amber-700 dark:text-amber-400">Choose a transition path first</p>
+                          <p className="text-xs text-amber-600/80 dark:text-amber-400/70 mt-0.5 leading-snug">
+                            Please select Greenfield, Brownfield, or Bluefield above (Step 2) before picking a start date.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <div className={cn(!transitionPath && "opacity-40 pointer-events-none select-none blur-[1px]")}>
+                      <CalendarPicker value={projectStartDate} onChange={setProjectStartDate} />
+                    </div>
                   </div>
 
                   {/* PHASE DURATIONS */}
