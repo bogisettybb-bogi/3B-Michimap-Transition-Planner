@@ -232,6 +232,7 @@ export default function Home() {
 
   const [aiModel, setAiModel] = useState("gemini-2-5-flash");
   const [apiKey, setApiKey] = useState("");
+  const [apiKeyConfirmed, setApiKeyConfirmed] = useState(false);
   const [transitionPath, setTransitionPath] = useState<GeneratePlanRequestTransitionPath | null>(null);
   const [projectStartDate, setProjectStartDate] = useState("");
 
@@ -307,6 +308,8 @@ export default function Home() {
 
 
   const isPaidModel = MODELS.paid.some(m => m.id === aiModel);
+  const isFreeOpenModel   = MODELS.freeOpen.some(m => m.id === aiModel);
+  const isFreeReplitModel = MODELS.freeReplit.some(m => m.id === aiModel);
 
   const totalWeeks = useMemo(() => {
     return Object.entries(phases).reduce((s, [k, v]) => {
@@ -334,8 +337,8 @@ export default function Home() {
       toast({ title: "Transition Path Required", description: "Please select a transition path before generating.", variant: "destructive" });
       return;
     }
-    if (isPaidModel && !apiKey.trim()) {
-      toast({ title: "API Key Required", description: "Please enter your API key for the selected paid model.", variant: "destructive" });
+    if (isPaidModel && (!apiKey.trim() || !apiKeyConfirmed)) {
+      toast({ title: "API Key Required", description: "Please enter and confirm your API key by clicking 'Done'.", variant: "destructive" });
       return;
     }
     stopRef.current = false;
@@ -520,23 +523,62 @@ export default function Home() {
                     <div className="relative">
                       <select
                         value={aiModel}
-                        onChange={e => setAiModel(e.target.value)}
+                        onChange={e => { setAiModel(e.target.value); setApiKeyConfirmed(false); setApiKey(""); }}
                         className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all appearance-none pr-10 cursor-pointer"
                         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundPosition: "right 0.75rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.2em" }}
                       >
-                        <optgroup label="── Free (Replit-hosted only — No API Key Needed) ──">
-                          {MODELS.free.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        <optgroup label="① Absolutely Free — Open-source, No Replit needed">
+                          {MODELS.freeOpen.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </optgroup>
-                        <optgroup label="── Bring Your Own API Key (Works Anywhere) ──">
+                        <optgroup label="② Free via Replit — No API Key needed here">
+                          {MODELS.freeReplit.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        </optgroup>
+                        <optgroup label="③ Latest Models — Connect with your own API Key">
                           {MODELS.paid.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </optgroup>
                       </select>
                     </div>
+
+                    {/* API key entry for paid models */}
                     <AnimatePresence>
                       {isPaidModel && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                          <input type="password" placeholder="Enter your API key..." value={apiKey} onChange={e => setApiKey(e.target.value)}
-                            className="w-full mt-2 bg-background border border-primary/40 rounded-xl px-4 py-3 text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          {apiKeyConfirmed ? (
+                            <div className="mt-2 flex items-center gap-3 px-4 py-3 rounded-xl border border-green-400 bg-green-50 dark:bg-green-950/30">
+                              <Check className="w-4 h-4 text-green-600 shrink-0 stroke-[2.5]" />
+                              <span className="text-sm text-green-700 dark:text-green-400 font-medium flex-1">API key saved</span>
+                              <button
+                                onClick={() => { setApiKeyConfirmed(false); setApiKey(""); }}
+                                className="text-xs text-green-600 underline underline-offset-2 hover:text-green-800 transition-colors"
+                              >
+                                Change
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="mt-2 space-y-2">
+                              <input
+                                type="password"
+                                placeholder={`Enter your API key for ${MODELS.paid.find(m => m.id === aiModel)?.name?.split(" ·")[0] ?? "this model"}…`}
+                                value={apiKey}
+                                onChange={e => setApiKey(e.target.value)}
+                                onKeyDown={e => { if (e.key === "Enter" && apiKey.trim()) setApiKeyConfirmed(true); }}
+                                className="w-full bg-background border border-primary/40 rounded-xl px-4 py-3 text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                              />
+                              <button
+                                onClick={() => { if (apiKey.trim()) setApiKeyConfirmed(true); }}
+                                disabled={!apiKey.trim()}
+                                className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-sm rounded-xl py-2.5 disabled:opacity-40 hover:opacity-90 active:scale-[0.99] transition-all"
+                              >
+                                <Check className="w-4 h-4 stroke-[2.5]" />
+                                Done — Use this key
+                              </button>
+                            </div>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>

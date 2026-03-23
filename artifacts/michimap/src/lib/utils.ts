@@ -12,23 +12,31 @@ export function formatDate(dateString: string) {
 }
 
 export const MODELS = {
-  free: [
-    { id: "gemini-2-5-flash", name: "Gemini 2.5 Flash · 2025  (Google — Best free)" },
+  // Truly free — open-source models, no Replit dependency
+  freeOpen: [
+    { id: "llama-3-3-70b",    name: "Llama 3.3 · 70B  (Meta — open-source)" },
+    { id: "mixtral-8x7b",     name: "Mixtral 8×7B  (Mistral AI — open-source)" },
+    { id: "deepseek-v3",      name: "DeepSeek-V3  (DeepSeek — open-source)" },
+  ],
+  // Free only when hosted on Replit — no API key needed here
+  freeReplit: [
+    { id: "gemini-2-5-flash", name: "Gemini 2.5 Flash · 2025  (Google)" },
     { id: "gemini-2-flash",   name: "Gemini 2.0 Flash · 2025  (Google)" },
     { id: "gpt-4o-free",      name: "GPT-4o · 2024  (OpenAI)" },
     { id: "gpt-4o-mini",      name: "GPT-4o mini · 2024  (OpenAI)" },
     { id: "o4-mini",          name: "o4-mini · 2025  (OpenAI — Reasoning)" },
     { id: "gpt-5-mini",       name: "GPT-5 mini · 2025  (OpenAI)" },
-    { id: "llama-3-3-70b",    name: "Llama 3.3 · 70B · 2024  (Meta, open-source)" },
-    { id: "mixtral-8x7b",     name: "Mixtral 8×7B · 2024  (Mistral AI, open-source)" },
     { id: "claude-3-5-haiku", name: "Claude 3.5 Haiku · 2024  (Anthropic)" },
-    { id: "deepseek-v3",      name: "DeepSeek-V3 · 2024  (DeepSeek)" },
   ],
+  // Latest models — connect with your own API key
   paid: [
-    { id: "gpt-4o",            name: "GPT-4o · 2024  (OpenAI API key)" },
-    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet · 2024  (Anthropic API key)" },
-    { id: "gemini-1-5-pro",    name: "Gemini 1.5 Pro · 2024  (Google API key)" },
-    { id: "deepseek-r1",       name: "DeepSeek-R1 · 2025  (DeepSeek API key)" },
+    { id: "gpt-4o",            name: "GPT-4o · 2024  (OpenAI)" },
+    { id: "o1",                name: "o1 · 2024  (OpenAI — Reasoning)" },
+    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet · 2024  (Anthropic)" },
+    { id: "claude-3-7-sonnet", name: "Claude 3.7 Sonnet · 2025  (Anthropic)" },
+    { id: "gemini-1-5-pro",    name: "Gemini 1.5 Pro · 2024  (Google)" },
+    { id: "gemini-2-5-pro",    name: "Gemini 2.5 Pro · 2025  (Google)" },
+    { id: "deepseek-r1",       name: "DeepSeek-R1 · 2025  (DeepSeek)" },
   ],
 };
 
