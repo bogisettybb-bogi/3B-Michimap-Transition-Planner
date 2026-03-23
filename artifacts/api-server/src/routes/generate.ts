@@ -235,6 +235,9 @@ async function generateWithAI(params: any): Promise<any> {
     } else if (paidModelBase && params.apiKey) {
       client = new OpenAI({ apiKey: params.apiKey, baseURL: paidModelBase.baseURL });
       model = paidModelBase.model;
+    } else if (params.customBaseURL && params.customModelId && params.apiKey) {
+      client = new OpenAI({ apiKey: params.apiKey, baseURL: params.customBaseURL });
+      model = params.customModelId;
     }
 
     const phaseLines = plan.phases
@@ -996,13 +999,13 @@ async function getLocation(ip: string): Promise<string> {
 
 router.post("/plan", async (req, res) => {
   try {
-    const { aiModel, apiKey, transitionPath, projectStartDate, phases } = req.body;
+    const { aiModel, apiKey, transitionPath, projectStartDate, phases, customBaseURL, customModelId } = req.body;
     
     if (!transitionPath || !projectStartDate || !phases) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const plan = await generateWithAI({ aiModel, apiKey, transitionPath, projectStartDate, phases });
+    const plan = await generateWithAI({ aiModel, apiKey, transitionPath, projectStartDate, phases, customBaseURL, customModelId });
     
     const planId = `plan_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
@@ -1130,20 +1133,25 @@ router.post("/download", async (req, res) => {
 // ── Chat / Plan Refinement endpoint ────────────────────────────────────────
 router.post("/chat", async (req, res) => {
   try {
-    const { planId, message, plan: clientPlan, aiModel, apiKey, transitionPath } = req.body;
+    const { planId, message, plan: clientPlan, aiModel, apiKey, transitionPath, customBaseURL, customModelId } = req.body;
     if (!message) return res.status(400).json({ error: "message is required" });
 
     const currentPlan: any = planId ? planStore.get(planId) : clientPlan;
     if (!currentPlan) return res.status(400).json({ error: "No plan context. Generate a plan first." });
 
     // Pick model
-    const isFree = !PAID_MODEL_BASES[aiModel];
+    const isFree = !PAID_MODEL_BASES[aiModel] && !customBaseURL;
     let client = openai;
     let model = FREE_MODEL_MAP[aiModel] || "gpt-5-mini";
     if (!isFree && apiKey) {
       const base = PAID_MODEL_BASES[aiModel];
-      client = new OpenAI({ baseURL: base.baseURL, apiKey }) as any;
-      model = base.model;
+      if (base) {
+        client = new OpenAI({ baseURL: base.baseURL, apiKey }) as any;
+        model = base.model;
+      } else if (customBaseURL && customModelId) {
+        client = new OpenAI({ baseURL: customBaseURL, apiKey }) as any;
+        model = customModelId;
+      }
     }
 
     // Build phase context string (compact)

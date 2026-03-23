@@ -72,6 +72,10 @@ export interface GeneratePlanRequest {
   /** Project start date (YYYY-MM-DD) */
   projectStartDate: string;
   phases: GeneratePlanRequestPhases;
+  /** Base URL for a custom model (e.g. OpenAI-compatible endpoint) */
+  customBaseURL?: string | null;
+  /** Actual model identifier string sent to the custom endpoint */
+  customModelId?: string | null;
 }
 
 export interface PlanActivity {

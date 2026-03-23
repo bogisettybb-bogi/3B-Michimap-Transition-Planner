@@ -225,6 +225,15 @@ function LiveSummary({ phases, projectStartDate, transitionPath }: { phases: Rec
 }
 
 // ── Main page ──────────────────────────────────────────────────────────────
+interface CustomModel {
+  id: string;
+  name: string;
+  baseURL: string;
+  modelId: string;
+}
+
+const CUSTOM_MODELS_KEY = "michimap_custom_models";
+
 export default function Home() {
   const { mutateAsync: generatePlan } = useGeneratePlan();
   const { mutateAsync: downloadPlan, isPending: isDownloading } = useDownloadPlan();
@@ -233,6 +242,14 @@ export default function Home() {
   const [aiModel, setAiModel] = useState("gemini-2-5-flash");
   const [apiKey, setApiKey] = useState("");
   const [apiKeyConfirmed, setApiKeyConfirmed] = useState(false);
+
+  const [customModels, setCustomModels] = useState<CustomModel[]>(() => {
+    try { return JSON.parse(localStorage.getItem(CUSTOM_MODELS_KEY) || "[]"); } catch { return []; }
+  });
+  const [showAddModel, setShowAddModel] = useState(false);
+  const [newModelName, setNewModelName] = useState("");
+  const [newModelId, setNewModelId] = useState("");
+  const [newModelBaseURL, setNewModelBaseURL] = useState("");
   const [transitionPath, setTransitionPath] = useState<GeneratePlanRequestTransitionPath | null>(null);
   const [projectStartDate, setProjectStartDate] = useState("");
 
@@ -307,7 +324,38 @@ export default function Home() {
 
 
 
-  const isPaidModel = MODELS.paid.some(m => m.id === aiModel);
+  const isCustomModel = customModels.some(m => m.id === aiModel);
+  const isPaidModel = MODELS.paid.some(m => m.id === aiModel) || isCustomModel;
+
+  const saveCustomModels = (updated: CustomModel[]) => {
+    setCustomModels(updated);
+    localStorage.setItem(CUSTOM_MODELS_KEY, JSON.stringify(updated));
+  };
+
+  const addCustomModel = () => {
+    if (!newModelName.trim() || !newModelId.trim() || !newModelBaseURL.trim()) return;
+    const entry: CustomModel = {
+      id: `custom_${Date.now()}`,
+      name: newModelName.trim(),
+      modelId: newModelId.trim(),
+      baseURL: newModelBaseURL.trim(),
+    };
+    const updated = [...customModels, entry];
+    saveCustomModels(updated);
+    setAiModel(entry.id);
+    setApiKeyConfirmed(false);
+    setApiKey("");
+    setNewModelName("");
+    setNewModelId("");
+    setNewModelBaseURL("");
+    setShowAddModel(false);
+  };
+
+  const deleteCustomModel = (id: string) => {
+    const updated = customModels.filter(m => m.id !== id);
+    saveCustomModels(updated);
+    if (aiModel === id) { setAiModel("gemini-2-5-flash"); setApiKeyConfirmed(false); setApiKey(""); }
+  };
 
   const totalWeeks = useMemo(() => {
     return Object.entries(phases).reduce((s, [k, v]) => {
@@ -344,6 +392,7 @@ export default function Home() {
     setHasDownloaded(false);
     setIsGenerating(true);
     try {
+      const customEntry = customModels.find(m => m.id === aiModel);
       const res = await generatePlan({
         data: {
           aiModel,
@@ -359,6 +408,8 @@ export default function Home() {
             deploy:         { weeks: phases.deploy.weeks },
             run:            { weeks: phases.run.weeks },
           },
+          customBaseURL:  customEntry?.baseURL  ?? null,
+          customModelId:  customEntry?.modelId  ?? null,
         },
       });
       if (!stopRef.current) {
@@ -517,7 +568,76 @@ export default function Home() {
 
                   {/* AI MODEL */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-primary uppercase tracking-wider">AI Model</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-primary uppercase tracking-wider">AI Model</label>
+                      <button
+                        onClick={() => setShowAddModel(v => !v)}
+                        title="Add a custom model"
+                        className={cn(
+                          "flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all",
+                          showAddModel
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background border-border text-muted-foreground hover:border-primary hover:text-primary"
+                        )}
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add model
+                      </button>
+                    </div>
+
+                    {/* Inline add-model form */}
+                    <AnimatePresence>
+                      {showAddModel && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="border border-primary/30 rounded-xl p-4 space-y-3 bg-primary/5">
+                            <p className="text-xs text-muted-foreground">Add any OpenAI-compatible model endpoint.</p>
+                            <input
+                              type="text"
+                              placeholder="Display name  (e.g. Gemini 3.1 Ultra)"
+                              value={newModelName}
+                              onChange={e => setNewModelName(e.target.value)}
+                              className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Model ID  (e.g. gemini-3.1-ultra)"
+                              value={newModelId}
+                              onChange={e => setNewModelId(e.target.value)}
+                              className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Base URL  (e.g. https://generativelanguage.googleapis.com/v1beta/openai)"
+                              value={newModelBaseURL}
+                              onChange={e => setNewModelBaseURL(e.target.value)}
+                              className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={addCustomModel}
+                                disabled={!newModelName.trim() || !newModelId.trim() || !newModelBaseURL.trim()}
+                                className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-sm rounded-xl py-2.5 disabled:opacity-40 hover:opacity-90 active:scale-[0.99] transition-all"
+                              >
+                                <Check className="w-4 h-4 stroke-[2.5]" />
+                                Save & Use
+                              </button>
+                              <button
+                                onClick={() => setShowAddModel(false)}
+                                className="px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
                     <div className="relative">
                       <select
                         value={aiModel}
@@ -531,8 +651,27 @@ export default function Home() {
                         <optgroup label="Latest Models - Connect with Your Own API Key">
                           {MODELS.paid.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </optgroup>
+                        {customModels.length > 0 && (
+                          <optgroup label="My Custom Models">
+                            {customModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                          </optgroup>
+                        )}
                       </select>
                     </div>
+
+                    {/* Delete button for active custom model */}
+                    {isCustomModel && (
+                      <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-dashed border-border bg-muted/30">
+                        <span className="text-xs text-muted-foreground">Custom model</span>
+                        <button
+                          onClick={() => deleteCustomModel(aiModel)}
+                          className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                          Remove
+                        </button>
+                      </div>
+                    )}
 
                     {/* API key entry for paid models */}
                     <AnimatePresence>
@@ -558,7 +697,7 @@ export default function Home() {
                             <div className="mt-2 space-y-2">
                               <input
                                 type="password"
-                                placeholder={`Enter your API key for ${MODELS.paid.find(m => m.id === aiModel)?.name?.split(" ·")[0] ?? "this model"}…`}
+                                placeholder={`Enter your API key for ${customModels.find(m => m.id === aiModel)?.name ?? MODELS.paid.find(m => m.id === aiModel)?.name?.split(" ·")[0] ?? "this model"}…`}
                                 value={apiKey}
                                 onChange={e => setApiKey(e.target.value)}
                                 onKeyDown={e => { if (e.key === "Enter" && apiKey.trim()) setApiKeyConfirmed(true); }}
