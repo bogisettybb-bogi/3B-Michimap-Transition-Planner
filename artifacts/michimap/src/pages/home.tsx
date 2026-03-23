@@ -524,10 +524,10 @@ export default function Home() {
                         className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all appearance-none pr-10 cursor-pointer"
                         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundPosition: "right 0.75rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.2em" }}
                       >
-                        <optgroup label="── Free Models (No API Key Needed) ──">
+                        <optgroup label="── Free (Replit-hosted only — No API Key Needed) ──">
                           {MODELS.free.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </optgroup>
-                        <optgroup label="── Paid Models (Enter Your API Key Below) ──">
+                        <optgroup label="── Bring Your Own API Key (Works Anywhere) ──">
                           {MODELS.paid.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </optgroup>
                       </select>
