@@ -29,14 +29,20 @@ const FREE_MODEL_MAP: Record<string, string> = {
 
 // Paid models: user supplies their own API key
 const PAID_MODEL_BASES: Record<string, { baseURL: string; model: string }> = {
-  "gpt-4o":            { baseURL: "https://api.openai.com/v1",                              model: "gpt-4o" },
-  "o1":                { baseURL: "https://api.openai.com/v1",                              model: "o1" },
-  "claude-3-5-sonnet": { baseURL: "https://api.anthropic.com/v1",                           model: "claude-3-5-sonnet-20241022" },
-  "claude-3-7-sonnet": { baseURL: "https://api.anthropic.com/v1",                           model: "claude-3-7-sonnet-20250219" },
-  "gemini-2-5-flash":  { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-2.5-flash-preview-05-20" },
-  "gemini-1-5-pro":    { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-1.5-pro" },
-  "gemini-2-5-pro":    { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-2.5-pro-preview-05-06" },
-  "deepseek-r1":       { baseURL: "https://api.deepseek.com/v1",                            model: "deepseek-reasoner" },
+  // Google Gemini
+  "gemini-2-5-flash":      { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-2.5-flash-preview-05-20" },
+  "gemini-2-0-flash":      { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-2.0-flash" },
+  "gemini-3-1-pro":        { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3.1-pro" },
+  "gemini-3-1-flash":      { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3.1-flash" },
+  "gemini-3-1-flash-lite": { baseURL: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3.1-flash-lite" },
+  // OpenAI
+  "gpt-5-4":               { baseURL: "https://api.openai.com/v1", model: "gpt-5.4" },
+  "gpt-5-4-mini":          { baseURL: "https://api.openai.com/v1", model: "gpt-5.4-mini" },
+  "gpt-5-4-nano":          { baseURL: "https://api.openai.com/v1", model: "gpt-5.4-nano" },
+  // Anthropic
+  "claude-opus-4-6":       { baseURL: "https://api.anthropic.com/v1", model: "claude-opus-4-6-20250514" },
+  "claude-sonnet-4-6":     { baseURL: "https://api.anthropic.com/v1", model: "claude-sonnet-4-6-20250514" },
+  "claude-haiku-4-5":      { baseURL: "https://api.anthropic.com/v1", model: "claude-haiku-4-5-20250307" },
 };
 
 const ACTIVITIES: Record<string, Record<string, any[]>> = {
