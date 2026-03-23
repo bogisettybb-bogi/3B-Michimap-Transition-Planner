@@ -255,7 +255,7 @@ export default function Home() {
   const { mutateAsync: downloadPlan, isPending: isDownloading } = useDownloadPlan();
   const { toast } = useToast();
 
-  const [aiModel, setAiModel] = useState("gemini-2-5-flash");
+  const [aiModel, setAiModel] = useState("gpt-oss-120b");
   const [savedKeys, setSavedKeys] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem(SAVED_KEYS_KEY) || "{}"); } catch { return {}; }
   });

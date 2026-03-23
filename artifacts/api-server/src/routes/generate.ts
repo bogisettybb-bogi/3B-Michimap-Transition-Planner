@@ -15,7 +15,8 @@ const openai = new OpenAI({
 
 // Free models: all route through our server (Replit AI proxy)
 const FREE_MODEL_MAP: Record<string, string> = {
-  "gemini-2-5-flash": "gpt-5-mini",   // Gemini 2.5 Flash (default)
+  "gpt-oss-120b":     "gpt-5-mini",   // GPT-OSS-120B (OpenAI open-source, default)
+  "gemini-2-5-flash": "gpt-5-mini",   // Gemini 2.5 Flash
   "gemini-2-flash":   "gpt-5-mini",   // Gemini 2.0 Flash
   "gpt-4o-free":      "gpt-5-mini",   // GPT-4o
   "gpt-4o-mini":      "gpt-5-nano",   // GPT-4o mini

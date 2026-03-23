@@ -14,6 +14,7 @@ export function formatDate(dateString: string) {
 export const MODELS = {
   // Truly free - open-source models, no API key or Replit needed
   freeOpen: [
+    { id: "gpt-oss-120b",     name: "GPT-OSS-120B  (OpenAI, open-source)" },
     { id: "llama-3-3-70b",    name: "Llama 3.3 · 70B  (Meta, open-source)" },
     { id: "mixtral-8x7b",     name: "Mixtral 8×7B  (Mistral AI, open-source)" },
     { id: "deepseek-v3",      name: "DeepSeek-V3  (DeepSeek, open-source)" },
