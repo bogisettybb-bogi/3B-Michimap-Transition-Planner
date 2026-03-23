@@ -13,13 +13,16 @@ export function formatDate(dateString: string) {
 
 export const MODELS = {
   free: [
-    { id: "gpt-5-mini",       name: "GPT-5 mini · 2025  (Best free - OpenAI)" },
-    { id: "gemini-2-5-flash", name: "Gemini 2.5 Flash · 2025  (Best free - Google)" },
-    { id: "gemini-2-flash",   name: "Gemini 2.0 Flash · 2025  (Gemini free tier)" },
-    { id: "gpt-4o-free",      name: "GPT-4o · 2024  (ChatGPT free tier)" },
-    { id: "claude-3-5-haiku", name: "Claude 3.5 Haiku · 2024  (Claude free tier)" },
-    { id: "deepseek-v3",      name: "DeepSeek-V3 · 2024  (DeepSeek free tier)" },
-    { id: "llama-3-3-70b",    name: "Llama 3.3 70B · 2024  (Meta, open source)" },
+    { id: "gemini-2-5-flash", name: "Gemini 2.5 Flash · 2025  (Google — Best free)" },
+    { id: "gemini-2-flash",   name: "Gemini 2.0 Flash · 2025  (Google)" },
+    { id: "gpt-4o-free",      name: "GPT-4o · 2024  (OpenAI)" },
+    { id: "gpt-4o-mini",      name: "GPT-4o mini · 2024  (OpenAI)" },
+    { id: "o4-mini",          name: "o4-mini · 2025  (OpenAI — Reasoning)" },
+    { id: "gpt-5-mini",       name: "GPT-5 mini · 2025  (OpenAI)" },
+    { id: "llama-3-3-70b",    name: "Llama 3.3 · 70B · 2024  (Meta, open-source)" },
+    { id: "mixtral-8x7b",     name: "Mixtral 8×7B · 2024  (Mistral AI, open-source)" },
+    { id: "claude-3-5-haiku", name: "Claude 3.5 Haiku · 2024  (Anthropic)" },
+    { id: "deepseek-v3",      name: "DeepSeek-V3 · 2024  (DeepSeek)" },
   ],
   paid: [
     { id: "gpt-4o",            name: "GPT-4o · 2024  (OpenAI API key)" },

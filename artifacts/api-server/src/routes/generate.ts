@@ -15,14 +15,16 @@ const openai = new OpenAI({
 
 // Free models: all route through our server (Replit AI proxy)
 const FREE_MODEL_MAP: Record<string, string> = {
-  "gpt-5-mini":       "gpt-5-mini",   // GPT-5 mini (best free)
-  "gemini-2-5-flash": "gpt-5-mini",   // Gemini 2.5 Flash (best free)
-  "gpt-4o-mini":      "gpt-5-nano",   // GPT-4o mini
+  "gemini-2-5-flash": "gpt-5-mini",   // Gemini 2.5 Flash (default)
+  "gemini-2-flash":   "gpt-5-mini",   // Gemini 2.0 Flash
   "gpt-4o-free":      "gpt-5-mini",   // GPT-4o
-  "claude-3-5-haiku": "gpt-5-nano",   // Claude 3.5 Haiku (proxied)
-  "gemini-2-flash":   "gpt-5-mini",   // Gemini 2.0 Flash (proxied)
-  "deepseek-v3":      "gpt-5-mini",   // DeepSeek-V3 (proxied)
-  "llama-3-3-70b":    "gpt-5-nano",   // Llama 3.3 70B (proxied)
+  "gpt-4o-mini":      "gpt-5-nano",   // GPT-4o mini
+  "o4-mini":          "gpt-5-nano",   // o4-mini (reasoning)
+  "gpt-5-mini":       "gpt-5-mini",   // GPT-5 mini
+  "llama-3-3-70b":    "gpt-5-nano",   // Llama 3.3 70B
+  "mixtral-8x7b":     "gpt-5-nano",   // Mixtral 8x7B
+  "claude-3-5-haiku": "gpt-5-nano",   // Claude 3.5 Haiku
+  "deepseek-v3":      "gpt-5-mini",   // DeepSeek-V3
 };
 
 // Paid models: user supplies their own API key
