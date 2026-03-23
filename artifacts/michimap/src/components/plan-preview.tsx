@@ -188,7 +188,7 @@ export function PlanPreview({ plan }: { plan: Plan }) {
                 return (
                   <div key={i} className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium", colors.bg, colors.text)}>
                     <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" />
-                    <span className="truncate max-w-[140px]" title={m.activity}>{m.activity}</span>
+                    <span>{m.activity}</span>
                     <span className="opacity-70 font-semibold">{weekToDate(m.week)}</span>
                   </div>
                 );
