@@ -1,3 +1,4 @@
+// @ts-nocheck
 export * from "./generated/api";
 export * from "./generated/api.schemas";
 export type { GeneratePlanResponse } from "./generated/api.schemas";

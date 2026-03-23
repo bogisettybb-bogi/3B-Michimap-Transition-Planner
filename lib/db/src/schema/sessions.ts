@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { index, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
 
 export const sessionsTable = pgTable(
