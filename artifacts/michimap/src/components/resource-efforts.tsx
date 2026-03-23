@@ -646,7 +646,7 @@ export function ResourceEffortsPanel({
             <div className="flex items-center gap-2 text-green-700">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <p className="text-xs font-semibold">
-                Confirmed — <span className="font-bold">{grandTotalAll} days</span> total across {plan.phases.length} phases.
+                Confirmed: <span className="font-bold">{grandTotalAll} days</span> total across {plan.phases.length} phases.
               </p>
               <button onClick={() => { setConfirmed(false); onUnconfirm(); }}
                 className="ml-auto text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors shrink-0">
@@ -680,7 +680,7 @@ export function ResourceEffortsPanel({
                 >
                   <div className="flex items-center gap-2">
                     <Share2 className="w-4 h-4 text-primary shrink-0" />
-                    <p className="text-xs font-semibold text-foreground">Your plan is ready — share your experience!</p>
+                    <p className="text-xs font-semibold text-foreground">Your plan is ready. Share your experience!</p>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     Copy this draft post, then click "Post on LinkedIn" to share it with your network:

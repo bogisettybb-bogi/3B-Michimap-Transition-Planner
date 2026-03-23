@@ -525,10 +525,10 @@ export default function Home() {
                         className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all appearance-none pr-10 cursor-pointer"
                         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundPosition: "right 0.75rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.2em" }}
                       >
-                        <optgroup label="Absolutely Free — Open-source, No API Key Needed">
+                        <optgroup label="Absolutely Free - Open-source, No API Key Needed">
                           {MODELS.freeOpen.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </optgroup>
-                        <optgroup label="Latest Models — Connect with Your Own API Key">
+                        <optgroup label="Latest Models - Connect with Your Own API Key">
                           {MODELS.paid.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </optgroup>
                       </select>
@@ -570,7 +570,7 @@ export default function Home() {
                                 className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-sm rounded-xl py-2.5 disabled:opacity-40 hover:opacity-90 active:scale-[0.99] transition-all"
                               >
                                 <Check className="w-4 h-4 stroke-[2.5]" />
-                                Done — Use this key
+                                Done - Use this key
                               </button>
                             </div>
                           )}
@@ -664,7 +664,7 @@ export default function Home() {
                       <label className="text-xs font-bold text-primary uppercase tracking-wider">Phase Durations (Weeks)</label>
                     </div>
 
-                    {/* LOCK OVERLAY — shown when start date not yet picked */}
+                    {/* LOCK OVERLAY - shown when start date not yet picked */}
                     {!projectStartDate && (
                       <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 dark:bg-amber-950/20">
                         <span className="text-xl leading-none mt-0.5 shrink-0">🔒</span>

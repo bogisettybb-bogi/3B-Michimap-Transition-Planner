@@ -12,17 +12,17 @@ export function formatDate(dateString: string) {
 }
 
 export const MODELS = {
-  // Truly free — open-source models, no API key or Replit needed
+  // Truly free - open-source models, no API key or Replit needed
   freeOpen: [
-    { id: "llama-3-3-70b",    name: "Llama 3.3 · 70B  (Meta — open-source)" },
-    { id: "mixtral-8x7b",     name: "Mixtral 8×7B  (Mistral AI — open-source)" },
-    { id: "deepseek-v3",      name: "DeepSeek-V3  (DeepSeek — open-source)" },
+    { id: "llama-3-3-70b",    name: "Llama 3.3 · 70B  (Meta, open-source)" },
+    { id: "mixtral-8x7b",     name: "Mixtral 8×7B  (Mistral AI, open-source)" },
+    { id: "deepseek-v3",      name: "DeepSeek-V3  (DeepSeek, open-source)" },
   ],
-  // Latest models — connect with your own API key
+  // Latest models - connect with your own API key
   paid: [
     { id: "gpt-4o",            name: "GPT-4o · 2024  (OpenAI)" },
-    { id: "o1",                name: "o1 · 2024  (OpenAI — Reasoning)" },
-    { id: "o4-mini",           name: "o4-mini · 2025  (OpenAI — Reasoning)" },
+    { id: "o1",                name: "o1 · 2024  (OpenAI, Reasoning)" },
+    { id: "o4-mini",           name: "o4-mini · 2025  (OpenAI, Reasoning)" },
     { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet · 2024  (Anthropic)" },
     { id: "claude-3-7-sonnet", name: "Claude 3.7 Sonnet · 2025  (Anthropic)" },
     { id: "gemini-1-5-pro",    name: "Gemini 1.5 Pro · 2024  (Google)" },
